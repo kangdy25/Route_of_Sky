@@ -64,6 +64,4 @@ const condition = ref('Partly Cloudy')
   </main>
 </template>
 
-<style scoped>
-/* Tailwind v4는 CSS-first이므로 추가적인 복잡한 SCSS 없이도 대부분 처리가 가능합니다. */
-</style>
+<style scoped></style>
