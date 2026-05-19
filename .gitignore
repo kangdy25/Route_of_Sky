@@ -25,3 +25,13 @@ dist-ssr
 
 # env
 *.env
+
+# Test coverage
+coverage/
+playwright-report/
+test-results/
+
+# Build and Tooling caches
+*.tsbuildinfo
+.eslintcache
+.vite

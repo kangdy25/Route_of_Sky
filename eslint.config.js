@@ -24,4 +24,10 @@ export default [
       'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
     },
   },
+  {
+    files: ['**/*.spec.ts', '**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 ]
