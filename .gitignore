@@ -28,3 +28,10 @@ dist-ssr
 
 # Test coverage
 coverage/
+playwright-report/
+test-results/
+
+# Build and Tooling caches
+*.tsbuildinfo
+.eslintcache
+.vite
