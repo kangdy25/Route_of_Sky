@@ -2,7 +2,6 @@
 import { TresCanvas } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
 import SkyElements from './SkyElements.vue'
-import Card from '../ui/Card.vue'
 </script>
 
 <template>
@@ -11,5 +10,4 @@ import Card from '../ui/Card.vue'
     <OrbitControls />
     <SkyElements />
   </TresCanvas>
-  <Card />
 </template>
