@@ -94,7 +94,7 @@ describe('SkyElements.vue', () => {
           ...stubs,
           TresMesh: {
             template: '<div class="tres-mesh-mock"><slot /></div>',
-            setup(props, { emit }) {
+            setup(_, { emit }) {
               // 컴포넌트가 부모에게 전달되기 전(Ref 바인딩 전)에 이벤트를 발생시켜
               // 'if (boxRef.value)'가 false인 경우를 실행하게 만듭니다.
               emit('before-render')
