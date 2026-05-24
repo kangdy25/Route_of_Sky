@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import MainScene from '@/components/scene/MainScene.vue'
-import AppHeader from '@/components/ui/AppHeader.vue'
+import AppHeader from '@/components/common/AppHeader.vue'
 import EnvironmentSpecs from '@/components/ui/EnvironmentSpecs.vue'
 import AtmosphereQuality from '@/components/ui/AtmosphereQuality.vue'
 import TimeScrubbing from '@/components/ui/TimeScrubbing.vue'
