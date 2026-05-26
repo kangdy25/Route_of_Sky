@@ -2,12 +2,13 @@
 import { ref } from 'vue'
 import MainScene from '@/components/scene/MainScene.vue'
 import AppHeader from '@/components/common/AppHeader.vue'
-import EnvironmentSpecs from '@/components/ui/EnvironmentSpecs.vue'
-import AtmosphereQuality from '@/components/ui/AtmosphereQuality.vue'
-import TimeScrubbing from '@/components/ui/TimeScrubbing.vue'
-import SkyConditions from '@/components/ui/SkyConditions.vue'
+import EnvironmentSpecs from '@/components/ui/card/EnvironmentSpecs.vue'
+import AtmosphereQuality from '@/components/ui/card/AtmosphereQuality.vue'
+import TimeScrubbing from '@/components/ui/card/TimeScrubbing.vue'
+import SkyConditions from '@/components/ui/card/SkyConditions.vue'
 
 // 임시 상태 값 (추후 API 및 3D 씬과 연동)
+const time = ref(16.5)
 const temperature = ref(24.5)
 const humidity = ref(62)
 const windSpeed = ref(5)
@@ -22,7 +23,13 @@ const visibility = ref(15.0)
     class="relative min-h-screen w-full overflow-x-hidden bg-[#0f172a] font-sans text-slate-200"
   >
     <div class="fixed inset-0 z-0">
-      <MainScene />
+      <MainScene
+        :time="time"
+        :cloud-cover="cloudCover"
+        :precipitation="precipitation"
+        :aqi="aqi"
+        :visibility="visibility"
+      />
     </div>
 
     <div class="pointer-events-none relative z-10 flex min-h-screen flex-col p-4 lg:p-6">
@@ -46,7 +53,7 @@ const visibility = ref(15.0)
             :visibility="visibility"
           />
           <AtmosphereQuality :aqi="aqi" />
-          <TimeScrubbing />
+          <TimeScrubbing v-model="time" />
         </aside>
       </div>
     </div>

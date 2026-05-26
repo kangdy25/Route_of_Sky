@@ -11,7 +11,7 @@ defineProps<{
         <div class="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.6)]"></div>
         <span class="text-base font-bold tracking-wider text-slate-100 uppercase">습도</span>
       </div>
-      <span class="text-sm font-semibold text-cyan-400 italic">낮은 응결도</span>
+      <span class="text-sm font-semibold text-cyan-400 italic">낮은 응결도 ↗</span>
     </div>
     <div class="flex items-center gap-8">
       <!-- Enlarged Circular Gauge -->
