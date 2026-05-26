@@ -8,8 +8,8 @@
   >
     <div class="flex items-start justify-between">
       <div>
-        <h2 class="text-base font-black tracking-[0.2em] text-slate-400 uppercase">시간대 탐색</h2>
-        <p class="mt-2 text-base font-medium text-slate-500">
+        <h2 class="text-xl font-black text-slate-200 uppercase">시간대 탐색</h2>
+        <p class="mt-2 text-base font-medium text-slate-300">
           재생 헤드를 드래그하여 시간대별<br />
           하늘 상태를 미리 확인하세요.
         </p>
@@ -40,10 +40,10 @@
           ></div>
         </div>
         <div
-          class="mt-5 flex justify-between px-1 font-mono text-sm font-bold tracking-tighter text-slate-500"
+          class="mt-5 flex justify-between px-1 font-mono text-sm font-bold tracking-tighter text-slate-300"
         >
           <span class="text-center"
-            >06:00<br /><span class="text-xs text-slate-600">일출</span></span
+            >06:00<br /><span class="text-xs text-slate-400">일출</span></span
           >
           <span>08:00</span>
           <span>12:00</span>
@@ -52,7 +52,7 @@
           >
           <span>18:00</span>
           <span class="text-center"
-            >20:00<br /><span class="text-xs text-slate-600">일몰</span></span
+            >20:00<br /><span class="text-xs text-slate-400">일몰</span></span
           >
         </div>
       </div>

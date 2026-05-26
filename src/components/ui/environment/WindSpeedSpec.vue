@@ -11,41 +11,66 @@ defineProps<{
         <div
           class="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)]"
         ></div>
-        <span class="text-base font-bold tracking-wider text-slate-200 uppercase">풍속</span>
+        <span class="text-base font-bold tracking-wider text-slate-100 uppercase">풍속</span>
       </div>
+      <span class="text-sm font-semibold text-emerald-400 italic">적정 풍속 ↗</span>
     </div>
     <div class="flex items-center gap-8">
-      <!-- Enlarged Wind Value Display -->
-      <div
-        class="flex h-32 w-32 shrink-0 flex-col items-center justify-center rounded-2xl border border-white/5 bg-slate-950/40 shadow-inner"
-      >
-        <span class="mt-4 text-6xl leading-none font-black tracking-tighter text-white">
-          {{ windSpeed }}
-        </span>
-        <span class="mt-3 text-sm font-black tracking-[0.3em] text-slate-400 uppercase">M/S</span>
-        <div class="mt-4 flex w-full gap-3 whitespace-nowrap">
-          <span class="text-base font-black tracking-tight text-emerald-400">남서풍</span>
-          <span class="font-mono tracking-tighter text-slate-500">각도: 225°</span>
+      <!-- Compass / Wind speed circular indicator -->
+      <div class="relative flex h-32 w-32 shrink-0 items-center justify-center">
+        <!-- Circular Outer Ring -->
+        <svg class="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
+          <circle
+            cx="50"
+            cy="50"
+            r="44"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="5"
+            class="text-slate-800"
+          />
+        </svg>
+
+        <!-- Compass Labels -->
+        <span class="absolute top-2 text-[10px] font-black text-slate-300">N</span>
+        <span class="absolute bottom-2 text-[10px] font-black text-slate-300">S</span>
+        <span class="absolute left-2 text-[10px] font-black text-slate-300">W</span>
+        <span class="absolute right-2 text-[10px] font-black text-slate-300">E</span>
+
+        <!-- Compass Needle (glowing rotated line/arrow inside the dial) -->
+        <div
+          class="absolute h-20 w-1 origin-center rotate-[225deg] transform rounded-full bg-gradient-to-b from-emerald-400 via-emerald-400 to-transparent shadow-[0_0_12px_rgba(52,211,153,0.6)]"
+          style="pointer-events: none"
+        ></div>
+
+        <!-- Center Value overlay -->
+        <div
+          class="absolute flex h-16 w-16 flex-col items-center justify-center rounded-full border border-white/5 bg-slate-950/80 shadow-lg"
+        >
+          <span class="text-2xl font-black text-white">{{ windSpeed }}</span>
+          <span class="text-[9px] font-bold tracking-wider text-slate-200 uppercase">m/s</span>
         </div>
       </div>
-      <!-- Enlarged Compass UI -->
-      <div class="flex w-full flex-1 flex-col items-center justify-center gap-8">
-        <div
-          class="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-2 border-slate-700/50 bg-slate-950/30 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]"
-        >
-          <span class="absolute -top-4 text-sm font-black text-slate-500">북</span>
-          <span class="absolute -bottom-4 text-sm font-black text-slate-500">남</span>
-          <span class="absolute -left-4 text-sm font-black text-slate-500">서</span>
-          <span class="absolute -right-4 text-sm font-black text-slate-500">동</span>
 
-          <!-- Compass Needle -->
+      <!-- Specs Info -->
+      <div class="flex-1 space-y-4">
+        <div class="flex flex-col gap-1 px-1">
+          <span class="text-base font-black text-emerald-400"
+            >남서풍
+            <span class="ml-2 font-mono text-sm font-semibold text-slate-200">225°</span></span
+          >
+          <span class="text-xs font-bold text-slate-200 uppercase">산들바람 (Light Breeze)</span>
+        </div>
+        <div class="h-6 w-full rounded-lg border border-white/5 bg-slate-950/50 p-1.5">
+          <!-- A small wind progress bar based on windSpeed (e.g. max 15 m/s) -->
           <div
-            class="h-20 w-1 origin-center rotate-[135deg] transform rounded-full bg-gradient-to-b from-emerald-400 via-emerald-400 to-transparent shadow-[0_0_12px_rgba(52,211,153,0.5)]"
-          ></div>
-          <div
-            class="absolute h-4 w-4 rounded-full border-2 border-emerald-500/50 bg-slate-950 shadow-lg"
+            class="h-full rounded-md bg-gradient-to-r from-emerald-500/60 to-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)] transition-all duration-1000"
+            :style="{ width: Math.min(100, (windSpeed / 15) * 100) + '%' }"
           ></div>
         </div>
+        <p class="px-1 text-sm leading-relaxed font-medium text-slate-200">
+          현재 비행 고도에서의 풍량은 비행하기에 매우 우호적입니다.
+        </p>
       </div>
     </div>
   </div>

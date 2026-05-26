@@ -14,9 +14,6 @@ const onBeforeRender = () => {
 </script>
 
 <template>
-  <TresAmbientLight :intensity="0.75" />
-  <TresDirectionalLight :position="[5, 5, 5]" :intensity="1" cast-shadow />
-
   <TresMesh ref="boxRef" @before-render="onBeforeRender">
     <TresBoxGeometry :args="[1, 1, 1]" />
     <TresMeshStandardMaterial color="#ffffff" :roughness="0.5" :metalness="0.75" />

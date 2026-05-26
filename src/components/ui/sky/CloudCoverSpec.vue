@@ -22,7 +22,7 @@ const cloudText = computed(() => {
   <div
     class="flex flex-col items-center justify-between rounded-2xl border border-white/5 bg-slate-950/40 p-3 text-center shadow-inner"
   >
-    <span class="text-sm font-bold tracking-wider text-slate-500 uppercase">운량</span>
+    <span class="text-sm font-bold tracking-wider text-slate-300 uppercase">운량</span>
     <div class="relative my-2 flex h-24 w-24 items-center justify-center">
       <svg class="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
         <circle

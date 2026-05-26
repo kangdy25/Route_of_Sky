@@ -9,7 +9,7 @@ defineProps<{
     <div class="mb-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.6)]"></div>
-        <span class="text-base font-bold tracking-wider text-slate-200 uppercase">습도</span>
+        <span class="text-base font-bold tracking-wider text-slate-100 uppercase">습도</span>
       </div>
       <span class="text-sm font-semibold text-cyan-400 italic">낮은 응결도</span>
     </div>
@@ -47,7 +47,7 @@ defineProps<{
         </svg>
         <div class="flex flex-col items-center">
           <span class="text-4xl leading-none font-black tracking-tight text-white"
-            >{{ humidity }}<span class="ml-1 text-base font-normal text-slate-400">%</span></span
+            >{{ humidity }}<span class="ml-1 text-base font-normal text-slate-200">%</span></span
           >
           <span class="mt-2 text-sm font-black tracking-widest text-cyan-400 uppercase">안정</span>
         </div>
@@ -64,7 +64,7 @@ defineProps<{
           ></div>
         </div>
         <div
-          class="mt-3 flex justify-between px-1 font-mono text-xs font-black tracking-widest text-slate-500"
+          class="mt-3 flex justify-between px-1 font-mono text-xs font-black tracking-widest text-slate-300"
         >
           <span>건조</span>
           <span>습함</span>

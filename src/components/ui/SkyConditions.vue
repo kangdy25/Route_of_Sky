@@ -23,7 +23,7 @@ withDefaults(
   >
     <div>
       <div class="mb-6 flex items-center justify-between">
-        <h2 class="text-base font-black tracking-[0.2em] text-slate-400 uppercase">하늘 상태</h2>
+        <h2 class="text-xl font-black text-slate-200 uppercase">하늘 상태</h2>
         <div class="h-2 w-12 rounded-full bg-cyan-500/30"></div>
       </div>
 
