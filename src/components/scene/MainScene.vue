@@ -4,6 +4,7 @@ import { Vector3, Color, BackSide, Clock } from 'three'
 import { TresCanvas } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
 import SkyElements from './SkyElements.vue'
+import Terrain from './Terrain.vue'
 
 // Props mapping standard weather parameters from the UI
 const props = withDefaults(
@@ -50,11 +51,17 @@ const sunDirectionArray = computed<[number, number, number]>(() => {
 })
 
 // 2. Dynamic Lighting Calculations
-const ambientColor = computed(() => {
+const timeFactors = computed(() => {
   const sunAlt = sunPosition.value.y
-  const dayFactor = Math.max(0, Math.min(1, (sunAlt + 0.1) / 0.3))
-  const nightFactor = Math.max(0, Math.min(1, (-sunAlt + 0.1) / 0.3))
+  // We widen the transition range to 0.5 (from -0.15 to 0.35) to make sunrise and sunset longer and more scenic
+  const dayFactor = Math.max(0, Math.min(1, (sunAlt + 0.15) / 0.5))
+  const nightFactor = Math.max(0, Math.min(1, (-sunAlt + 0.15) / 0.5))
   const sunsetFactor = 1.0 - dayFactor - nightFactor
+  return { dayFactor, nightFactor, sunsetFactor }
+})
+
+const ambientColor = computed(() => {
+  const { dayFactor, nightFactor, sunsetFactor } = timeFactors.value
 
   // Light colors: daylight (blue-sky), sunset (warm orange), night (cool navy)
   const r = 0.5 * dayFactor + 0.75 * sunsetFactor + 0.05 * nightFactor
@@ -75,10 +82,7 @@ const ambientColor = computed(() => {
 })
 
 const ambientIntensity = computed(() => {
-  const sunAlt = sunPosition.value.y
-  const dayFactor = Math.max(0, Math.min(1, (sunAlt + 0.1) / 0.3))
-  const nightFactor = Math.max(0, Math.min(1, (-sunAlt + 0.1) / 0.3))
-  const sunsetFactor = 1.0 - dayFactor - nightFactor
+  const { dayFactor, nightFactor, sunsetFactor } = timeFactors.value
 
   let baseIntensity = 0.65 * dayFactor + 0.45 * sunsetFactor + 0.18 * nightFactor
 
@@ -90,10 +94,7 @@ const ambientIntensity = computed(() => {
 })
 
 const directionalColor = computed(() => {
-  const sunAlt = sunPosition.value.y
-  const dayFactor = Math.max(0, Math.min(1, (sunAlt + 0.1) / 0.3))
-  const nightFactor = Math.max(0, Math.min(1, (-sunAlt + 0.1) / 0.3))
-  const sunsetFactor = 1.0 - dayFactor - nightFactor
+  const { dayFactor, nightFactor, sunsetFactor } = timeFactors.value
 
   // Daylight (bright sun), sunset (fiery red-orange), night (cool pale moonlight)
   const r = 1.0 * dayFactor + 1.0 * sunsetFactor + 0.65 * nightFactor
@@ -104,10 +105,7 @@ const directionalColor = computed(() => {
 })
 
 const directionalIntensity = computed(() => {
-  const sunAlt = sunPosition.value.y
-  const dayFactor = Math.max(0, Math.min(1, (sunAlt + 0.1) / 0.3))
-  const nightFactor = Math.max(0, Math.min(1, (-sunAlt + 0.1) / 0.3))
-  const sunsetFactor = 1.0 - dayFactor - nightFactor
+  const { dayFactor, nightFactor, sunsetFactor } = timeFactors.value
 
   // High directional sun light, medium warm sunset light, soft moonlight
   let baseIntensity = 1.3 * dayFactor + 0.85 * sunsetFactor + 0.18 * nightFactor
@@ -121,10 +119,7 @@ const directionalIntensity = computed(() => {
 
 // 3. Dynamic Fog Calculations
 const fogColor = computed(() => {
-  const sunAlt = sunPosition.value.y
-  const dayFactor = Math.max(0, Math.min(1, (sunAlt + 0.1) / 0.3))
-  const nightFactor = Math.max(0, Math.min(1, (-sunAlt + 0.1) / 0.3))
-  const sunsetFactor = 1.0 - dayFactor - nightFactor
+  const { dayFactor, nightFactor, sunsetFactor } = timeFactors.value
 
   // Fog matches horizon color to blend scene objects into the distance
   const r = 140 * dayFactor + 224 * sunsetFactor + 10 * nightFactor
@@ -275,9 +270,9 @@ void main() {
     
     // 1. Time-of-day Weighting Factors
     // Day: sun is high above horizon
-    float dayFactor = smoothstep(-0.05, 0.25, sunAltitude);
+    float dayFactor = smoothstep(-0.15, 0.35, sunAltitude);
     // Night: sun is deep below horizon
-    float nightFactor = smoothstep(0.05, -0.25, sunAltitude);
+    float nightFactor = smoothstep(0.15, -0.35, sunAltitude);
     // Sunset/Dawn: transitional zone
     float sunsetFactor = 1.0 - dayFactor - nightFactor;
     
@@ -388,9 +383,9 @@ void main() {
 
 <template>
   <!-- TresCanvas setup with background fog matches horizon color -->
-  <TresCanvas clear-color="#000000" window-size>
-    <TresPerspectiveCamera :position="[3, 3, 3]" :look-at="[0, 0, 0]" />
-    <OrbitControls />
+  <TresCanvas clear-color="#000000" window-size shadows>
+    <TresPerspectiveCamera :position="[12, 8, 16]" :look-at="[0, 0, 0]" />
+    <OrbitControls :max-distance="45" :min-distance="5" :max-polar-angle="Math.PI / 2 + 0.15" />
 
     <!-- Dynamic Environment Lights -->
     <TresAmbientLight :color="ambientColor" :intensity="ambientIntensity" />
@@ -419,5 +414,8 @@ void main() {
 
     <!-- Base geometry placeholder (rotating box mesh) -->
     <SkyElements />
+
+    <!-- Terrain containing mountains, hills, valleys and lake water -->
+    <Terrain :precipitation="props.precipitation" />
   </TresCanvas>
 </template>
