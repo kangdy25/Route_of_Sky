@@ -1,10 +1,126 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Vector3, Color, BackSide, Clock } from 'three'
 import { TresCanvas } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
 import SkyElements from './SkyElements.vue'
 import Terrain from './Terrain.vue'
+import NatureElements from './NatureElements.vue'
+import Google3DTiles from './Google3DTiles.vue'
+
+const hasGoogleApiKey = computed(() => {
+  return !!import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+})
+
+const cameraPosition = computed<[number, number, number]>(() => {
+  return hasGoogleApiKey.value ? [900, 560, 1150] : [12, 8, 16]
+})
+
+const cameraNear = computed(() => {
+  return hasGoogleApiKey.value ? 1 : 0.1
+})
+
+const cameraFar = computed(() => {
+  return hasGoogleApiKey.value ? 60000 : 1000
+})
+
+const cameraFov = computed(() => {
+  return hasGoogleApiKey.value ? 66 : 45
+})
+
+const skyDomeRadius = computed(() => {
+  return hasGoogleApiKey.value ? 45000 : 400
+})
+
+const sunLightDistance = computed(() => {
+  return hasGoogleApiKey.value ? 12000 : 5
+})
+
+const maxDistance = computed(() => {
+  return hasGoogleApiKey.value ? 9000 : 45
+})
+
+const minDistance = computed(() => {
+  return hasGoogleApiKey.value ? 320 : 5
+})
+
+const minPolarAngle = computed(() => {
+  return hasGoogleApiKey.value ? 0.0 : Math.PI / 3
+})
+
+const maxPolarAngle = computed(() => {
+  return hasGoogleApiKey.value ? Math.PI / 2 + 0.04 : Math.PI / 2 + 0.7
+})
+
+const controlsTarget = computed<[number, number, number]>(() => {
+  return hasGoogleApiKey.value ? [0, 620, 0] : [0, 0, 0]
+})
+
+const screenSpacePanning = computed(() => {
+  return !hasGoogleApiKey.value
+})
+
+type OrbitControlsLike = {
+  target?: Vector3
+  object?: {
+    position?: Vector3
+  }
+  update?: () => void
+}
+
+type OrbitControlsComponentRef = {
+  instance?: { value?: OrbitControlsLike | null } | OrbitControlsLike | null
+}
+
+const orbitControlsRef = ref<OrbitControlsComponentRef | null>(null)
+const minMapTargetY = 620
+const minMapCameraY = 260
+
+function getOrbitControlsFromRef(): OrbitControlsLike | null {
+  const instance = orbitControlsRef.value?.instance
+
+  if (!instance) return null
+  if ('value' in instance) return (instance.value as OrbitControlsLike | null) || null
+
+  return instance as OrbitControlsLike
+}
+
+function resolveOrbitControls(input?: unknown): OrbitControlsLike | null {
+  if (!input || typeof input !== 'object') return getOrbitControlsFromRef()
+
+  const candidate = input as OrbitControlsLike
+  if (typeof candidate.update === 'function') return candidate
+
+  const eventTarget = (input as { target?: unknown }).target
+  if (eventTarget && typeof eventTarget === 'object') {
+    const targetCandidate = eventTarget as OrbitControlsLike
+    if (typeof targetCandidate.update === 'function') return targetCandidate
+  }
+
+  return getOrbitControlsFromRef()
+}
+
+function clampMapCamera(input?: unknown) {
+  const controls = resolveOrbitControls(input)
+  if (!hasGoogleApiKey.value || !controls) return
+
+  let changed = false
+
+  if (controls.target && controls.target.y < minMapTargetY) {
+    controls.target.y = minMapTargetY
+    changed = true
+  }
+
+  const cameraPosition = controls.object?.position
+  if (cameraPosition && cameraPosition.y < minMapCameraY) {
+    cameraPosition.y = minMapCameraY
+    changed = true
+  }
+
+  if (changed) {
+    controls.update?.()
+  }
+}
 
 // Props mapping standard weather parameters from the UI
 const props = withDefaults(
@@ -25,15 +141,30 @@ const props = withDefaults(
 )
 
 // 1. Sun Position Calculations
-const azimuth = Math.PI / 4 // 45 degree angle slant for natural sunlight shadows
 const theta = computed(() => {
-  // Map hours (0-24) to a circular orbit (0 to 2*PI radians)
-  // Sunrise at 6.0 (theta = 0), Noon at 12.0 (theta = PI/2), Sunset at 18.0 (theta = PI)
+  // Default terrain mode keeps the original stylized 24h circular orbit.
   return ((props.time - 6.0) / 24.0) * Math.PI * 2
 })
 
+const mapTileSunPosition = computed(() => {
+  // Google tiles are aligned to local ENU transformed into Three.js as:
+  // X = east, Y = up, Z = south. This makes the sun read naturally over the map:
+  // sunrise east, noon across the southern sky, sunset west.
+  const dayAngle = ((props.time - 6.0) / 12.0) * Math.PI
+  const eastWest = Math.cos(dayAngle)
+  const altitude = Math.sin(dayAngle)
+  const southernArc = Math.max(0, altitude) * 0.62
+
+  return new Vector3(eastWest, altitude * 0.86, southernArc).normalize()
+})
+
 const sunPosition = computed(() => {
+  if (hasGoogleApiKey.value) {
+    return mapTileSunPosition.value
+  }
+
   const t = theta.value
+  const azimuth = Math.PI / 4 // 45 degree angle slant for natural sunlight shadows
   const x = Math.cos(t) * Math.cos(azimuth)
   const y = Math.sin(t) // Altitude (-1 to 1)
   const z = Math.cos(t) * Math.sin(azimuth)
@@ -42,12 +173,18 @@ const sunPosition = computed(() => {
 
 // Helper array representation for TresJS light bindings
 const sunDirectionArray = computed<[number, number, number]>(() => {
+  const distance = sunLightDistance.value
+
   // If night, position the light source as the moon (opposite direction of the sun)
   if (sunPosition.value.y < 0) {
-    const moonPos = sunPosition.value.clone().multiplyScalar(-5)
+    const moonPos = sunPosition.value.clone().multiplyScalar(-distance)
     return [moonPos.x, moonPos.y, moonPos.z]
   }
-  return [sunPosition.value.x * 5, sunPosition.value.y * 5, sunPosition.value.z * 5]
+  return [
+    sunPosition.value.x * distance,
+    sunPosition.value.y * distance,
+    sunPosition.value.z * distance,
+  ]
 })
 
 // 2. Dynamic Lighting Calculations
@@ -186,18 +323,17 @@ watch(
 // Tick the time uniform for cloud wind animation & night star twinkling
 const clock = new Clock()
 const onBeforeRender = () => {
+  clampMapCamera()
   uniforms.uTime.value = clock.getElapsedTime()
 }
 
 // Vertex Shader
 const vertexShader = `
-varying vec3 vWorldPosition;
-varying vec3 vNormal;
+varying vec3 vSkyDirection;
 
 void main() {
-    vNormal = normal;
+    vSkyDirection = normalize(position);
     vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-    vWorldPosition = worldPosition.xyz;
     gl_Position = projectionMatrix * viewMatrix * worldPosition;
 }
 `
@@ -209,8 +345,7 @@ uniform float uTime;
 uniform float uCloudCover;
 uniform float uPrecipitation;
 
-varying vec3 vWorldPosition;
-varying vec3 vNormal;
+varying vec3 vSkyDirection;
 
 // Simple pseudo-random hash for value noise
 float hash(vec2 p) {
@@ -263,7 +398,7 @@ float stars(vec3 p) {
 }
 
 void main() {
-    vec3 viewDir = normalize(vWorldPosition);
+    vec3 viewDir = normalize(vSkyDirection);
     vec3 sunDir = normalize(uSunPosition);
     
     float sunAltitude = sunDir.y;
@@ -384,8 +519,25 @@ void main() {
 <template>
   <!-- TresCanvas setup with background fog matches horizon color -->
   <TresCanvas clear-color="#000000" window-size shadows>
-    <TresPerspectiveCamera :position="[12, 8, 16]" :look-at="[0, 0, 0]" />
-    <OrbitControls :max-distance="45" :min-distance="5" :max-polar-angle="Math.PI / 2 + 0.15" />
+    <TresPerspectiveCamera
+      :position="cameraPosition"
+      :look-at="controlsTarget"
+      :near="cameraNear"
+      :far="cameraFar"
+      :fov="cameraFov"
+    />
+    <OrbitControls
+      ref="orbitControlsRef"
+      :target="controlsTarget"
+      :maxDistance="maxDistance"
+      :minDistance="minDistance"
+      :minPolarAngle="minPolarAngle"
+      :maxPolarAngle="maxPolarAngle"
+      :screenSpacePanning="screenSpacePanning"
+      @start="clampMapCamera"
+      @change="clampMapCamera"
+      @end="clampMapCamera"
+    />
 
     <!-- Dynamic Environment Lights -->
     <TresAmbientLight :color="ambientColor" :intensity="ambientIntensity" />
@@ -400,8 +552,8 @@ void main() {
     <TresFogExp2 :color="fogColor" :density="fogDensity" />
 
     <!-- Procedural Sky Dome Mesh -->
-    <TresMesh @before-render="onBeforeRender">
-      <TresSphereGeometry :args="[400, 64, 32]" />
+    <TresMesh :render-order="-1000" @before-render="onBeforeRender">
+      <TresSphereGeometry :args="[skyDomeRadius, 96, 48]" />
       <TresShaderMaterial
         :vertex-shader="vertexShader"
         :fragment-shader="fragmentShader"
@@ -412,10 +564,19 @@ void main() {
       />
     </TresMesh>
 
-    <!-- Base geometry placeholder (rotating box mesh) -->
-    <SkyElements />
+    <!-- Google Photorealistic 3D Tiles (Activated when API Key is present) -->
+    <Google3DTiles v-if="hasGoogleApiKey" />
 
-    <!-- Terrain containing mountains, hills, valleys and lake water -->
-    <Terrain :precipitation="props.precipitation" />
+    <!-- Default Fantasy Nature Scene (Activated when API Key is missing) -->
+    <template v-else>
+      <!-- Base geometry placeholder (rotating box mesh) -->
+      <SkyElements />
+
+      <!-- Low-poly trees and rocks on mountainsides -->
+      <NatureElements />
+
+      <!-- Terrain containing mountains, hills, valleys and lake water -->
+      <Terrain :precipitation="props.precipitation" />
+    </template>
   </TresCanvas>
 </template>
