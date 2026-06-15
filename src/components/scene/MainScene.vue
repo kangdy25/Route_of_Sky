@@ -1,64 +1,65 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Vector3, Color, BackSide, Clock } from 'three'
+import { Vector3, BackSide, Clock } from 'three'
 import { TresCanvas } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
+import { hasGoogleMapsApiKey } from '@/shared/config/env'
+import { useAtmosphere } from '@/features/scene/composables/useAtmosphere'
+import { useSceneCamera } from '@/features/scene/composables/useSceneCamera'
+import { useSunPosition } from '@/features/scene/composables/useSunPosition'
 import SkyElements from './SkyElements.vue'
 import Terrain from './Terrain.vue'
 import NatureElements from './NatureElements.vue'
 import Google3DTiles from './Google3DTiles.vue'
 
-const hasGoogleApiKey = computed(() => {
-  return !!import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-})
+const props = withDefaults(
+  defineProps<{
+    time?: number
+    cloudCover?: number
+    precipitation?: number
+    aqi?: number
+    visibility?: number
+  }>(),
+  {
+    time: 16.5,
+    cloudCover: 65,
+    precipitation: 0.0,
+    aqi: 45,
+    visibility: 15.0,
+  },
+)
 
-const cameraPosition = computed<[number, number, number]>(() => {
-  return hasGoogleApiKey.value ? [900, 560, 1150] : [12, 8, 16]
-})
+const hasGoogleTiles = computed(() => hasGoogleMapsApiKey)
 
-const cameraNear = computed(() => {
-  return hasGoogleApiKey.value ? 1 : 0.1
-})
+const {
+  cameraPosition,
+  cameraNear,
+  cameraFar,
+  cameraFov,
+  skyDomeRadius,
+  sunLightDistance,
+  maxDistance,
+  minDistance,
+  minPolarAngle,
+  maxPolarAngle,
+  controlsTarget,
+  screenSpacePanning,
+} = useSceneCamera(hasGoogleTiles)
 
-const cameraFar = computed(() => {
-  return hasGoogleApiKey.value ? 60000 : 1000
-})
+const { sunPosition, sunDirectionArray, timeFactors } = useSunPosition(
+  props,
+  hasGoogleTiles,
+  sunLightDistance,
+)
 
-const cameraFov = computed(() => {
-  return hasGoogleApiKey.value ? 66 : 45
-})
-
-const skyDomeRadius = computed(() => {
-  return hasGoogleApiKey.value ? 45000 : 400
-})
-
-const sunLightDistance = computed(() => {
-  return hasGoogleApiKey.value ? 12000 : 5
-})
-
-const maxDistance = computed(() => {
-  return hasGoogleApiKey.value ? 9000 : 45
-})
-
-const minDistance = computed(() => {
-  return hasGoogleApiKey.value ? 320 : 5
-})
-
-const minPolarAngle = computed(() => {
-  return hasGoogleApiKey.value ? 0.0 : Math.PI / 3
-})
-
-const maxPolarAngle = computed(() => {
-  return hasGoogleApiKey.value ? Math.PI / 2 + 0.04 : Math.PI / 2 + 0.7
-})
-
-const controlsTarget = computed<[number, number, number]>(() => {
-  return hasGoogleApiKey.value ? [0, 620, 0] : [0, 0, 0]
-})
-
-const screenSpacePanning = computed(() => {
-  return !hasGoogleApiKey.value
-})
+const {
+  ambientColor,
+  ambientIntensity,
+  directionalColor,
+  directionalIntensity,
+  fogColor,
+  fogDensity,
+} = useAtmosphere(props, timeFactors)
 
 type OrbitControlsLike = {
   target?: Vector3
@@ -102,7 +103,7 @@ function resolveOrbitControls(input?: unknown): OrbitControlsLike | null {
 
 function clampMapCamera(input?: unknown) {
   const controls = resolveOrbitControls(input)
-  if (!hasGoogleApiKey.value || !controls) return
+  if (!hasGoogleTiles.value || !controls) return
 
   let changed = false
 
@@ -122,172 +123,7 @@ function clampMapCamera(input?: unknown) {
   }
 }
 
-// Props mapping standard weather parameters from the UI
-const props = withDefaults(
-  defineProps<{
-    time?: number // Time of day (0.0 to 24.0 hours)
-    cloudCover?: number // Cloud cover density (0 to 100 percentage)
-    precipitation?: number // Precipitation intensity (0 to 100 percentage)
-    aqi?: number // Air Quality Index (0 to 500)
-    visibility?: number // Visibility distance (0.0 to 20.0 km)
-  }>(),
-  {
-    time: 16.5, // 16:30 (4:30 PM) by default
-    cloudCover: 65,
-    precipitation: 0.0,
-    aqi: 45,
-    visibility: 15.0,
-  },
-)
-
-// 1. Sun Position Calculations
-const theta = computed(() => {
-  // Default terrain mode keeps the original stylized 24h circular orbit.
-  return ((props.time - 6.0) / 24.0) * Math.PI * 2
-})
-
-const mapTileSunPosition = computed(() => {
-  // Google tiles are aligned to local ENU transformed into Three.js as:
-  // X = east, Y = up, Z = south. This makes the sun read naturally over the map:
-  // sunrise east, noon across the southern sky, sunset west.
-  const dayAngle = ((props.time - 6.0) / 12.0) * Math.PI
-  const eastWest = Math.cos(dayAngle)
-  const altitude = Math.sin(dayAngle)
-  const southernArc = Math.max(0, altitude) * 0.62
-
-  return new Vector3(eastWest, altitude * 0.86, southernArc).normalize()
-})
-
-const sunPosition = computed(() => {
-  if (hasGoogleApiKey.value) {
-    return mapTileSunPosition.value
-  }
-
-  const t = theta.value
-  const azimuth = Math.PI / 4 // 45 degree angle slant for natural sunlight shadows
-  const x = Math.cos(t) * Math.cos(azimuth)
-  const y = Math.sin(t) // Altitude (-1 to 1)
-  const z = Math.cos(t) * Math.sin(azimuth)
-  return new Vector3(x, y, z).normalize()
-})
-
-// Helper array representation for TresJS light bindings
-const sunDirectionArray = computed<[number, number, number]>(() => {
-  const distance = sunLightDistance.value
-
-  // If night, position the light source as the moon (opposite direction of the sun)
-  if (sunPosition.value.y < 0) {
-    const moonPos = sunPosition.value.clone().multiplyScalar(-distance)
-    return [moonPos.x, moonPos.y, moonPos.z]
-  }
-  return [
-    sunPosition.value.x * distance,
-    sunPosition.value.y * distance,
-    sunPosition.value.z * distance,
-  ]
-})
-
-// 2. Dynamic Lighting Calculations
-const timeFactors = computed(() => {
-  const sunAlt = sunPosition.value.y
-  // We widen the transition range to 0.5 (from -0.15 to 0.35) to make sunrise and sunset longer and more scenic
-  const dayFactor = Math.max(0, Math.min(1, (sunAlt + 0.15) / 0.5))
-  const nightFactor = Math.max(0, Math.min(1, (-sunAlt + 0.15) / 0.5))
-  const sunsetFactor = 1.0 - dayFactor - nightFactor
-  return { dayFactor, nightFactor, sunsetFactor }
-})
-
-const ambientColor = computed(() => {
-  const { dayFactor, nightFactor, sunsetFactor } = timeFactors.value
-
-  // Light colors: daylight (blue-sky), sunset (warm orange), night (cool navy)
-  const r = 0.5 * dayFactor + 0.75 * sunsetFactor + 0.05 * nightFactor
-  const g = 0.6 * dayFactor + 0.45 * sunsetFactor + 0.08 * nightFactor
-  const b = 0.75 * dayFactor + 0.3 * sunsetFactor + 0.15 * nightFactor
-
-  // Heavy precipitation turns ambient light slate gray
-  const precFactor = props.precipitation / 100
-  const stormR = 0.22,
-    stormG = 0.24,
-    stormB = 0.28
-
-  return new Color(
-    r * (1 - precFactor) + stormR * precFactor,
-    g * (1 - precFactor) + stormG * precFactor,
-    b * (1 - precFactor) + stormB * precFactor,
-  )
-})
-
-const ambientIntensity = computed(() => {
-  const { dayFactor, nightFactor, sunsetFactor } = timeFactors.value
-
-  let baseIntensity = 0.65 * dayFactor + 0.45 * sunsetFactor + 0.18 * nightFactor
-
-  // Dim ambient light slightly during heavy precipitation
-  const precFactor = props.precipitation / 100
-  baseIntensity *= 1.0 - precFactor * 0.35
-
-  return baseIntensity
-})
-
-const directionalColor = computed(() => {
-  const { dayFactor, nightFactor, sunsetFactor } = timeFactors.value
-
-  // Daylight (bright sun), sunset (fiery red-orange), night (cool pale moonlight)
-  const r = 1.0 * dayFactor + 1.0 * sunsetFactor + 0.65 * nightFactor
-  const g = 0.95 * dayFactor + 0.55 * sunsetFactor + 0.72 * nightFactor
-  const b = 0.85 * dayFactor + 0.25 * sunsetFactor + 0.85 * nightFactor
-
-  return new Color(r, g, b)
-})
-
-const directionalIntensity = computed(() => {
-  const { dayFactor, nightFactor, sunsetFactor } = timeFactors.value
-
-  // High directional sun light, medium warm sunset light, soft moonlight
-  let baseIntensity = 1.3 * dayFactor + 0.85 * sunsetFactor + 0.18 * nightFactor
-
-  // Heavy rain/storm clouds block direct directional sunlight/moonlight
-  const precFactor = props.precipitation / 100
-  baseIntensity *= 1.0 - precFactor * 0.88
-
-  return baseIntensity
-})
-
-// 3. Dynamic Fog Calculations
-const fogColor = computed(() => {
-  const { dayFactor, nightFactor, sunsetFactor } = timeFactors.value
-
-  // Fog matches horizon color to blend scene objects into the distance
-  const r = 140 * dayFactor + 224 * sunsetFactor + 10 * nightFactor
-  const g = 185 * dayFactor + 115 * sunsetFactor + 13 * nightFactor
-  const b = 235 * dayFactor + 65 * sunsetFactor + 28 * nightFactor
-
-  // Dark grey-blue fog under storm precipitation
-  const precFactor = props.precipitation / 100
-  const stormFog = [74, 85, 104]
-
-  const finalR = (r * (1 - precFactor) + stormFog[0] * precFactor) / 255
-  const finalG = (g * (1 - precFactor) + stormFog[1] * precFactor) / 255
-  const finalB = (b * (1 - precFactor) + stormFog[2] * precFactor) / 255
-
-  return new Color(finalR, finalG, finalB)
-})
-
-const fogDensity = computed(() => {
-  // Physical visibility mapping (Koschmieder's law: density = 3.912 / visibility_in_meters)
-  // Clamp visibility to a minimum of 0.01 km to prevent division by zero
-  const visInMeters = Math.max(0.01, props.visibility) * 1000
-  const densityFromVis = 3.912 / visInMeters
-
-  // Haze mapping from AQI: 0 to 500 maps to 0.0 to 0.07 extra fog density
-  const aqiClamped = Math.max(0, props.aqi)
-  const densityFromAqi = (aqiClamped / 500) * 0.07
-
-  return densityFromVis + densityFromAqi
-})
-
-// 4. Custom Procedural Sky Dome Shader Material Uniforms
+// 절차적으로 생성하는 하늘 돔 셰이더의 uniform입니다.
 const uniforms = {
   uSunPosition: { value: new Vector3() },
   uTime: { value: 0 },
@@ -295,7 +131,7 @@ const uniforms = {
   uPrecipitation: { value: 0.0 },
 }
 
-// Reactively synchronize uniforms when props change
+// props와 태양 위치 변화가 셰이더 uniform에 즉시 반영되도록 동기화합니다.
 watch(
   () => sunPosition.value,
   (newVal) => {
@@ -320,14 +156,14 @@ watch(
   { immediate: true },
 )
 
-// Tick the time uniform for cloud wind animation & night star twinkling
+// 구름 이동과 별 반짝임 애니메이션에 사용할 시간 uniform을 매 프레임 갱신합니다.
 const clock = new Clock()
 const onBeforeRender = () => {
   clampMapCamera()
   uniforms.uTime.value = clock.getElapsedTime()
 }
 
-// Vertex Shader
+// 하늘 돔 vertex shader입니다.
 const vertexShader = `
 varying vec3 vSkyDirection;
 
@@ -338,7 +174,7 @@ void main() {
 }
 `
 
-// Fragment Shader (Procedural Atmosphere, Sun, Twinkling Stars, & fBm Clouds)
+// 대기, 태양, 별, fBm 구름을 그리는 하늘 돔 fragment shader입니다.
 const fragmentShader = `
 uniform vec3 uSunPosition;
 uniform float uTime;
@@ -347,13 +183,13 @@ uniform float uPrecipitation;
 
 varying vec3 vSkyDirection;
 
-// Simple pseudo-random hash for value noise
+// value noise에 사용할 간단한 의사 난수 hash입니다.
 float hash(vec2 p) {
     p = fract(p * vec2(127.1, 311.7));
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
 }
 
-// 2D Value Noise
+// 2D value noise입니다.
 float noise(vec2 p) {
     vec2 i = floor(p);
     vec2 f = fract(p);
@@ -362,7 +198,7 @@ float noise(vec2 p) {
                mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
 }
 
-// 2D Fractional Brownian Motion (5 octaves) for realistic procedural clouds
+// 자연스러운 절차적 구름을 만들기 위한 2D fBm입니다.
 float fbm(vec2 p) {
     float v = 0.0;
     float a = 0.5;
@@ -376,21 +212,21 @@ float fbm(vec2 p) {
     return v;
 }
 
-// Twinkling stars generator for night sky
+// 밤하늘의 반짝이는 별을 생성합니다.
 float stars(vec3 p) {
-    // scale coordinates to partition sky into cells
+    // 하늘 방향을 격자 셀로 나누기 위해 좌표를 스케일링합니다.
     vec3 q = p * 180.0;
     vec3 ip = floor(q);
     vec3 fp = fract(q);
     
-    // Hash grid cell coordinates
+    // 격자 셀 좌표를 hash 값으로 변환합니다.
     float h = hash(ip.xy + ip.z * 17.3);
     
-    if (h > 0.988) { // Draw stars in ~1.2% of cells
+    if (h > 0.988) { // 약 1.2%의 셀에만 별을 그립니다.
         vec3 offset = vec3(hash(ip.yz), hash(ip.zx), h) * 0.5;
         float dist = length(fp - 0.5 - offset);
         
-        // Star twinkle effect via sine wave with randomized offset
+        // 무작위 offset을 섞은 sine wave로 별 반짝임을 만듭니다.
         float twinkle = sin(uTime * 2.5 + h * 6.28) * 0.35 + 0.65;
         return smoothstep(0.06, 0.0, dist) * h * twinkle;
     }
@@ -403,81 +239,81 @@ void main() {
     
     float sunAltitude = sunDir.y;
     
-    // 1. Time-of-day Weighting Factors
-    // Day: sun is high above horizon
+    // 1. 시간대별 혼합 계수입니다.
+    // 낮: 태양이 지평선 위에 높게 있습니다.
     float dayFactor = smoothstep(-0.15, 0.35, sunAltitude);
-    // Night: sun is deep below horizon
+    // 밤: 태양이 지평선 아래 깊게 있습니다.
     float nightFactor = smoothstep(0.15, -0.35, sunAltitude);
-    // Sunset/Dawn: transitional zone
+    // 일출/일몰: 낮과 밤 사이의 전환 구간입니다.
     float sunsetFactor = 1.0 - dayFactor - nightFactor;
     
-    // 2. Base Sky Gradients (Zenith & Horizon)
-    // Day Colors
+    // 2. 기본 하늘 그라데이션입니다. 천정과 지평선 색을 따로 둡니다.
+    // 낮 색상입니다.
     vec3 zenithDay = vec3(0.12, 0.35, 0.72);
     vec3 horizonDay = vec3(0.55, 0.75, 0.95);
     
-    // Sunset/Dawn Colors
+    // 일출/일몰 색상입니다.
     vec3 zenithSunset = vec3(0.08, 0.08, 0.22);
     vec3 horizonSunset = vec3(0.95, 0.38, 0.15);
     
-    // Night Colors
+    // 밤 색상입니다.
     vec3 zenithNight = vec3(0.015, 0.018, 0.045);
     vec3 horizonNight = vec3(0.035, 0.045, 0.095);
     
-    // Blend Zenith and Horizon based on current time factors
+    // 현재 시간대 계수에 따라 천정색과 지평선색을 섞습니다.
     vec3 zenithColor = zenithDay * dayFactor + zenithSunset * sunsetFactor + zenithNight * nightFactor;
     vec3 horizonColor = horizonDay * dayFactor + horizonSunset * sunsetFactor + horizonNight * nightFactor;
     
-    // Interpolate vertical sky color gradient based on height angle
+    // 시선 방향의 높이 각도에 따라 수직 하늘 그라데이션을 보간합니다.
     float h = max(0.0, viewDir.y);
     vec3 skyBase = mix(horizonColor, zenithColor, pow(h, 0.75));
     
-    // 3. Sun Rendering
+    // 3. 태양 렌더링입니다.
     float cosTheta = dot(viewDir, sunDir);
     float sunVisibility = smoothstep(-0.12, 0.12, sunAltitude);
     
-    // Crisp sun disk
-    float sunAngle = 0.993; // Approximately 0.5 degrees
+    // 선명한 태양 원반입니다.
+    float sunAngle = 0.993; // 대략 0.5도에 해당합니다.
     float sunDisk = smoothstep(sunAngle, sunAngle + 0.002, cosTheta) * sunVisibility;
     vec3 sunColor = mix(vec3(1.0, 0.55, 0.15), vec3(1.0, 1.0, 0.95), dayFactor);
     
-    // Soft solar flare/glow
+    // 부드러운 태양 glow입니다.
     float sunGlowPower = mix(25.0, 45.0, dayFactor);
     float sunGlow = pow(max(0.0, cosTheta), sunGlowPower) * 0.45 * sunVisibility;
     vec3 glowColor = mix(vec3(1.0, 0.4, 0.1), vec3(1.0, 0.9, 0.75), dayFactor);
     
-    // Combine base sky, sun disk, and sun glow (dimmed by precipitation)
+    // 기본 하늘, 태양 원반, glow를 합치고 강수량이 높을수록 어둡게 만듭니다.
     float sunObscure = 1.0 - uPrecipitation * 0.82;
     vec3 skyWithSun = skyBase + 
                      (sunDisk * sunColor * 1.5 * sunObscure) + 
                      (sunGlow * glowColor * sunObscure);
                      
-    // 4. Star Field (Night Sky)
-    // Stars only appear at night and are masked by clouds and rain
+    // 4. 밤하늘 별 필드입니다.
+    // 별은 밤에만 보이고 구름과 비가 많을수록 가려집니다.
     float starDensity = stars(viewDir) * nightFactor * (1.0 - uCloudCover) * (1.0 - uPrecipitation);
     skyWithSun += vec3(starDensity * 0.8);
     
-    // 5. Procedural Cloud Layer (rendered on a projected plane for perspective)
+    // 5. 원근감 있는 투영 평면 위에 절차적 구름 레이어를 그립니다.
     vec3 finalColor = skyWithSun;
     
     if (viewDir.y > 0.0) {
-        // Perspective projection: map 3D direction vector onto flat horizontal sky plane
+        // 3D 방향 벡터를 수평 하늘 평면에 투영해 원근감을 만듭니다.
         vec2 cloudUV = viewDir.xz / (viewDir.y + 0.16);
         
-        // Wind speed & animation offset
+        // 바람 방향처럼 보이는 애니메이션 offset입니다.
         vec2 windOffset = vec2(0.015, 0.01) * uTime;
         vec2 p = cloudUV * 1.2 - windOffset;
         
-        // Generate fractional Brownian motion noise for cloud shapes
+        // fBm noise로 구름 형태를 만듭니다.
         float n1 = fbm(p);
         float n2 = fbm(p * 2.3 + vec2(10.0));
         float cloudNoise = mix(n1, n2, 0.35);
         
-        // Threshold and mask cloud density based on the cloudCover slider (0.0 to 1.0)
+        // cloudCover 값에 맞춰 구름 밀도 threshold와 mask를 계산합니다.
         float cloudThreshold = 1.0 - uCloudCover;
         float cloudDensity = smoothstep(cloudThreshold - 0.16, cloudThreshold + 0.16, cloudNoise);
         
-        // Calculate cloud coloring (bright white in day, shaded gold/pink at sunset, dark at night)
+        // 낮, 일몰, 밤 시간대에 맞춰 구름 색을 계산합니다.
         vec3 cloudBaseDay = vec3(0.95, 0.95, 0.98);
         vec3 cloudBaseSunset = mix(vec3(0.95, 0.58, 0.32), vec3(0.35, 0.22, 0.32), h);
         vec3 cloudBaseNight = vec3(0.06, 0.07, 0.14);
@@ -486,28 +322,28 @@ void main() {
                              cloudBaseSunset * sunsetFactor + 
                              cloudBaseNight * nightFactor;
                              
-        // Shift clouds to dark grey storm colors if precipitation is high
+        // 강수량이 높으면 구름을 어두운 폭풍색으로 이동시킵니다.
         vec3 stormCloudColor = vec3(0.18, 0.20, 0.24);
         cloudBaseColor = mix(cloudBaseColor, stormCloudColor, uPrecipitation);
         
-        // Simple directional lighting on clouds (sunlight highlights)
-        // Offset UV slightly in the direction of the sun to calculate shadow
-        vec2 sunDirXZ = normalize(sunDir.xz + vec2(0.001)); // Avoid divide-by-zero
+        // 태양 방향을 이용해 구름의 간단한 명암과 하이라이트를 계산합니다.
+        // 그림자 계산을 위해 UV를 태양 방향으로 살짝 이동합니다.
+        vec2 sunDirXZ = normalize(sunDir.xz + vec2(0.001)); // 0으로 나누는 상황을 피합니다.
         float shadowNoise = fbm(p + sunDirXZ * 0.05);
         float shadow = smoothstep(-0.02, 0.18, cloudNoise - shadowNoise);
         
-        // Darken the shaded/underside regions of the clouds
+        // 구름의 그늘진 아래쪽 영역을 더 어둡게 만듭니다.
         vec3 shadedCloudColor = mix(cloudBaseColor * 0.65, cloudBaseColor, 0.35 + 0.65 * shadow);
         
-        // Softly fade clouds out near the horizon to prevent harsh boundaries
+        // 지평선 근처에서 구름을 부드럽게 사라지게 해 경계선을 줄입니다.
         float horizonFade = smoothstep(0.0, 0.22, viewDir.y);
         float finalCloudAlpha = cloudDensity * 0.88 * horizonFade;
         
         finalColor = mix(finalColor, shadedCloudColor, finalCloudAlpha);
     }
     
-    // 6. Precipitation Storm Darkening
-    // When precipitation is high, blend the entire atmosphere towards a dark storm gray
+    // 6. 강수량에 따른 폭풍 어둡기 보정입니다.
+    // 강수량이 높을수록 전체 대기를 어두운 회색으로 섞습니다.
     vec3 stormSkyColor = vec3(0.14, 0.16, 0.20);
     finalColor = mix(finalColor, stormSkyColor, uPrecipitation * 0.68);
     
@@ -565,7 +401,7 @@ void main() {
     </TresMesh>
 
     <!-- Google Photorealistic 3D Tiles (Activated when API Key is present) -->
-    <Google3DTiles v-if="hasGoogleApiKey" />
+    <Google3DTiles v-if="hasGoogleTiles" />
 
     <!-- Default Fantasy Nature Scene (Activated when API Key is missing) -->
     <template v-else>
