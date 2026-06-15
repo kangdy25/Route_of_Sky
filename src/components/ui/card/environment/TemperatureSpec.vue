@@ -11,7 +11,7 @@ defineProps<{
         <div
           class="h-2 w-2 rounded-full bg-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.6)]"
         ></div>
-        <span class="text-base font-bold tracking-wider text-slate-200 uppercase">기온</span>
+        <span class="text-base font-bold tracking-wider text-slate-100 uppercase">기온</span>
       </div>
       <span class="text-sm font-semibold text-orange-400 italic">따뜻함, 맑음 ↗</span>
     </div>
@@ -50,7 +50,7 @@ defineProps<{
         <div class="flex flex-col items-center">
           <span class="text-4xl leading-none font-black tracking-tight text-white"
             >{{ temperature
-            }}<span class="ml-1 text-base font-normal text-slate-400">°C</span></span
+            }}<span class="ml-1 text-base font-normal text-slate-200">°C</span></span
           >
           <span class="mt-2 text-sm font-black tracking-widest text-orange-400 uppercase"
             >상승 중</span
@@ -60,10 +60,10 @@ defineProps<{
       <!-- Specs Info -->
       <div class="flex-1 space-y-4">
         <div class="flex flex-col gap-1 px-1">
-          <span class="font-mono text-sm font-bold tracking-tighter text-slate-500 uppercase"
+          <span class="font-mono text-sm font-bold tracking-tighter text-slate-300 uppercase"
             ><span class="text-blue-400">최저 기온</span> 24.5</span
           >
-          <span class="font-mono text-sm font-bold tracking-tighter text-slate-500 uppercase"
+          <span class="font-mono text-sm font-bold tracking-tighter text-slate-300 uppercase"
             ><span class="text-orange-400">최고 기온</span> 32.0</span
           >
         </div>
@@ -72,7 +72,7 @@ defineProps<{
             class="h-full w-[70%] rounded-md bg-gradient-to-r from-orange-500/60 to-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.3)]"
           ></div>
         </div>
-        <p class="px-1 text-sm leading-relaxed font-medium text-slate-400">
+        <p class="px-1 text-sm leading-relaxed font-medium text-slate-200">
           현재 고도에서 열 변화가 안정적으로 유지되고 있습니다.
         </p>
       </div>
