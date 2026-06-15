@@ -2,8 +2,8 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect } from 'vitest'
 import TimeScrubbing from './TimeScrubbing.vue'
 
-describe('TimeScrubbing.vue', () => {
-  it('renders 00:00 and 24:00 initial static boundaries', async () => {
+describe('시간대 탐색 카드', () => {
+  it('초기 고정 경계 시간인 00:00과 24:00을 렌더링해야 한다', async () => {
     const wrapper = mount(TimeScrubbing, {
       props: {
         modelValue: 12.0,
@@ -19,7 +19,7 @@ describe('TimeScrubbing.vue', () => {
     expect(wrapper.text()).toContain('12:00')
   })
 
-  it('fades out 00:00 when the time value is near the start', async () => {
+  it('시간 값이 시작 지점에 가까우면 00:00 표시를 흐리게 해야 한다', async () => {
     const wrapper = mount(TimeScrubbing, {
       props: {
         modelValue: 4.0,
@@ -31,7 +31,7 @@ describe('TimeScrubbing.vue', () => {
     expect(zeroZeroSpan?.attributes('style')).toContain('opacity: 0.5')
   })
 
-  it('fades out 24:00 when the time value is near the end', async () => {
+  it('시간 값이 끝 지점에 가까우면 24:00 표시를 흐리게 해야 한다', async () => {
     const wrapper = mount(TimeScrubbing, {
       props: {
         modelValue: 20.0,
@@ -43,7 +43,7 @@ describe('TimeScrubbing.vue', () => {
     expect(twentyFourSpan?.attributes('style')).toContain('opacity: 0.5')
   })
 
-  it('resets time to 00:00 when reset button is clicked', async () => {
+  it('리셋 버튼을 클릭하면 시간을 00:00으로 되돌려야 한다', async () => {
     const wrapper = mount(TimeScrubbing, {
       props: {
         modelValue: 12.0,
@@ -58,7 +58,7 @@ describe('TimeScrubbing.vue', () => {
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([0])
   })
 
-  it('rewinds time by 2 hours when skip backward button is clicked', async () => {
+  it('뒤로 감기 버튼을 클릭하면 시간을 2시간 되돌려야 한다', async () => {
     const wrapper = mount(TimeScrubbing, {
       props: {
         modelValue: 12.0,

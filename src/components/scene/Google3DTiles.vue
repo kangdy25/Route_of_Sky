@@ -3,32 +3,33 @@ import { onMounted, onUnmounted, watch, computed, ref } from 'vue'
 import { useTresContext } from '@tresjs/core'
 import * as THREE from 'three'
 import { TilesRenderer } from '3d-tiles-renderer'
+import { googleMapsApiKey } from '@/shared/config/env'
 import {
   GLTFExtensionsPlugin,
   GoogleCloudAuthPlugin,
   TileCompressionPlugin,
 } from '3d-tiles-renderer/plugins'
 
-// Props allowing users to configure which location in the world to anchor at (0, 0, 0)
+// 월드 원점(0, 0, 0)에 맞출 실제 지리 좌표입니다.
 const props = withDefaults(
   defineProps<{
-    lat?: number // Latitude of the local origin
-    lon?: number // Longitude of the local origin
-    alt?: number // Altitude of the local origin (meters)
+    lat?: number // 로컬 원점의 위도입니다.
+    lon?: number // 로컬 원점의 경도입니다.
+    alt?: number // 로컬 원점의 고도입니다. 단위는 meter입니다.
   }>(),
   {
-    lat: 37.512218, // Default: Lotte World Tower, Jamsil, Seoul
+    lat: 37.512218, // 기본값: 서울 잠실 롯데월드타워
     lon: 127.102707,
     alt: 25,
   },
 )
 
-// CRITICAL: We use a plain JS variable instead of Vue shallowRef to bypass Vue 3's proxy system.
-// This prevents "Object.defineProperty called on non-object" errors caused by Vue trying to observe the TilesRenderer class.
+// TilesRenderer는 Vue proxy와 맞지 않는 내부 구조가 있어 일반 변수로 유지합니다.
+// Vue가 클래스 인스턴스를 관찰하려다 발생하는 Object.defineProperty 오류를 피하기 위한 선택입니다.
 let tilesRenderer: TilesRenderer | null = null
 const tilesGroup = new THREE.Group()
 
-// Diagnostic reactive states to render in our HUD overlay
+// 디버깅 HUD나 상태 표시에 사용할 진단용 reactive 상태입니다.
 const isCameraBound = ref(false)
 const isRendering = ref(false)
 const isRootLoaded = ref(false)
@@ -37,9 +38,8 @@ const visibleTileCount = ref(0)
 const activeTileCount = ref(0)
 const lastLoadError = ref('')
 
-// Load Google Maps API Key from Vite env variables
 const apiKey = computed(() => {
-  return import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
+  return googleMapsApiKey
 })
 
 const { camera, renderer, scene } = useTresContext()
@@ -49,15 +49,14 @@ const enuFrame = new THREE.Matrix4()
 const localTransform = new THREE.Matrix4()
 const gigabyte = 1024 * 1024 * 1024
 
-// Convert library ENU coordinates (X east, Y north, Z up) into this app's
-// Three.js convention (X east, Y up, Z south).
+// 라이브러리 ENU 좌표계(X=동, Y=북, Z=상)를 앱의 Three.js 좌표계(X=동, Y=상, Z=남)로 변환합니다.
 const enuToThreeWorld = new THREE.Matrix4().set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1)
 
 function degToRad(degrees: number) {
   return (degrees * Math.PI) / 180
 }
 
-// Align the global Earth tileset group so the target coordinates sit at local origin.
+// 목표 지리 좌표가 로컬 원점에 오도록 지구 타일셋 그룹을 정렬합니다.
 function alignTileset() {
   if (!tilesRenderer) return
 
@@ -68,7 +67,7 @@ function alignTileset() {
     enuFrame,
   )
 
-  // Prevent Three.js from resetting our custom geospatial transform in the render loop.
+  // 렌더 루프에서 Three.js가 지리 좌표 변환 행렬을 덮어쓰지 않게 합니다.
   tilesRenderer.group.matrixAutoUpdate = false
 
   localTransform.copy(enuFrame).invert().premultiply(enuToThreeWorld)
@@ -83,7 +82,7 @@ function alignTileset() {
   console.log('[Google3DTiles] Coordinates re-aligned to lat:', props.lat, 'lon:', props.lon)
 }
 
-// 4. Initialize and Load Google Photorealistic 3D Tiles
+// Google Photorealistic 3D Tiles 렌더러를 초기화하고 로드합니다.
 function initTiles() {
   cleanupTiles()
 
@@ -178,7 +177,7 @@ function getWebGLRenderer() {
   return typeof candidate?.getSize === 'function' ? candidate : null
 }
 
-// 5. Standard requestAnimationFrame Render Loop (Unbound to TresJS version variations)
+// TresJS 버전 차이에 덜 의존하도록 독립적인 requestAnimationFrame 루프에서 LOD를 갱신합니다.
 function startRenderLoop() {
   stopRenderLoop()
 
@@ -228,12 +227,12 @@ function stopRenderLoop() {
   activeTileCount.value = 0
 }
 
-// Reactively re-align if location coordinates change
+// 위치 좌표가 바뀌면 타일셋을 다시 정렬합니다.
 watch([() => props.lat, () => props.lon, () => props.alt], () => {
   alignTileset()
 })
 
-// Reactively reload tileset if API Key changes
+// API 키가 바뀌면 인증 정보를 반영하기 위해 타일셋을 다시 로드합니다.
 watch(apiKey, () => {
   initTiles()
 })

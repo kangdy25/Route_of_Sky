@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect } from 'vitest'
 import SkyConditions from './SkyConditions.vue'
 
-describe('SkyConditions.vue (Integration)', () => {
+describe('하늘 상태 카드 통합 렌더링', () => {
   it('주어진 props로 하위 하늘 상태 스펙 컴포넌트들을 정상적으로 렌더링해야 한다', () => {
     const wrapper = mount(SkyConditions, {
       props: { cloudCover: 40, precipitation: 1.5, visibility: 12 },

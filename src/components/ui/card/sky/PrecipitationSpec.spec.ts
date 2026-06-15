@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect } from 'vitest'
 import PrecipitationSpec from './PrecipitationSpec.vue'
 
-describe('PrecipitationSpec.vue', () => {
+describe('강수량 스펙 카드', () => {
   it('강수량이 0일 때 "없음"을 렌더링해야 한다', () => {
     const wrapper = mount(PrecipitationSpec, { props: { precipitation: 0 } })
     expect(wrapper.text()).toContain('없음')

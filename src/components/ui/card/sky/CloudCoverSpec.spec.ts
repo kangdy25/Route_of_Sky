@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect } from 'vitest'
 import CloudCoverSpec from './CloudCoverSpec.vue'
 
-describe('CloudCoverSpec.vue', () => {
+describe('운량 스펙 카드', () => {
   it('운량이 10 미만일 때 "맑음"을 렌더링해야 한다', () => {
     const wrapper = mount(CloudCoverSpec, { props: { cloudCover: 5 } })
     expect(wrapper.text()).toContain('맑음')
