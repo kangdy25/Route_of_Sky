@@ -4,7 +4,7 @@ import { computed, type ComputedRef } from 'vue'
  * 기본 자연 씬과 Google 3D Tiles 씬에서 사용하는 카메라/컨트롤 설정을 계산합니다.
  *
  * 두 씬은 실제 스케일 차이가 커서 카메라 거리, clipping range, orbit target을
- * 같은 컴포넌트 안에서 직접 분기하면 MainScene의 책임이 빠르게 커집니다.
+ * 같은 컴포넌트 안에서 직접 분기하면 SceneCanvas의 책임이 빠르게 커집니다.
  */
 export function useSceneCamera(hasGoogleTiles: ComputedRef<boolean>) {
   const cameraPosition = computed<[number, number, number]>(() => {

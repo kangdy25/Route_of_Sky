@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { getCloudCoverLabel } from '@/features/weather/lib/weatherLabels'
 
 const props = withDefaults(
   defineProps<{
@@ -11,10 +12,7 @@ const props = withDefaults(
 )
 
 const cloudText = computed(() => {
-  if (props.cloudCover < 10) return '맑음'
-  if (props.cloudCover < 50) return '구름 조금'
-  if (props.cloudCover < 80) return '구름 많음'
-  return '흐림'
+  return getCloudCoverLabel(props.cloudCover)
 })
 </script>
 

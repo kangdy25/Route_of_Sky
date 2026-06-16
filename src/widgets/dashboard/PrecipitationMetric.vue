@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { getPrecipitationLabel } from '@/features/weather/lib/weatherLabels'
 
 const props = withDefaults(
   defineProps<{
@@ -11,10 +12,7 @@ const props = withDefaults(
 )
 
 const precipitationText = computed(() => {
-  if (props.precipitation === 0) return '없음'
-  if (props.precipitation < 2.5) return '약한 비'
-  if (props.precipitation < 7.6) return '보통 비'
-  return '강한 비'
+  return getPrecipitationLabel(props.precipitation)
 })
 </script>
 
