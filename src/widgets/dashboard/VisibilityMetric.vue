@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { getVisibilityLabel } from '@/features/weather/lib/weatherLabels'
 
 const props = withDefaults(
   defineProps<{
@@ -11,10 +12,7 @@ const props = withDefaults(
 )
 
 const visibilityText = computed(() => {
-  if (props.visibility >= 10) return '선명함'
-  if (props.visibility >= 5) return '연무'
-  if (props.visibility >= 2) return '박무'
-  return '안개'
+  return getVisibilityLabel(props.visibility)
 })
 </script>
 

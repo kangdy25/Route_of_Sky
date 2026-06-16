@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { Vector3, BackSide, Clock } from 'three'
 import { TresCanvas } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
 import { hasGoogleMapsApiKey } from '@/shared/config/env'
 import { useAtmosphere } from '@/features/scene/composables/useAtmosphere'
+import { useOrbitCameraClamp } from '@/features/scene/composables/useOrbitCameraClamp'
 import { useSceneCamera } from '@/features/scene/composables/useSceneCamera'
 import { useSunPosition } from '@/features/scene/composables/useSunPosition'
 import { skyFragmentShader, skyVertexShader } from '@/features/scene/shaders/skyShader'
-import SkyElements from './SkyElements.vue'
-import Terrain from './Terrain.vue'
-import Google3DTiles from './Google3DTiles.vue'
+import DefaultNatureScene from './DefaultNatureScene.vue'
+import GoogleTilesScene from './GoogleTilesScene.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -61,67 +61,7 @@ const {
   fogDensity,
 } = useAtmosphere(props, timeFactors)
 
-type OrbitControlsLike = {
-  target?: Vector3
-  object?: {
-    position?: Vector3
-  }
-  update?: () => void
-}
-
-type OrbitControlsComponentRef = {
-  instance?: { value?: OrbitControlsLike | null } | OrbitControlsLike | null
-}
-
-const orbitControlsRef = ref<OrbitControlsComponentRef | null>(null)
-const minMapTargetY = 620
-const minMapCameraY = 260
-
-function getOrbitControlsFromRef(): OrbitControlsLike | null {
-  const instance = orbitControlsRef.value?.instance
-
-  if (!instance) return null
-  if ('value' in instance) return (instance.value as OrbitControlsLike | null) || null
-
-  return instance as OrbitControlsLike
-}
-
-function resolveOrbitControls(input?: unknown): OrbitControlsLike | null {
-  if (!input || typeof input !== 'object') return getOrbitControlsFromRef()
-
-  const candidate = input as OrbitControlsLike
-  if (typeof candidate.update === 'function') return candidate
-
-  const eventTarget = (input as { target?: unknown }).target
-  if (eventTarget && typeof eventTarget === 'object') {
-    const targetCandidate = eventTarget as OrbitControlsLike
-    if (typeof targetCandidate.update === 'function') return targetCandidate
-  }
-
-  return getOrbitControlsFromRef()
-}
-
-function clampMapCamera(input?: unknown) {
-  const controls = resolveOrbitControls(input)
-  if (!hasGoogleTiles.value || !controls) return
-
-  let changed = false
-
-  if (controls.target && controls.target.y < minMapTargetY) {
-    controls.target.y = minMapTargetY
-    changed = true
-  }
-
-  const cameraPosition = controls.object?.position
-  if (cameraPosition && cameraPosition.y < minMapCameraY) {
-    cameraPosition.y = minMapCameraY
-    changed = true
-  }
-
-  if (changed) {
-    controls.update?.()
-  }
-}
+const { bindOrbitControlsRef, clampMapCamera } = useOrbitCameraClamp(hasGoogleTiles)
 
 // 절차적으로 생성하는 하늘 돔 셰이더의 uniform입니다.
 const uniforms = {
@@ -165,7 +105,7 @@ const onBeforeRender = () => {
 </script>
 
 <template>
-  <!-- TresCanvas setup with background fog matches horizon color -->
+  <!-- 씬의 전체 3D 렌더링 컨텍스트입니다. -->
   <TresCanvas clear-color="#000000" window-size shadows>
     <TresPerspectiveCamera
       :position="cameraPosition"
@@ -175,7 +115,7 @@ const onBeforeRender = () => {
       :fov="cameraFov"
     />
     <OrbitControls
-      ref="orbitControlsRef"
+      :ref="bindOrbitControlsRef"
       :target="controlsTarget"
       :maxDistance="maxDistance"
       :minDistance="minDistance"
@@ -187,7 +127,7 @@ const onBeforeRender = () => {
       @end="clampMapCamera"
     />
 
-    <!-- Dynamic Environment Lights -->
+    <!-- 시간대와 날씨에 반응하는 환경 조명입니다. -->
     <TresAmbientLight :color="ambientColor" :intensity="ambientIntensity" />
     <TresDirectionalLight
       :position="sunDirectionArray"
@@ -196,10 +136,10 @@ const onBeforeRender = () => {
       cast-shadow
     />
 
-    <!-- Dynamic Fog System -->
+    <!-- 가시거리와 AQI를 반영하는 안개입니다. -->
     <TresFogExp2 :color="fogColor" :density="fogDensity" />
 
-    <!-- Procedural Sky Dome Mesh -->
+    <!-- 절차적으로 그리는 하늘 돔입니다. -->
     <TresMesh :render-order="-1000" @before-render="onBeforeRender">
       <TresSphereGeometry :args="[skyDomeRadius, 96, 48]" />
       <TresShaderMaterial
@@ -212,16 +152,10 @@ const onBeforeRender = () => {
       />
     </TresMesh>
 
-    <!-- Google Photorealistic 3D Tiles (Activated when API Key is present) -->
-    <Google3DTiles v-if="hasGoogleTiles" />
+    <!-- API 키가 있으면 Google Photorealistic 3D Tiles를 렌더링합니다. -->
+    <GoogleTilesScene v-if="hasGoogleTiles" />
 
-    <!-- Default Fantasy Nature Scene (Activated when API Key is missing) -->
-    <template v-else>
-      <!-- Base geometry placeholder (rotating box mesh) -->
-      <SkyElements />
-
-      <!-- Terrain containing mountains, hills and valleys -->
-      <Terrain :precipitation="props.precipitation" />
-    </template>
+    <!-- API 키가 없을 때 사용하는 기본 씬입니다. -->
+    <DefaultNatureScene v-else :precipitation="props.precipitation" />
   </TresCanvas>
 </template>

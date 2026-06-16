@@ -1,35 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted } from 'vue'
+import { formatTime } from '@/features/weather/lib/formatTime'
+import { getTimeStatus } from '@/features/weather/lib/weatherLabels'
+import IconButton from '@/shared/ui/IconButton.vue'
+import Panel from '@/shared/ui/Panel.vue'
 
 const time = defineModel<number>({ default: 16.5 })
 
 const formattedTime = computed(() => {
-  const totalMinutes = Math.round(time.value * 60)
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-
-  const hh = String(hours).padStart(2, '0')
-  const mm = String(minutes).padStart(2, '0')
-  return `${hh}:${mm}`
+  return formatTime(time.value)
 })
 
 const timeStatus = computed(() => {
-  const t = time.value
-  if (t >= 0 && t < 5) {
-    return { title: '깊은 밤', subtitle: '별빛이 빛나는 하늘' }
-  } else if (t >= 5 && t < 7) {
-    return { title: '일출 새벽', subtitle: '붉게 물드는 하늘' }
-  } else if (t >= 7 && t < 11) {
-    return { title: '아침 태양', subtitle: '맑고 상쾌한 하늘' }
-  } else if (t >= 11 && t < 15) {
-    return { title: '낮 태양', subtitle: '푸르고 선명한 하늘' }
-  } else if (t >= 15 && t < 17.5) {
-    return { title: '오후 태양', subtitle: '맑고 밝은 하늘' }
-  } else if (t >= 17.5 && t < 19.5) {
-    return { title: '일몰 노을', subtitle: '붉고 노란 하늘' }
-  } else {
-    return { title: '늦은 밤', subtitle: '어스름한 밤하늘' }
-  }
+  return getTimeStatus(time.value)
 })
 
 const isPlaying = ref(false)
@@ -86,9 +69,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    class="relative flex h-full flex-col justify-between rounded-3xl border border-white/10 bg-slate-900/50 p-8 shadow-2xl backdrop-blur-xl"
-  >
+  <Panel class="relative" padding-class="p-8" full-height justify>
     <div class="flex items-start justify-between">
       <div>
         <h2 class="text-xl font-black text-slate-200 uppercase">시간대 탐색</h2>
@@ -151,35 +132,13 @@ onUnmounted(() => {
       </div>
 
       <div class="flex items-center justify-center gap-4 sm:gap-6">
-        <button
-          @click="resetTime"
-          class="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-xl transition-all hover:bg-cyan-500 hover:shadow-[0_0_15px_rgba(34,211,238,0.5)]"
-          title="00:00으로 리셋"
-        >
-          ↺
-        </button>
-        <button
-          @click="skipBackward"
-          class="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-2xl transition-all hover:bg-cyan-500 hover:shadow-[0_0_15px_rgba(34,211,238,0.5)]"
-          title="2시간 뒤로 감기"
-        >
-          ⏮
-        </button>
-        <button
-          @click="togglePlay"
-          class="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-2xl transition-all hover:bg-cyan-500 hover:shadow-[0_0_15px_rgba(34,211,238,0.5)]"
-          title="재생/일시정지"
-        >
+        <IconButton title="00:00으로 리셋" class="text-xl" @click="resetTime">↺</IconButton>
+        <IconButton title="2시간 뒤로 감기" @click="skipBackward">⏮</IconButton>
+        <IconButton title="재생/일시정지" @click="togglePlay">
           {{ isPlaying ? '❚❚' : '▶' }}
-        </button>
-        <button
-          @click="skipForward"
-          class="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-2xl transition-all hover:bg-cyan-500 hover:shadow-[0_0_15px_rgba(34,211,238,0.5)]"
-          title="2시간 빨리 감기"
-        >
-          ⏭
-        </button>
+        </IconButton>
+        <IconButton title="2시간 빨리 감기" @click="skipForward">⏭</IconButton>
       </div>
     </div>
-  </div>
+  </Panel>
 </template>
