@@ -77,10 +77,10 @@ onMounted(() => {
       <div class="flex items-start gap-3">
         <span class="text-lg">💡</span>
         <div>
-          <h3 class="text-sm font-semibold text-blue-300">
+          <h3 class="text-base font-semibold text-blue-300">
             Google Photorealistic 3D Tiles 활성화 가능
           </h3>
-          <p class="mt-1 text-xs leading-relaxed text-slate-300">
+          <p class="mt-1 text-sm leading-relaxed text-slate-300">
             프로젝트 루트의 <code>.env</code> 파일에 Cesium ion 토큰을
             <code>VITE_CESIUM_ION_ACCESS_TOKEN</code> 변수로 등록해 주세요. 등록 시 Asset ID
             <code>2275207</code>의 실사 3D 타일이 로드됩니다.
@@ -92,22 +92,22 @@ onMounted(() => {
     <div
       class="mt-6 flex flex-1 flex-col justify-between gap-6 pb-2 lg:flex-row lg:items-start lg:pb-0"
     >
-      <aside class="pointer-events-auto flex w-full flex-col gap-6 lg:w-[340px] lg:shrink-0">
+      <aside class="pointer-events-auto flex w-full flex-col gap-6 lg:w-[380px] lg:shrink-0">
         <EnvironmentPanel :temperature="temperature" :humidity="humidity" :wind-speed="windSpeed" />
         <button
           type="button"
           class="rounded-lg border border-cyan-300/30 bg-slate-950/70 px-5 py-4 text-left shadow-[inset_0_0_20px_rgba(34,211,238,0.12),0_18px_36px_rgba(0,0,0,0.28)] backdrop-blur-2xl transition-all hover:border-cyan-200/70 hover:bg-cyan-950/45 hover:shadow-[0_0_24px_rgba(34,211,238,0.28)] focus:ring-2 focus:ring-cyan-300/50 focus:outline-none"
           @click.stop="emit('flyToCentralPark')"
         >
-          <span class="block text-xs font-bold tracking-[0.26em] text-cyan-300 uppercase">
-            Scenic route
-          </span>
+          <span class="block text-sm font-bold text-cyan-300 uppercase"> Scenic route </span>
           <span class="mt-2 block text-lg font-black text-white">Central Park fly-through</span>
-          <span class="mt-1 block text-sm font-medium text-slate-300">Smooth aerial approach</span>
+          <span class="mt-1 block text-base font-medium text-slate-300"
+            >Smooth aerial approach</span
+          >
         </button>
       </aside>
 
-      <aside class="pointer-events-auto flex w-full flex-col gap-6 lg:w-[420px] lg:shrink-0">
+      <aside class="pointer-events-auto flex w-full flex-col gap-6 lg:w-[390px] lg:shrink-0">
         <SkyPanel
           :cloud-cover="cloudCover"
           :precipitation="precipitation"

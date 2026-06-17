@@ -41,7 +41,7 @@ const surfaceClass = computed(() => {
       <slot name="header">
         <div v-if="title" :class="['flex items-center justify-between', headerClass]">
           <h2
-            class="text-lg font-black tracking-[0.12em] text-cyan-50 uppercase drop-shadow-[0_0_8px_rgba(34,211,238,0.35)]"
+            class="text-xl font-black text-cyan-50 uppercase drop-shadow-[0_0_8px_rgba(34,211,238,0.35)]"
           >
             {{ title }}
           </h2>

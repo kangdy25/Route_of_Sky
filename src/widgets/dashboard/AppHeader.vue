@@ -1,7 +1,3 @@
-<script setup lang="ts">
-// Props could be added if needed
-</script>
-
 <template>
   <header
     class="pointer-events-auto relative z-10 flex items-center justify-between rounded-lg border border-cyan-300/20 bg-slate-950/60 px-5 py-3 shadow-[inset_0_0_24px_rgba(34,211,238,0.12),0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
@@ -11,12 +7,18 @@
     ></div>
     <div class="flex items-center gap-3">
       <div
-        class="animate-spin-slow h-10 w-10 rounded-full border-[3px] border-dashed border-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.72)]"
-      ></div>
-      <h1
-        class="text-2xl font-black tracking-[0.08em] text-white drop-shadow-[0_0_10px_rgba(34,211,238,0.42)]"
+        class="flex h-14 w-14 items-center justify-center rounded-xl border border-cyan-300/20 bg-slate-950/45 p-1.5 shadow-[inset_0_0_18px_rgba(34,211,238,0.10),0_0_18px_rgba(34,211,238,0.24)] backdrop-blur-md"
       >
-        Route of <span class="text-cyan-400">Sky</span>
+        <img
+          src="/logo.png"
+          alt="Route of Sky"
+          class="h-full w-full object-contain drop-shadow-[0_0_10px_rgba(34,211,238,0.45)]"
+        />
+      </div>
+      <h1
+        class="bg-gradient-to-r from-cyan-100 via-sky-400 to-orange-300 bg-clip-text text-3xl font-black text-transparent drop-shadow-[0_0_12px_rgba(34,211,238,0.34)]"
+      >
+        Route of Sky
       </h1>
     </div>
 
@@ -37,7 +39,7 @@
           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
         ></path>
       </svg>
-      <span class="text-base font-bold tracking-[0.16em] text-cyan-50">MANHATTAN, NY</span>
+      <span class="text-lg font-bold text-cyan-50">MANHATTAN, NY</span>
     </div>
 
     <div class="flex gap-4">

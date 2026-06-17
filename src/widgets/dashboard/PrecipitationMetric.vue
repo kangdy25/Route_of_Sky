@@ -20,7 +20,7 @@ const precipitationText = computed(() => {
   <div
     class="flex flex-col items-center justify-between rounded-lg border border-cyan-300/20 bg-slate-950/60 p-3 text-center shadow-[inset_0_0_18px_rgba(34,211,238,0.10)]"
   >
-    <span class="text-sm font-bold tracking-wider text-cyan-50 uppercase">강수량</span>
+    <span class="text-base font-bold text-cyan-50 uppercase">강수량</span>
     <div class="my-2 flex flex-col items-center gap-1">
       <svg
         class="h-10 w-10 text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"
@@ -41,12 +41,10 @@ const precipitationText = computed(() => {
           d="M9 19l-1 2M12 19l-1 2M15 19l-1 2"
         />
       </svg>
-      <span class="mt-1 text-base leading-none font-black text-white"
-        >{{ precipitation }} <span class="text-xs font-normal text-slate-200">mm/h</span></span
+      <span class="mt-1 text-xl leading-none font-black text-white"
+        >{{ precipitation }} <span class="text-sm font-normal text-slate-200">mm/h</span></span
       >
     </div>
-    <span class="text-sm font-bold tracking-tighter text-cyan-300 uppercase">{{
-      precipitationText
-    }}</span>
+    <span class="text-base font-bold text-cyan-300 uppercase">{{ precipitationText }}</span>
   </div>
 </template>

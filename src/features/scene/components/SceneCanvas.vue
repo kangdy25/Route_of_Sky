@@ -243,7 +243,7 @@ defineExpose({
     <div class="pointer-events-none absolute inset-0" :style="atmosphereOverlayStyle"></div>
     <div
       v-if="statusMessage || isTilesLoading"
-      class="pointer-events-none absolute bottom-5 left-5 rounded-full border border-white/10 bg-slate-950/60 px-4 py-2 text-xs font-bold tracking-[0.18em] text-cyan-200 uppercase backdrop-blur-md"
+      class="pointer-events-none absolute bottom-5 left-5 rounded-full border border-white/10 bg-slate-950/60 px-4 py-2 text-sm font-bold text-cyan-200 uppercase backdrop-blur-md"
     >
       {{ statusMessage }}
     </div>
