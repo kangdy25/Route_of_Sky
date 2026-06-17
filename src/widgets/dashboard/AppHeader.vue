@@ -30,7 +30,7 @@
           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
         ></path>
       </svg>
-      <span class="text-base font-bold tracking-[0.1em] text-white">SEOUL, KR</span>
+      <span class="text-base font-bold tracking-[0.1em] text-white">MANHATTAN, NY</span>
     </div>
 
     <div class="flex gap-4">

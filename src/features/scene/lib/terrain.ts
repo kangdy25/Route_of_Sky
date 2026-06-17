@@ -1,10 +1,31 @@
-import { Color, MathUtils } from 'three'
-
 /** 지형 노이즈가 만들 수 있는 최대 산 높이입니다. */
 export const terrainHeightScale = 22
 
-/** Three.js 월드에서 지형 메시가 놓이는 기준 Y 좌표입니다. */
+/** 기존 절차적 지형 테스트가 공유하는 기준 높이 오프셋입니다. */
 export const terrainBaseY = -10
+
+export interface TerrainColor {
+  r: number
+  g: number
+  b: number
+  equals: (other: TerrainColor) => boolean
+}
+
+function smoothstep(edge0: number, edge1: number, x: number) {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)))
+  return t * t * (3 - 2 * t)
+}
+
+function createTerrainColor(r = 0, g = 0, b = 0): TerrainColor {
+  return {
+    r,
+    g,
+    b,
+    equals(other) {
+      return this.r === other.r && this.g === other.g && this.b === other.b
+    },
+  }
+}
 
 /** 2D 좌표를 안정적인 의사 난수 값으로 변환합니다. */
 export function hash2(x: number, y: number) {
@@ -55,25 +76,35 @@ export function fbm2(x: number, y: number, octaves = 4) {
 export function getTerrainHeight(x: number, y: number) {
   const d = Math.sqrt(x * x + y * y)
   const rawNoise = fbm2(x * 0.012, y * 0.012, 4)
-  const centerMask = MathUtils.smoothstep(d, 25, 160)
+  const centerMask = smoothstep(25, 160, d)
 
   return rawNoise * (1.5 + (terrainHeightScale - 1.5) * centerMask)
 }
 
 /** 높이에 따라 초원, 암석 지대, 설산 계열의 vertex color를 반환합니다. */
 export function getColorForHeight(h: number) {
-  const color = new Color()
-
   if (h < 5.0) {
     const t = h / 5.0
-    color.setRGB(0.24 * (1 - t) + 0.12 * t, 0.48 * (1 - t) + 0.32 * t, 0.28 * (1 - t) + 0.18 * t)
-  } else if (h < 12.0) {
-    const t = (h - 5.0) / 7.0
-    color.setRGB(0.12 * (1 - t) + 0.35 * t, 0.32 * (1 - t) + 0.38 * t, 0.18 * (1 - t) + 0.4 * t)
-  } else {
-    const t = Math.min(1.0, (h - 12.0) / 7.0)
-    color.setRGB(0.35 * (1 - t) + 0.95 * t, 0.38 * (1 - t) + 0.96 * t, 0.4 * (1 - t) + 0.98 * t)
+    return createTerrainColor(
+      0.24 * (1 - t) + 0.12 * t,
+      0.48 * (1 - t) + 0.32 * t,
+      0.28 * (1 - t) + 0.18 * t,
+    )
   }
 
-  return color
+  if (h < 12.0) {
+    const t = (h - 5.0) / 7.0
+    return createTerrainColor(
+      0.12 * (1 - t) + 0.35 * t,
+      0.32 * (1 - t) + 0.38 * t,
+      0.18 * (1 - t) + 0.4 * t,
+    )
+  }
+
+  const t = Math.min(1.0, (h - 12.0) / 7.0)
+  return createTerrainColor(
+    0.35 * (1 - t) + 0.95 * t,
+    0.38 * (1 - t) + 0.96 * t,
+    0.4 * (1 - t) + 0.98 * t,
+  )
 }

@@ -1,6 +1,21 @@
 import { computed, type ComputedRef } from 'vue'
-import { Vector3 } from 'three'
 import type { SceneWeatherProps, TimeFactors } from '../types'
+
+interface SceneVector3 {
+  x: number
+  y: number
+  z: number
+}
+
+function normalizeVector(vector: SceneVector3): SceneVector3 {
+  const length = Math.hypot(vector.x, vector.y, vector.z) || 1
+
+  return {
+    x: vector.x / length,
+    y: vector.y / length,
+    z: vector.z / length,
+  }
+}
 
 /**
  * 시간과 렌더링 모드에 맞춰 태양 방향, 실제 조명 위치, 시간대 혼합 계수를 계산합니다.
@@ -10,7 +25,7 @@ import type { SceneWeatherProps, TimeFactors } from '../types'
  */
 export function useSunPosition(
   props: SceneWeatherProps,
-  hasGoogleTiles: ComputedRef<boolean>,
+  hasCesiumTiles: ComputedRef<boolean>,
   sunLightDistance: ComputedRef<number>,
 ) {
   const theta = computed(() => {
@@ -24,11 +39,11 @@ export function useSunPosition(
     const altitude = Math.sin(dayAngle)
     const southernArc = Math.max(0, altitude) * 0.62
 
-    return new Vector3(eastWest, altitude * 0.86, southernArc).normalize()
+    return normalizeVector({ x: eastWest, y: altitude * 0.86, z: southernArc })
   })
 
   const sunPosition = computed(() => {
-    if (hasGoogleTiles.value) {
+    if (hasCesiumTiles.value) {
       return mapTileSunPosition.value
     }
 
@@ -37,7 +52,7 @@ export function useSunPosition(
     const x = Math.cos(t) * Math.cos(azimuth)
     const y = Math.sin(t)
     const z = Math.cos(t) * Math.sin(azimuth)
-    return new Vector3(x, y, z).normalize()
+    return normalizeVector({ x, y, z })
   })
 
   const sunDirectionArray = computed<[number, number, number]>(() => {
@@ -45,8 +60,11 @@ export function useSunPosition(
 
     // 밤에는 태양의 반대 방향을 달빛처럼 사용해 어두운 시간대에도 형태가 읽히게 합니다.
     if (sunPosition.value.y < 0) {
-      const moonPos = sunPosition.value.clone().multiplyScalar(-distance)
-      return [moonPos.x, moonPos.y, moonPos.z]
+      return [
+        sunPosition.value.x * -distance,
+        sunPosition.value.y * -distance,
+        sunPosition.value.z * -distance,
+      ]
     }
 
     return [

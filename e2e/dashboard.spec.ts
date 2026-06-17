@@ -7,7 +7,7 @@ test.describe('대시보드 메인 화면 로드 테스트', () => {
   })
 
   test('3D WebGL 캔버스가 정상적으로 마운트되는지 확인', async ({ page }) => {
-    // TresJS에 의해 생성되는 canvas 엘리먼트가 존재하는지 확인
+    // Cesium Viewer에 의해 생성되는 canvas 엘리먼트가 존재하는지 확인
     const canvas = page.locator('canvas')
     await expect(canvas).toBeVisible()
   })
