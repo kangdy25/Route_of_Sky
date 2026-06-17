@@ -26,7 +26,7 @@ function flyToCentralPark() {
 
 <template>
   <main
-    class="relative min-h-screen w-full overflow-x-hidden bg-[#0f172a] font-sans text-slate-200"
+    class="relative min-h-screen w-full overflow-x-hidden bg-[#020617] font-sans text-slate-200"
   >
     <div class="fixed inset-0 z-0">
       <SceneCanvas

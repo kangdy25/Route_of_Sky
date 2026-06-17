@@ -9,7 +9,7 @@ defineProps<{
     <div class="mb-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.6)]"></div>
-        <span class="text-base font-bold tracking-wider text-slate-100 uppercase">습도</span>
+        <span class="text-base font-bold tracking-wider text-cyan-50 uppercase">습도</span>
       </div>
       <span class="text-sm font-semibold text-cyan-400 italic">낮은 응결도 ↗</span>
     </div>
@@ -24,7 +24,7 @@ defineProps<{
             fill="none"
             stroke="currentColor"
             stroke-width="6"
-            class="text-slate-800"
+            class="text-cyan-950/80"
           />
           <circle
             cx="50"
@@ -58,8 +58,8 @@ defineProps<{
             v-for="i in 5"
             :key="i"
             :class="[
-              'rounded-md border border-white/5',
-              i <= 3 ? 'bg-cyan-500/40 shadow-[0_0_10px_rgba(34,211,238,0.2)]' : 'bg-slate-800/30',
+              'rounded-md border border-cyan-300/10',
+              i <= 3 ? 'bg-cyan-400/45 shadow-[0_0_10px_rgba(34,211,238,0.28)]' : 'bg-cyan-950/35',
             ]"
           ></div>
         </div>

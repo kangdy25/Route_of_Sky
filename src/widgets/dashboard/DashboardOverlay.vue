@@ -44,7 +44,7 @@ onMounted(() => {
 <template>
   <div
     ref="overlayRef"
-    class="pointer-events-none relative z-10 flex min-h-screen flex-col p-4 lg:p-6"
+    class="dashboard-frame pointer-events-none relative z-10 flex min-h-screen flex-col p-4 lg:p-6"
     @click.stop
     @dblclick.stop
     @mousedown.stop
@@ -58,6 +58,15 @@ onMounted(() => {
     @touchend.stop
     @wheel.stop
   >
+    <div
+      class="pointer-events-none absolute inset-3 border border-cyan-300/15 shadow-[inset_0_0_32px_rgba(34,211,238,0.10)]"
+    ></div>
+    <div
+      class="pointer-events-none absolute inset-x-12 top-3 h-px bg-gradient-to-r from-transparent via-cyan-200/70 to-transparent shadow-[0_0_16px_rgba(34,211,238,0.85)]"
+    ></div>
+    <div
+      class="pointer-events-none absolute inset-x-20 bottom-3 h-px bg-gradient-to-r from-transparent via-cyan-300/35 to-transparent"
+    ></div>
     <AppHeader />
 
     <!-- Cesium ion 토큰이 없을 때 3D Tiles 활성화 방법을 안내합니다. -->
@@ -87,7 +96,7 @@ onMounted(() => {
         <EnvironmentPanel :temperature="temperature" :humidity="humidity" :wind-speed="windSpeed" />
         <button
           type="button"
-          class="rounded-3xl border border-cyan-300/20 bg-slate-950/45 px-5 py-4 text-left shadow-2xl backdrop-blur-xl transition-all hover:border-cyan-300/45 hover:bg-cyan-950/30 focus:ring-2 focus:ring-cyan-300/50 focus:outline-none"
+          class="rounded-lg border border-cyan-300/30 bg-slate-950/70 px-5 py-4 text-left shadow-[inset_0_0_20px_rgba(34,211,238,0.12),0_18px_36px_rgba(0,0,0,0.28)] backdrop-blur-2xl transition-all hover:border-cyan-200/70 hover:bg-cyan-950/45 hover:shadow-[0_0_24px_rgba(34,211,238,0.28)] focus:ring-2 focus:ring-cyan-300/50 focus:outline-none"
           @click.stop="emit('flyToCentralPark')"
         >
           <span class="block text-xs font-bold tracking-[0.26em] text-cyan-300 uppercase">
@@ -110,3 +119,30 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.dashboard-frame::before,
+.dashboard-frame::after {
+  position: absolute;
+  z-index: 0;
+  width: 92px;
+  height: 92px;
+  content: '';
+  pointer-events: none;
+  filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.55));
+}
+
+.dashboard-frame::before {
+  top: 12px;
+  left: 12px;
+  border-top: 2px solid rgba(34, 211, 238, 0.62);
+  border-left: 2px solid rgba(34, 211, 238, 0.62);
+}
+
+.dashboard-frame::after {
+  right: 12px;
+  bottom: 12px;
+  border-right: 2px solid rgba(34, 211, 238, 0.52);
+  border-bottom: 2px solid rgba(34, 211, 238, 0.52);
+}
+</style>

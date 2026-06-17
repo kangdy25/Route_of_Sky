@@ -11,7 +11,7 @@ defineProps<{
         <div
           class="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)]"
         ></div>
-        <span class="text-base font-bold tracking-wider text-slate-100 uppercase">풍속</span>
+        <span class="text-base font-bold tracking-wider text-cyan-50 uppercase">풍속</span>
       </div>
       <span class="text-sm font-semibold text-emerald-400 italic">적정 풍속 ↗</span>
     </div>
@@ -27,7 +27,7 @@ defineProps<{
             fill="none"
             stroke="currentColor"
             stroke-width="5"
-            class="text-slate-800"
+            class="text-cyan-950/80"
           />
         </svg>
 
@@ -45,7 +45,7 @@ defineProps<{
 
         <!-- Center Value overlay -->
         <div
-          class="absolute flex h-16 w-16 flex-col items-center justify-center rounded-full border border-white/5 bg-slate-950/80 shadow-lg"
+          class="absolute flex h-16 w-16 flex-col items-center justify-center rounded-full border border-cyan-300/20 bg-slate-950/85 shadow-[inset_0_0_14px_rgba(34,211,238,0.12)]"
         >
           <span class="text-2xl font-black text-white">{{ windSpeed }}</span>
           <span class="text-[9px] font-bold tracking-wider text-slate-200 uppercase">m/s</span>
@@ -61,7 +61,7 @@ defineProps<{
           >
           <span class="text-xs font-bold text-slate-200 uppercase">산들바람 (Light Breeze)</span>
         </div>
-        <div class="h-6 w-full rounded-lg border border-white/5 bg-slate-950/50 p-1.5">
+        <div class="h-6 w-full rounded-lg border border-cyan-300/10 bg-cyan-950/40 p-1.5">
           <!-- A small wind progress bar based on windSpeed (e.g. max 15 m/s) -->
           <div
             class="h-full rounded-md bg-gradient-to-r from-emerald-500/60 to-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)] transition-all duration-1000"

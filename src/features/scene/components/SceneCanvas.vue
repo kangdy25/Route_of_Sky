@@ -55,7 +55,7 @@ const atmosphereOverlayStyle = computed(() => {
   const hazeAlpha = Math.min(0.28, Math.max(0.02, (20 - props.visibility) / 80 + props.aqi / 900))
 
   return {
-    background: `linear-gradient(180deg, rgba(15, 23, 42, ${cloudAlpha}) 0%, rgba(8, 13, 25, ${rainAlpha}) 52%, rgba(2, 6, 23, ${hazeAlpha}) 100%)`,
+    background: `radial-gradient(circle at 50% 35%, rgba(34, 211, 238, 0.08), rgba(2, 6, 23, 0.34) 52%, rgba(2, 6, 23, 0.78) 100%), linear-gradient(180deg, rgba(15, 23, 42, ${cloudAlpha}) 0%, rgba(8, 13, 25, ${rainAlpha + 0.16}) 52%, rgba(2, 6, 23, ${hazeAlpha + 0.28}) 100%)`,
   }
 })
 
@@ -82,6 +82,15 @@ function initializeViewer() {
   })
 
   viewer.scene.backgroundColor = Color.fromCssColorString('#020617')
+  if (viewer.scene.skyAtmosphere) {
+    viewer.scene.skyAtmosphere.show = false
+  }
+  if (viewer.scene.sun) {
+    viewer.scene.sun.show = false
+  }
+  if (viewer.scene.moon) {
+    viewer.scene.moon.show = false
+  }
   viewer.scene.fog.enabled = true
   viewer.scene.globe.show = false
   viewer.scene.screenSpaceCameraController.minimumZoomDistance = 80
@@ -231,10 +240,7 @@ defineExpose({
 <template>
   <section class="relative h-full w-full overflow-hidden bg-slate-950">
     <div id="cesiumContainer" ref="cesiumContainer" class="absolute inset-0 h-full w-full"></div>
-    <div
-      class="pointer-events-none absolute inset-0 mix-blend-screen"
-      :style="atmosphereOverlayStyle"
-    ></div>
+    <div class="pointer-events-none absolute inset-0" :style="atmosphereOverlayStyle"></div>
     <div
       v-if="statusMessage || isTilesLoading"
       class="pointer-events-none absolute bottom-5 left-5 rounded-full border border-white/10 bg-slate-950/60 px-4 py-2 text-xs font-bold tracking-[0.18em] text-cyan-200 uppercase backdrop-blur-md"
@@ -251,6 +257,13 @@ defineExpose({
 #cesiumContainer :deep(canvas) {
   width: 100%;
   height: 100%;
+  background: #020617;
+}
+
+#cesiumContainer,
+#cesiumContainer :deep(.cesium-viewer),
+#cesiumContainer :deep(.cesium-widget) {
+  background: #020617 !important;
 }
 
 #cesiumContainer :deep(.cesium-viewer-bottom) {

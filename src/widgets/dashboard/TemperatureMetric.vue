@@ -11,7 +11,7 @@ defineProps<{
         <div
           class="h-2 w-2 rounded-full bg-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.6)]"
         ></div>
-        <span class="text-base font-bold tracking-wider text-slate-100 uppercase">기온</span>
+        <span class="text-base font-bold tracking-wider text-cyan-50 uppercase">기온</span>
       </div>
       <span class="text-sm font-semibold text-orange-400 italic">따뜻함, 맑음 ↗</span>
     </div>
@@ -26,7 +26,7 @@ defineProps<{
             fill="none"
             stroke="currentColor"
             stroke-width="6"
-            class="text-slate-800"
+            class="text-cyan-950/80"
           />
           <circle
             cx="50"
@@ -67,7 +67,7 @@ defineProps<{
             ><span class="text-orange-400">최고 기온</span> 32.0</span
           >
         </div>
-        <div class="h-6 w-full rounded-lg border border-white/5 bg-slate-950/50 p-1.5">
+        <div class="h-6 w-full rounded-lg border border-cyan-300/10 bg-cyan-950/40 p-1.5">
           <div
             class="h-full w-[70%] rounded-md bg-gradient-to-r from-orange-500/60 to-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.3)]"
           ></div>

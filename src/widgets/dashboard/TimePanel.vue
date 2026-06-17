@@ -72,8 +72,8 @@ onUnmounted(() => {
   <Panel class="relative" padding-class="p-8" full-height justify>
     <div class="flex items-start justify-between">
       <div>
-        <h2 class="text-xl font-black text-slate-200 uppercase">시간대 탐색</h2>
-        <p class="mt-2 text-base font-medium text-slate-300">
+        <h2 class="text-xl font-black tracking-[0.1em] text-cyan-50 uppercase">시간대 탐색</h2>
+        <p class="mt-2 text-base font-medium text-cyan-100/70">
           재생 헤드를 드래그하여 시간대별<br />
           하늘 상태를 미리 확인하세요.
         </p>
@@ -82,7 +82,7 @@ onUnmounted(() => {
         <span class="block text-2xl font-black tracking-tight text-white">{{
           timeStatus.title
         }}</span>
-        <span class="block text-sm font-bold tracking-widest text-cyan-400 uppercase">{{
+        <span class="block text-sm font-bold tracking-widest text-cyan-300 uppercase">{{
           timeStatus.subtitle
         }}</span>
       </div>
@@ -98,13 +98,13 @@ onUnmounted(() => {
           step="0.1"
           class="absolute z-10 h-full w-full cursor-pointer opacity-0"
         />
-        <div class="relative h-2 w-full rounded-full bg-slate-800">
+        <div class="relative h-2 w-full rounded-full border border-cyan-300/10 bg-cyan-950/55">
           <div
             class="absolute top-0 left-0 h-full rounded-full bg-cyan-400 shadow-[0_0_15px_#22d3ee]"
             :style="{ width: `${(time / 24) * 100}%` }"
           ></div>
           <div
-            class="absolute top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-cyan-400 shadow-xl"
+            class="absolute top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cyan-50 bg-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.7)]"
             :style="{ left: `${(time / 24) * 100}%` }"
           ></div>
         </div>
