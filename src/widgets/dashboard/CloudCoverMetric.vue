@@ -18,9 +18,9 @@ const cloudText = computed(() => {
 
 <template>
   <div
-    class="flex flex-col items-center justify-between rounded-2xl border border-white/5 bg-slate-950/40 p-3 text-center shadow-inner"
+    class="flex flex-col items-center justify-between rounded-lg border border-cyan-300/20 bg-slate-950/60 p-3 text-center shadow-[inset_0_0_18px_rgba(34,211,238,0.10)]"
   >
-    <span class="text-sm font-bold tracking-wider text-slate-300 uppercase">운량</span>
+    <span class="text-base font-bold text-cyan-50 uppercase">운량</span>
     <div class="relative my-2 flex h-24 w-24 items-center justify-center">
       <svg class="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
         <circle
@@ -30,7 +30,7 @@ const cloudText = computed(() => {
           fill="none"
           stroke="currentColor"
           stroke-width="8"
-          class="text-slate-800"
+          class="text-cyan-950/80"
         />
         <circle
           cx="50"
@@ -42,7 +42,7 @@ const cloudText = computed(() => {
           stroke-dasharray="263.89"
           :stroke-dashoffset="263.89 - (263.89 * cloudCover) / 100"
           stroke-linecap="round"
-          class="transition-all duration-1000 ease-out"
+          class="drop-shadow-[0_0_8px_rgba(34,211,238,0.45)] transition-all duration-1000 ease-out"
         />
         <defs>
           <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -51,8 +51,8 @@ const cloudText = computed(() => {
           </linearGradient>
         </defs>
       </svg>
-      <span class="text-base font-black text-white">{{ cloudCover }}%</span>
+      <span class="text-xl font-black text-white">{{ cloudCover }}%</span>
     </div>
-    <span class="text-sm font-bold tracking-tighter text-cyan-400 uppercase">{{ cloudText }}</span>
+    <span class="text-base font-bold text-cyan-300 uppercase">{{ cloudText }}</span>
   </div>
 </template>

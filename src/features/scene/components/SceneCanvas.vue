@@ -1,16 +1,28 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
-import { Vector3, BackSide, Clock } from 'three'
-import { TresCanvas } from '@tresjs/core'
-import { OrbitControls } from '@tresjs/cientos'
-import { hasGoogleMapsApiKey } from '@/shared/config/env'
-import { useAtmosphere } from '@/features/scene/composables/useAtmosphere'
-import { useOrbitCameraClamp } from '@/features/scene/composables/useOrbitCameraClamp'
-import { useSceneCamera } from '@/features/scene/composables/useSceneCamera'
-import { useSunPosition } from '@/features/scene/composables/useSunPosition'
-import { skyFragmentShader, skyVertexShader } from '@/features/scene/shaders/skyShader'
-import DefaultNatureScene from './DefaultNatureScene.vue'
-import GoogleTilesScene from './GoogleTilesScene.vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { gsap } from 'gsap'
+import { Cartesian3, Cesium3DTileset, Color, Ion, Math as CesiumMath, Viewer } from 'cesium'
+import 'cesium/Build/Cesium/Widgets/widgets.css'
+import { cesiumIonAccessToken, hasCesiumIonAccessToken } from '@/shared/config/env'
+
+const GOOGLE_3D_TILES_ION_ASSET_ID = 2275207
+const MANHATTAN_VIEW = {
+  longitude: -74.006,
+  latitude: 40.7128,
+  height: 1850,
+  headingDegrees: 28,
+  pitchDegrees: -43,
+}
+
+interface CameraWaypoint {
+  longitude: number
+  latitude: number
+  height?: number
+  headingDegrees?: number
+  pitchDegrees?: number
+  rollDegrees?: number
+  duration?: number
+}
 
 const props = withDefaults(
   defineProps<{
@@ -29,133 +41,233 @@ const props = withDefaults(
   },
 )
 
-const hasGoogleTiles = computed(() => hasGoogleMapsApiKey)
+const cesiumContainer = ref<HTMLDivElement | null>(null)
+const isTilesLoading = ref(false)
+const statusMessage = ref('')
 
-const {
-  cameraPosition,
-  cameraNear,
-  cameraFar,
-  cameraFov,
-  skyDomeRadius,
-  sunLightDistance,
-  maxDistance,
-  minDistance,
-  minPolarAngle,
-  maxPolarAngle,
-  controlsTarget,
-  screenSpacePanning,
-} = useSceneCamera(hasGoogleTiles)
+let viewer: Viewer | null = null
+let activeCameraTween: gsap.core.Tween | null = null
+let destroyed = false
 
-const { sunPosition, sunDirectionArray, timeFactors } = useSunPosition(
-  props,
-  hasGoogleTiles,
-  sunLightDistance,
-)
+const atmosphereOverlayStyle = computed(() => {
+  const cloudAlpha = Math.min(0.34, Math.max(0.04, props.cloudCover / 280))
+  const rainAlpha = Math.min(0.22, Math.max(0, props.precipitation / 360))
+  const hazeAlpha = Math.min(0.28, Math.max(0.02, (20 - props.visibility) / 80 + props.aqi / 900))
 
-const {
-  ambientColor,
-  ambientIntensity,
-  directionalColor,
-  directionalIntensity,
-  fogColor,
-  fogDensity,
-} = useAtmosphere(props, timeFactors)
+  return {
+    background: `radial-gradient(circle at 50% 35%, rgba(34, 211, 238, 0.08), rgba(2, 6, 23, 0.34) 52%, rgba(2, 6, 23, 0.78) 100%), linear-gradient(180deg, rgba(15, 23, 42, ${cloudAlpha}) 0%, rgba(8, 13, 25, ${rainAlpha + 0.16}) 52%, rgba(2, 6, 23, ${hazeAlpha + 0.28}) 100%)`,
+  }
+})
 
-const { bindOrbitControlsRef, clampMapCamera } = useOrbitCameraClamp(hasGoogleTiles)
+function initializeViewer() {
+  if (!cesiumContainer.value) return
 
-// 절차적으로 생성하는 하늘 돔 셰이더의 uniform입니다.
-const uniforms = {
-  uSunPosition: { value: new Vector3() },
-  uTime: { value: 0 },
-  uCloudCover: { value: 0.65 },
-  uPrecipitation: { value: 0.0 },
+  if (hasCesiumIonAccessToken) {
+    Ion.defaultAccessToken = cesiumIonAccessToken
+  }
+
+  viewer = new Viewer(cesiumContainer.value, {
+    animation: false,
+    timeline: false,
+    baseLayerPicker: false,
+    geocoder: false,
+    homeButton: false,
+    sceneModePicker: false,
+    navigationHelpButton: false,
+    fullscreenButton: false,
+    infoBox: false,
+    selectionIndicator: false,
+    baseLayer: false,
+    shouldAnimate: true,
+  })
+
+  viewer.scene.backgroundColor = Color.fromCssColorString('#020617')
+  if (viewer.scene.skyAtmosphere) {
+    viewer.scene.skyAtmosphere.show = false
+  }
+  if (viewer.scene.sun) {
+    viewer.scene.sun.show = false
+  }
+  if (viewer.scene.moon) {
+    viewer.scene.moon.show = false
+  }
+  viewer.scene.fog.enabled = true
+  viewer.scene.globe.show = false
+  viewer.scene.screenSpaceCameraController.minimumZoomDistance = 80
+  viewer.scene.screenSpaceCameraController.maximumZoomDistance = 30000
+
+  setInitialManhattanView()
+  applyAtmosphereToScene()
+
+  if (hasCesiumIonAccessToken) {
+    void loadGooglePhotorealisticTiles()
+  } else {
+    statusMessage.value = 'Cesium ion token required for Google 3D Tiles'
+  }
 }
 
-// props와 태양 위치 변화가 셰이더 uniform에 즉시 반영되도록 동기화합니다.
-watch(
-  () => sunPosition.value,
-  (newVal) => {
-    uniforms.uSunPosition.value.copy(newVal)
-  },
-  { immediate: true },
-)
+function setInitialManhattanView() {
+  if (!viewer) return
 
-watch(
-  () => props.cloudCover,
-  (newVal) => {
-    uniforms.uCloudCover.value = newVal / 100
-  },
-  { immediate: true },
-)
-
-watch(
-  () => props.precipitation,
-  (newVal) => {
-    uniforms.uPrecipitation.value = newVal / 100
-  },
-  { immediate: true },
-)
-
-// 구름 이동과 별 반짝임 애니메이션에 사용할 시간 uniform을 매 프레임 갱신합니다.
-const clock = new Clock()
-const onBeforeRender = () => {
-  clampMapCamera()
-  uniforms.uTime.value = clock.getElapsedTime()
+  viewer.camera.setView({
+    destination: Cartesian3.fromDegrees(
+      MANHATTAN_VIEW.longitude,
+      MANHATTAN_VIEW.latitude,
+      MANHATTAN_VIEW.height,
+    ),
+    orientation: {
+      heading: CesiumMath.toRadians(MANHATTAN_VIEW.headingDegrees),
+      pitch: CesiumMath.toRadians(MANHATTAN_VIEW.pitchDegrees),
+      roll: 0,
+    },
+  })
 }
+
+async function loadGooglePhotorealisticTiles() {
+  if (!viewer) return
+
+  isTilesLoading.value = true
+  statusMessage.value = 'Loading Google Photorealistic 3D Tiles'
+
+  try {
+    const tileset = await Cesium3DTileset.fromIonAssetId(GOOGLE_3D_TILES_ION_ASSET_ID, {
+      maximumScreenSpaceError: 2,
+      cullWithChildrenBounds: true,
+    })
+
+    if (!viewer || destroyed) return
+
+    viewer.scene.primitives.add(tileset)
+    statusMessage.value = ''
+  } catch (error) {
+    console.error(error)
+    statusMessage.value = 'Unable to load Google 3D Tiles asset'
+  } finally {
+    isTilesLoading.value = false
+  }
+}
+
+function applyAtmosphereToScene() {
+  if (!viewer) return
+
+  const visibilityFactor = Math.max(0, Math.min(1, (20 - props.visibility) / 20))
+  const weatherFactor = Math.max(props.cloudCover, props.precipitation, props.aqi) / 100
+  viewer.scene.fog.density = CesiumMath.lerp(
+    0.00005,
+    0.00038,
+    Math.max(visibilityFactor, weatherFactor * 0.35),
+  )
+  viewer.scene.fog.minimumBrightness = props.time >= 6 && props.time <= 18 ? 0.08 : 0.02
+}
+
+function lerpRadians(start: number, end: number, progress: number) {
+  const tau = Math.PI * 2
+  const delta = ((((end - start + Math.PI) % tau) + tau) % tau) - Math.PI
+  return start + delta * progress
+}
+
+function flyToLocation(target: CameraWaypoint) {
+  if (!viewer) return
+
+  activeCameraTween?.kill()
+
+  const camera = viewer.camera
+  const startPosition = Cartesian3.clone(camera.positionWC)
+  const endPosition = Cartesian3.fromDegrees(
+    target.longitude,
+    target.latitude,
+    target.height ?? MANHATTAN_VIEW.height,
+  )
+  const startHeading = camera.heading
+  const startPitch = camera.pitch
+  const startRoll = camera.roll
+  const endHeading = CesiumMath.toRadians(target.headingDegrees ?? MANHATTAN_VIEW.headingDegrees)
+  const endPitch = CesiumMath.toRadians(target.pitchDegrees ?? MANHATTAN_VIEW.pitchDegrees)
+  const endRoll = CesiumMath.toRadians(target.rollDegrees ?? 0)
+  const progress = { value: 0 }
+  const currentPosition = new Cartesian3()
+
+  activeCameraTween = gsap.to(progress, {
+    value: 1,
+    duration: target.duration ?? 3.2,
+    ease: 'power3.inOut',
+    onUpdate: () => {
+      if (!viewer) return
+
+      Cartesian3.lerp(startPosition, endPosition, progress.value, currentPosition)
+      camera.setView({
+        destination: currentPosition,
+        orientation: {
+          heading: lerpRadians(startHeading, endHeading, progress.value),
+          pitch: CesiumMath.lerp(startPitch, endPitch, progress.value),
+          roll: CesiumMath.lerp(startRoll, endRoll, progress.value),
+        },
+      })
+    },
+    onComplete: () => {
+      activeCameraTween = null
+    },
+  })
+}
+
+watch(
+  () => [props.time, props.cloudCover, props.precipitation, props.aqi, props.visibility],
+  () => applyAtmosphereToScene(),
+)
+
+onMounted(async () => {
+  await nextTick()
+  initializeViewer()
+})
+
+onBeforeUnmount(() => {
+  destroyed = true
+  activeCameraTween?.kill()
+  activeCameraTween = null
+
+  if (viewer && !viewer.isDestroyed()) {
+    viewer.destroy()
+  }
+
+  viewer = null
+})
+
+defineExpose({
+  flyToLocation,
+})
 </script>
 
 <template>
-  <!-- 씬의 전체 3D 렌더링 컨텍스트입니다. -->
-  <TresCanvas clear-color="#000000" window-size shadows>
-    <TresPerspectiveCamera
-      :position="cameraPosition"
-      :look-at="controlsTarget"
-      :near="cameraNear"
-      :far="cameraFar"
-      :fov="cameraFov"
-    />
-    <OrbitControls
-      :ref="bindOrbitControlsRef"
-      :target="controlsTarget"
-      :maxDistance="maxDistance"
-      :minDistance="minDistance"
-      :minPolarAngle="minPolarAngle"
-      :maxPolarAngle="maxPolarAngle"
-      :screenSpacePanning="screenSpacePanning"
-      @start="clampMapCamera"
-      @change="clampMapCamera"
-      @end="clampMapCamera"
-    />
-
-    <!-- 시간대와 날씨에 반응하는 환경 조명입니다. -->
-    <TresAmbientLight :color="ambientColor" :intensity="ambientIntensity" />
-    <TresDirectionalLight
-      :position="sunDirectionArray"
-      :color="directionalColor"
-      :intensity="directionalIntensity"
-      cast-shadow
-    />
-
-    <!-- 가시거리와 AQI를 반영하는 안개입니다. -->
-    <TresFogExp2 :color="fogColor" :density="fogDensity" />
-
-    <!-- 절차적으로 그리는 하늘 돔입니다. -->
-    <TresMesh :render-order="-1000" @before-render="onBeforeRender">
-      <TresSphereGeometry :args="[skyDomeRadius, 96, 48]" />
-      <TresShaderMaterial
-        :vertex-shader="skyVertexShader"
-        :fragment-shader="skyFragmentShader"
-        :uniforms="uniforms"
-        :side="BackSide"
-        :depth-write="false"
-        :fog="false"
-      />
-    </TresMesh>
-
-    <!-- API 키가 있으면 Google Photorealistic 3D Tiles를 렌더링합니다. -->
-    <GoogleTilesScene v-if="hasGoogleTiles" />
-
-    <!-- API 키가 없을 때 사용하는 기본 씬입니다. -->
-    <DefaultNatureScene v-else :precipitation="props.precipitation" />
-  </TresCanvas>
+  <section class="relative h-full w-full overflow-hidden bg-slate-950">
+    <div id="cesiumContainer" ref="cesiumContainer" class="absolute inset-0 h-full w-full"></div>
+    <div class="pointer-events-none absolute inset-0" :style="atmosphereOverlayStyle"></div>
+    <div
+      v-if="statusMessage || isTilesLoading"
+      class="pointer-events-none absolute bottom-5 left-5 rounded-full border border-white/10 bg-slate-950/60 px-4 py-2 text-sm font-bold text-cyan-200 uppercase backdrop-blur-md"
+    >
+      {{ statusMessage }}
+    </div>
+  </section>
 </template>
+
+<style scoped>
+#cesiumContainer :deep(.cesium-viewer),
+#cesiumContainer :deep(.cesium-viewer-cesiumWidgetContainer),
+#cesiumContainer :deep(.cesium-widget),
+#cesiumContainer :deep(canvas) {
+  width: 100%;
+  height: 100%;
+  background: #020617;
+}
+
+#cesiumContainer,
+#cesiumContainer :deep(.cesium-viewer),
+#cesiumContainer :deep(.cesium-widget) {
+  background: #020617 !important;
+}
+
+#cesiumContainer :deep(.cesium-viewer-bottom) {
+  bottom: 0.75rem;
+  left: 1rem;
+}
+</style>

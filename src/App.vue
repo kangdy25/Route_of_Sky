@@ -10,6 +10,7 @@ import DashboardPage from '@/pages/DashboardPage.vue'
 ::-webkit-scrollbar {
   width: 2px;
 }
+
 ::-webkit-scrollbar-track {
   background: rgba(15, 23, 42, 0.9);
 }

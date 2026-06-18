@@ -1,7 +1,19 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+
+const props = defineProps<{
   temperature: number
 }>()
+
+const minTemperature = 24.5
+const maxTemperature = 32.0
+const rangeMin = 18
+const rangeMax = 36
+
+const temperaturePercent = computed(() => {
+  const normalized = ((props.temperature - rangeMin) / (rangeMax - rangeMin)) * 100
+  return Math.min(100, Math.max(0, normalized))
+})
 </script>
 
 <template>
@@ -11,67 +23,57 @@ defineProps<{
         <div
           class="h-2 w-2 rounded-full bg-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.6)]"
         ></div>
-        <span class="text-base font-bold tracking-wider text-slate-100 uppercase">기온</span>
+        <span class="text-base font-bold text-cyan-50 uppercase">기온</span>
       </div>
-      <span class="text-sm font-semibold text-orange-400 italic">따뜻함, 맑음 ↗</span>
+      <span class="text-base font-semibold text-orange-400 italic">따뜻함, 맑음 ↗</span>
     </div>
+
     <div class="flex items-center gap-8">
-      <!-- Enlarged Circular Gauge -->
-      <div class="relative flex h-32 w-32 shrink-0 items-center justify-center">
-        <svg class="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
-          <circle
-            cx="50"
-            cy="50"
-            r="44"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="6"
-            class="text-slate-800"
-          />
-          <circle
-            cx="50"
-            cy="50"
-            r="44"
-            fill="none"
-            stroke="url(#tempGradient)"
-            stroke-width="7"
-            stroke-dasharray="276.46"
-            stroke-dashoffset="70"
-            stroke-linecap="round"
-            class="drop-shadow-[0_0_8px_rgba(251,146,60,0.5)]"
-          />
-          <defs>
-            <linearGradient id="tempGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#fb923c" />
-              <stop offset="100%" stop-color="#f87171" />
-            </linearGradient>
-          </defs>
-        </svg>
-        <div class="flex flex-col items-center">
-          <span class="text-4xl leading-none font-black tracking-tight text-white"
-            >{{ temperature
-            }}<span class="ml-1 text-base font-normal text-slate-200">°C</span></span
-          >
-          <span class="mt-2 text-sm font-black tracking-widest text-orange-400 uppercase"
-            >상승 중</span
-          >
-        </div>
+      <div
+        class="relative flex h-36 w-36 shrink-0 flex-col items-center justify-center rounded-2xl border-3 border-orange-300/30 bg-gradient-to-br from-slate-950/75 via-cyan-950/25 to-orange-950/25 shadow-[inset_0_0_24px_rgba(251,146,60,0.10),0_0_18px_rgba(251,146,60,0.08)]"
+      >
+        <div
+          class="absolute top-3 right-3 h-2 w-2 rounded-full bg-orange-300 shadow-[0_0_10px_rgba(251,191,36,0.65)]"
+        ></div>
+        <span class="text-4xl leading-none font-black text-white"> {{ temperature }}° </span>
+        <span
+          class="mt-3 rounded-full border border-orange-300/20 bg-orange-400/10 px-3 py-1 text-sm font-bold text-orange-300"
+        >
+          상승 중
+        </span>
       </div>
-      <!-- Specs Info -->
-      <div class="flex-1 space-y-4">
-        <div class="flex flex-col gap-1 px-1">
-          <span class="font-mono text-sm font-bold tracking-tighter text-slate-300 uppercase"
-            ><span class="text-blue-400">최저 기온</span> 24.5</span
-          >
-          <span class="font-mono text-sm font-bold tracking-tighter text-slate-300 uppercase"
-            ><span class="text-orange-400">최고 기온</span> 32.0</span
-          >
+
+      <div class="flex flex-1 flex-col justify-center space-y-4">
+        <div class="flex items-center justify-between gap-3 px-1">
+          <div>
+            <span class="block text-sm font-semibold text-blue-300">최저 기온</span>
+            <span class="mt-1 block font-mono text-lg font-black text-slate-100">
+              {{ minTemperature }}°
+            </span>
+          </div>
+          <div class="text-right">
+            <span class="block text-sm font-semibold text-orange-300">최고 기온</span>
+            <span class="mt-1 block font-mono text-lg font-black text-slate-100">
+              {{ maxTemperature }}°
+            </span>
+          </div>
         </div>
-        <div class="h-6 w-full rounded-lg border border-white/5 bg-slate-950/50 p-1.5">
+
+        <div class="space-y-2">
           <div
-            class="h-full w-[70%] rounded-md bg-gradient-to-r from-orange-500/60 to-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.3)]"
-          ></div>
+            class="relative h-7 w-full rounded-lg border border-cyan-300/10 bg-cyan-950/40 p-1.5"
+          >
+            <div
+              class="h-full rounded-md bg-gradient-to-r from-cyan-400/75 via-amber-300/90 to-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.34)] transition-all duration-700"
+              :style="{ width: `${temperaturePercent}%` }"
+            ></div>
+          </div>
+          <div class="flex justify-between px-1 font-mono text-sm font-bold text-slate-300">
+            <span>{{ rangeMin }}°</span>
+            <span>{{ rangeMax }}°</span>
+          </div>
         </div>
+
         <p class="px-1 text-sm leading-relaxed font-medium text-slate-200">
           현재 고도에서 열 변화가 안정적으로 유지되고 있습니다.
         </p>
@@ -83,9 +85,5 @@ defineProps<{
 <style scoped>
 .spec-section {
   position: relative;
-}
-
-svg circle {
-  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>
