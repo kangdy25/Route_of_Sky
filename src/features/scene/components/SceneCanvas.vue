@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { gsap } from 'gsap'
-import { Cartesian3, Cesium3DTileset, Color, Ion, Math as CesiumMath, Viewer } from 'cesium'
+import {
+  CameraEventType,
+  Cartesian3,
+  Cesium3DTileset,
+  Color,
+  Ion,
+  KeyboardEventModifier,
+  Math as CesiumMath,
+  Viewer,
+} from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 import { cesiumIonAccessToken, hasCesiumIonAccessToken } from '@/shared/config/env'
 
@@ -55,7 +64,7 @@ const atmosphereOverlayStyle = computed(() => {
   const hazeAlpha = Math.min(0.28, Math.max(0.02, (20 - props.visibility) / 80 + props.aqi / 900))
 
   return {
-    background: `radial-gradient(circle at 50% 35%, rgba(34, 211, 238, 0.08), rgba(2, 6, 23, 0.34) 52%, rgba(2, 6, 23, 0.78) 100%), linear-gradient(180deg, rgba(15, 23, 42, ${cloudAlpha}) 0%, rgba(8, 13, 25, ${rainAlpha + 0.16}) 52%, rgba(2, 6, 23, ${hazeAlpha + 0.28}) 100%)`,
+    background: `radial-gradient(circle at 50% 35%, rgba(34, 211, 238, 0.06), rgba(2, 6, 23, 0.2) 52%, rgba(2, 6, 23, 0.52) 100%), linear-gradient(180deg, rgba(15, 23, 42, ${cloudAlpha * 0.62}) 0%, rgba(8, 13, 25, ${(rainAlpha + 0.16) * 0.62}) 52%, rgba(2, 6, 23, ${(hazeAlpha + 0.28) * 0.62}) 100%)`,
   }
 })
 
@@ -93,8 +102,7 @@ function initializeViewer() {
   }
   viewer.scene.fog.enabled = true
   viewer.scene.globe.show = false
-  viewer.scene.screenSpaceCameraController.minimumZoomDistance = 80
-  viewer.scene.screenSpaceCameraController.maximumZoomDistance = 30000
+  configureCameraControls()
 
   setInitialManhattanView()
   applyAtmosphereToScene()
@@ -104,6 +112,33 @@ function initializeViewer() {
   } else {
     statusMessage.value = 'Cesium ion token required for Google 3D Tiles'
   }
+}
+
+function configureCameraControls() {
+  if (!viewer) return
+
+  const controller = viewer.scene.screenSpaceCameraController
+  controller.enableInputs = true
+  controller.enableRotate = true
+  controller.enableTranslate = true
+  controller.enableZoom = true
+  controller.enableTilt = true
+  controller.enableLook = true
+  controller.enableCollisionDetection = false
+  controller.minimumZoomDistance = 80
+  controller.maximumZoomDistance = 30000
+  controller.maximumTiltAngle = undefined
+  controller.inertiaSpin = 0.45
+  controller.inertiaTranslate = 0.45
+  controller.inertiaZoom = 0.35
+  controller.zoomEventTypes = [CameraEventType.WHEEL, CameraEventType.PINCH]
+  controller.lookEventTypes = [
+    CameraEventType.RIGHT_DRAG,
+    {
+      eventType: CameraEventType.LEFT_DRAG,
+      modifier: KeyboardEventModifier.SHIFT,
+    },
+  ]
 }
 
 function setInitialManhattanView() {
@@ -239,7 +274,12 @@ defineExpose({
 
 <template>
   <section class="relative h-full w-full overflow-hidden bg-slate-950">
-    <div id="cesiumContainer" ref="cesiumContainer" class="absolute inset-0 h-full w-full"></div>
+    <div
+      id="cesiumContainer"
+      ref="cesiumContainer"
+      class="absolute inset-0 h-full w-full"
+      @contextmenu.prevent
+    ></div>
     <div class="pointer-events-none absolute inset-0" :style="atmosphereOverlayStyle"></div>
     <div
       v-if="statusMessage || isTilesLoading"
