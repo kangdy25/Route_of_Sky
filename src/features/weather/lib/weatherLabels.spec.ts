@@ -21,6 +21,12 @@ describe('날씨 표시 라벨', () => {
     expect(getPrecipitationLabel(10)).toBe('강한 비')
   })
 
+  it('눈 모드에서는 강설 라벨을 반환해야 한다', () => {
+    expect(getPrecipitationLabel(1.5, true)).toBe('약한 눈')
+    expect(getPrecipitationLabel(5, true)).toBe('보통 눈')
+    expect(getPrecipitationLabel(10, true)).toBe('강한 눈')
+  })
+
   it('가시거리 범위에 맞는 라벨을 반환해야 한다', () => {
     expect(getVisibilityLabel(12)).toBe('선명함')
     expect(getVisibilityLabel(7)).toBe('연무')

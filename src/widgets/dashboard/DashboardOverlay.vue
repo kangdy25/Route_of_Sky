@@ -11,13 +11,14 @@ import TimePanel from './TimePanel.vue'
 const time = defineModel<number>('time', { required: true })
 const overlayRef = ref<HTMLElement | null>(null)
 const emit = defineEmits<{
-  flyToCentralPark: []
+  flyToJamsil: []
 }>()
 
 defineProps<{
   temperature: number
   humidity: number
   windSpeed: number
+  windDirectionDegrees: number
   aqi: number
   cloudCover: number
   precipitation: number
@@ -93,17 +94,20 @@ onMounted(() => {
       class="mt-6 flex flex-1 flex-col justify-between gap-6 pb-2 lg:flex-row lg:items-start lg:pb-0"
     >
       <aside class="pointer-events-auto flex w-full flex-col gap-6 lg:w-[380px] lg:shrink-0">
-        <EnvironmentPanel :temperature="temperature" :humidity="humidity" :wind-speed="windSpeed" />
+        <EnvironmentPanel
+          :temperature="temperature"
+          :humidity="humidity"
+          :wind-speed="windSpeed"
+          :wind-direction-degrees="windDirectionDegrees"
+        />
         <button
           type="button"
           class="rounded-lg border border-cyan-300/30 bg-slate-950/70 px-5 py-4 text-left shadow-[inset_0_0_20px_rgba(34,211,238,0.12),0_18px_36px_rgba(0,0,0,0.28)] backdrop-blur-2xl transition-all hover:border-cyan-200/70 hover:bg-cyan-950/45 hover:shadow-[0_0_24px_rgba(34,211,238,0.28)] focus:ring-2 focus:ring-cyan-300/50 focus:outline-none"
-          @click.stop="emit('flyToCentralPark')"
+          @click.stop="emit('flyToJamsil')"
         >
           <span class="block text-sm font-bold text-cyan-300 uppercase"> Scenic route </span>
-          <span class="mt-2 block text-lg font-black text-white">Central Park fly-through</span>
-          <span class="mt-1 block text-base font-medium text-slate-300"
-            >Smooth aerial approach</span
-          >
+          <span class="mt-2 block text-lg font-black text-white">Jamsil fly-through</span>
+          <span class="mt-1 block text-base font-medium text-slate-300">Seoul aerial approach</span>
         </button>
       </aside>
 
@@ -112,6 +116,7 @@ onMounted(() => {
           :cloud-cover="cloudCover"
           :precipitation="precipitation"
           :visibility="visibility"
+          :temperature="temperature"
         />
         <AtmospherePanel :aqi="aqi" />
         <TimePanel v-model="time" />

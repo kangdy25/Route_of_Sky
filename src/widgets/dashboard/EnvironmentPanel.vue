@@ -8,6 +8,7 @@ defineProps<{
   temperature: number
   humidity: number
   windSpeed: number
+  windDirectionDegrees: number
 }>()
 </script>
 
@@ -26,6 +27,6 @@ defineProps<{
     <HumidityMetric :humidity="humidity" />
 
     <!-- 풍속 지표입니다. -->
-    <WindSpeedMetric :wind-speed="windSpeed" />
+    <WindSpeedMetric :wind-speed="windSpeed" :wind-direction-degrees="windDirectionDegrees" />
   </Panel>
 </template>

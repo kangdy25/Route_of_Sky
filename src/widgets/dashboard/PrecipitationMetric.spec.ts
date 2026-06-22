@@ -22,4 +22,15 @@ describe('강수량 지표 카드', () => {
     const wrapper = mount(PrecipitationMetric, { props: { precipitation: 10.0 } })
     expect(wrapper.text()).toContain('강한 비')
   })
+
+  it('영하에서 강수량이 있으면 강설량과 눈 라벨을 렌더링해야 한다', () => {
+    const wrapper = mount(PrecipitationMetric, {
+      props: { precipitation: 5.0, temperature: -4 },
+    })
+
+    expect(wrapper.text()).toContain('강설량')
+    expect(wrapper.text()).toContain('5.0')
+    expect(wrapper.text()).toContain('cm/h')
+    expect(wrapper.text()).toContain('보통 눈')
+  })
 })

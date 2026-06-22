@@ -39,7 +39,7 @@
           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
         ></path>
       </svg>
-      <span class="text-lg font-bold text-cyan-50">MANHATTAN, NY</span>
+      <span class="text-lg font-bold text-cyan-50">SEOUL, JAMSIL</span>
     </div>
 
     <div class="flex gap-4">

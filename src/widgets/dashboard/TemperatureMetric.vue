@@ -14,6 +14,33 @@ const temperaturePercent = computed(() => {
   const normalized = ((props.temperature - rangeMin) / (rangeMax - rangeMin)) * 100
   return Math.min(100, Math.max(0, normalized))
 })
+
+const temperatureSummary = computed(() => {
+  if (props.temperature <= 0) return '결빙 위험 ↘'
+  if (props.temperature < 10) return '차가운 공기 ↘'
+  if (props.temperature > 30) return '고온 상승 ↗'
+  return '쾌적한 기온 ↗'
+})
+
+const temperatureStatus = computed(() => {
+  if (props.temperature <= 0) return '결빙'
+  if (props.temperature < 10) return '저온'
+  if (props.temperature > 30) return '고온'
+  return '안정'
+})
+
+const temperatureDescription = computed(() => {
+  if (props.temperature <= 0) {
+    return '영하권 기온으로 강수가 눈으로 바뀌며 결빙 가능성이 높습니다.'
+  }
+  if (props.temperature < 10) {
+    return '낮은 기온으로 공기 밀도가 높고 체감 조건이 차갑게 유지됩니다.'
+  }
+  if (props.temperature > 30) {
+    return '높은 기온으로 열 상승과 지표 난류가 강해질 수 있습니다.'
+  }
+  return '현재 고도에서 열 변화가 안정적으로 유지되고 있습니다.'
+})
 </script>
 
 <template>
@@ -25,7 +52,7 @@ const temperaturePercent = computed(() => {
         ></div>
         <span class="text-base font-bold text-cyan-50 uppercase">기온</span>
       </div>
-      <span class="text-base font-semibold text-orange-400 italic">따뜻함, 맑음 ↗</span>
+      <span class="text-base font-semibold text-orange-400 italic">{{ temperatureSummary }}</span>
     </div>
 
     <div class="flex items-center gap-8">
@@ -39,7 +66,7 @@ const temperaturePercent = computed(() => {
         <span
           class="mt-3 rounded-full border border-orange-300/20 bg-orange-400/10 px-3 py-1 text-sm font-bold text-orange-300"
         >
-          상승 중
+          {{ temperatureStatus }}
         </span>
       </div>
 
@@ -75,7 +102,7 @@ const temperaturePercent = computed(() => {
         </div>
 
         <p class="px-1 text-sm leading-relaxed font-medium text-slate-200">
-          현재 고도에서 열 변화가 안정적으로 유지되고 있습니다.
+          {{ temperatureDescription }}
         </p>
       </div>
     </div>

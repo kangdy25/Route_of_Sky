@@ -5,11 +5,11 @@ export function getCloudCoverLabel(cloudCover: number) {
   return '흐림'
 }
 
-export function getPrecipitationLabel(precipitation: number) {
+export function getPrecipitationLabel(precipitation: number, isSnow = false) {
   if (precipitation === 0) return '없음'
-  if (precipitation < 2.5) return '약한 비'
-  if (precipitation < 7.6) return '보통 비'
-  return '강한 비'
+  if (precipitation < 2.5) return isSnow ? '약한 눈' : '약한 비'
+  if (precipitation < 7.6) return isSnow ? '보통 눈' : '보통 비'
+  return isSnow ? '강한 눈' : '강한 비'
 }
 
 export function getVisibilityLabel(visibility: number) {

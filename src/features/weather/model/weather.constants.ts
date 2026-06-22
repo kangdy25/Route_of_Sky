@@ -6,8 +6,9 @@ export const defaultWeatherState: WeatherState = {
   temperature: 24.5,
   humidity: 62,
   windSpeed: 5,
+  windDirectionDegrees: 225,
   aqi: 45,
-  cloudCover: 65,
+  cloudCover: 35,
   precipitation: 0.0,
   visibility: 15.0,
 }
