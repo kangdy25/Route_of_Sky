@@ -219,6 +219,19 @@ const wetLensOverlayStyle = computed(() => {
   }
 })
 
+const whiteoutOverlayStyle = computed(() => {
+  const intensity = getSnowstormIntensity()
+  const opacity = CesiumMath.lerp(0, 0.48, intensity)
+  const lowerVeil = CesiumMath.lerp(0.06, 0.42, intensity)
+  const upperVeil = CesiumMath.lerp(0.01, 0.18, intensity)
+
+  return {
+    opacity,
+    background: `radial-gradient(ellipse at 50% 54%, rgba(248, 250, 252, ${lowerVeil}), rgba(226, 232, 240, ${upperVeil}) 42%, transparent 78%), linear-gradient(90deg, rgba(241, 245, 249, ${upperVeil}) 0%, rgba(226, 232, 240, ${lowerVeil * 0.72}) 48%, rgba(248, 250, 252, ${upperVeil}) 100%)`,
+    backdropFilter: `blur(${CesiumMath.lerp(0, 2.4, intensity)}px) saturate(${CesiumMath.lerp(1, 0.86, intensity)})`,
+  }
+})
+
 const skyTimeStyle = computed(() => {
   const sky = getSkyPhase(props.time)
   const dawnWarmth = sky.dawn + sky.dusk
@@ -310,6 +323,16 @@ function getThunderstormIntensity() {
   return clamp01(precipitationFactor * cloudFactor * humidityFactor)
 }
 
+function getSnowstormIntensity() {
+  if (getPrecipitationMode() !== 'snow') return 0
+
+  const snowfallFactor = smoothstep(5.5, 12, props.precipitation)
+  const windFactor = smoothstep(7, 17, props.windSpeed)
+  const humidityFactor = CesiumMath.lerp(0.72, 1, clamp01((props.humidity - 55) / 45))
+
+  return clamp01(snowfallFactor * windFactor * humidityFactor * 0.82)
+}
+
 function getScreenWeatherTargetCount() {
   const mode = getPrecipitationMode()
   if (!mode) return 0
@@ -317,33 +340,46 @@ function getScreenWeatherTargetCount() {
   const intensity = clamp01(props.precipitation / 12)
   const humidityBoost = CesiumMath.lerp(0.82, 1.18, clamp01(props.humidity / 100))
   const windBoost = mode === 'snow' ? CesiumMath.lerp(1, 1.32, clamp01(props.windSpeed / 14)) : 1
+  const snowstormBoost = mode === 'snow' ? CesiumMath.lerp(1, 1.22, getSnowstormIntensity()) : 1
   const baseCount = mode === 'snow' ? 360 : 360
-  const peakCount = mode === 'snow' ? 1480 : 1100
+  const peakCount = mode === 'snow' ? 1550 : 1100
 
-  return Math.round(CesiumMath.lerp(baseCount, peakCount, intensity) * humidityBoost * windBoost)
+  return Math.round(
+    CesiumMath.lerp(baseCount, peakCount, intensity) * humidityBoost * windBoost * snowstormBoost,
+  )
 }
 
 function createScreenWeatherParticle(width: number, height: number, fromTop = false) {
   const mode = getPrecipitationMode()
   const intensity = clamp01(props.precipitation / 12)
   const windFactor = clamp01(props.windSpeed / 14)
+  const snowstormIntensity = getSnowstormIntensity()
   const isSnow = mode === 'snow'
 
   return {
     x: Math.random() * width,
     y: fromTop ? -Math.random() * height * (isSnow ? 0.42 : 0.25) : Math.random() * height,
     size: isSnow
-      ? CesiumMath.lerp(1.8, CesiumMath.lerp(5.8, 7.2, intensity), Math.random())
+      ? CesiumMath.lerp(
+          1.5,
+          CesiumMath.lerp(5.8, 7.6, intensity) * CesiumMath.lerp(1, 0.78, snowstormIntensity),
+          Math.random(),
+        )
       : CesiumMath.lerp(8, 24, intensity),
     speed: isSnow
       ? CesiumMath.lerp(58, 190, intensity) *
         CesiumMath.lerp(0.72, 1.58, Math.random()) *
-        CesiumMath.lerp(1, 1.34, windFactor)
+        CesiumMath.lerp(1, 1.34, windFactor) *
+        CesiumMath.lerp(1, 0.86, snowstormIntensity)
       : CesiumMath.lerp(560, 1240, intensity) * CesiumMath.lerp(0.72, 1.22, Math.random()),
     drift:
-      CesiumMath.lerp(-1, 1, Math.random()) * (isSnow ? CesiumMath.lerp(42, 86, windFactor) : 18),
+      CesiumMath.lerp(-1, 1, Math.random()) *
+      (isSnow
+        ? CesiumMath.lerp(42, 86, windFactor) * CesiumMath.lerp(1, 0.62, snowstormIntensity)
+        : 18),
     alpha: isSnow
-      ? CesiumMath.lerp(0.52, CesiumMath.lerp(0.94, 1, intensity), Math.random())
+      ? CesiumMath.lerp(0.52, CesiumMath.lerp(0.94, 1, intensity), Math.random()) *
+        CesiumMath.lerp(1, 0.9, snowstormIntensity)
       : CesiumMath.lerp(0.24, 0.62, Math.random()),
     phase: Math.random() * Math.PI * 2,
   }
@@ -390,6 +426,17 @@ function getWindScreenVector(): WindScreenVector {
   }
 }
 
+function getSnowstormScreenVector(windVector: WindScreenVector, intensity: number) {
+  const directionInfluence = intensity * 0.48
+  const horizontalDirection =
+    Math.abs(windVector.x) > 0.22 ? Math.sign(windVector.x) : windVector.y >= 0 ? 1 : -1
+
+  return {
+    x: CesiumMath.lerp(windVector.x, horizontalDirection, directionInfluence),
+    y: CesiumMath.lerp(windVector.y, windVector.y * 0.45, directionInfluence),
+  }
+}
+
 function drawRainParticle(
   context: CanvasRenderingContext2D,
   particle: ScreenWeatherParticle,
@@ -414,6 +461,7 @@ function drawSnowParticle(
   windVector: WindScreenVector,
   windOffset: number,
 ) {
+  const snowstormIntensity = getSnowstormIntensity()
   const radius = particle.size
   const gradient = context.createRadialGradient(
     particle.x,
@@ -431,15 +479,17 @@ function drawSnowParticle(
   context.arc(particle.x, particle.y, radius, 0, Math.PI * 2)
   context.fill()
 
-  if (windOffset > 42) {
-    context.globalAlpha = particle.alpha * clamp01(windOffset / 150) * 0.5
+  if (windOffset > 42 || snowstormIntensity > 0.08) {
+    const streakLength = windOffset * CesiumMath.lerp(0.16, 0.38, snowstormIntensity)
+    context.globalAlpha =
+      particle.alpha * clamp01(windOffset / 150) * CesiumMath.lerp(0.42, 0.68, snowstormIntensity)
     context.strokeStyle = 'rgba(241, 245, 249, 0.7)'
-    context.lineWidth = Math.max(0.8, radius * 0.36)
+    context.lineWidth = Math.max(0.8, radius * CesiumMath.lerp(0.32, 0.52, snowstormIntensity))
     context.beginPath()
     context.moveTo(particle.x, particle.y)
     context.lineTo(
-      particle.x - windVector.x * windOffset * 0.18,
-      particle.y - windVector.y * windOffset * 0.08,
+      particle.x - windVector.x * streakLength,
+      particle.y - windVector.y * streakLength * 0.36,
     )
     context.stroke()
   }
@@ -624,16 +674,31 @@ function renderScreenWeatherFrame(timestamp: number) {
   if (mode) {
     const intensity = clamp01(props.precipitation / 12)
     const windOffset = clamp(props.windSpeed, 0, 28) * (mode === 'snow' ? 14 : 9)
-    const windVector = getWindScreenVector()
+    const baseWindVector = getWindScreenVector()
+    const windVector =
+      mode === 'snow'
+        ? getSnowstormScreenVector(baseWindVector, getSnowstormIntensity())
+        : baseWindVector
     syncScreenWeatherParticles(width, height)
     context.lineCap = 'round'
 
     for (const particle of screenWeatherParticles) {
       if (mode === 'snow') {
-        particle.phase += dt * CesiumMath.lerp(2.8, 5.6, clamp01(props.windSpeed / 14))
+        const snowstormIntensity = getSnowstormIntensity()
+        particle.phase +=
+          dt *
+          CesiumMath.lerp(2.8, 5.6, clamp01(props.windSpeed / 14)) *
+          CesiumMath.lerp(1, 0.74, snowstormIntensity)
         particle.x +=
-          (windVector.x * windOffset * 0.28 + Math.sin(particle.phase) * particle.drift) * dt
-        particle.y += (particle.speed + windVector.y * windOffset * 0.16) * dt
+          (windVector.x * windOffset * CesiumMath.lerp(0.28, 0.66, snowstormIntensity) +
+            Math.sin(particle.phase) *
+              particle.drift *
+              CesiumMath.lerp(1, 0.42, snowstormIntensity)) *
+          dt
+        particle.y +=
+          (particle.speed * CesiumMath.lerp(1, 0.72, snowstormIntensity) +
+            windVector.y * windOffset * CesiumMath.lerp(0.16, 0.28, snowstormIntensity)) *
+          dt
         drawSnowParticle(context, particle, windVector, windOffset)
       } else {
         particle.x += windVector.x * windOffset * 0.62 * dt
@@ -1006,15 +1071,18 @@ function applyAtmosphereToScene() {
   const visibilityFactor = clamp01((20 - visibilityKm) / 20)
   const aqiHazeFactor = clamp01((props.aqi - 45) / 180)
   const precipitationHazeFactor = clamp01(props.precipitation / 16)
+  const snowstormHazeFactor = getSnowstormIntensity()
   const nightFactor = 1 - sky.daylight
   const extinctionCoefficient = 3.912 / (visibilityKm * 1000)
   const fogDensity = clamp(
-    extinctionCoefficient * (1 + aqiHazeFactor * 2.2 + precipitationHazeFactor * 0.9),
+    extinctionCoefficient *
+      (1 + aqiHazeFactor * 2.2 + precipitationHazeFactor * 0.9 + snowstormHazeFactor * 1.8),
     0.000045,
-    0.0028,
+    0.0034,
   )
   const fogTint = getWeatherTint()
-  viewer.scene.fog.enabled = visibilityKm < 22 || props.aqi > 65 || props.precipitation > 0.2
+  viewer.scene.fog.enabled =
+    visibilityKm < 22 || props.aqi > 65 || props.precipitation > 0.2 || snowstormHazeFactor > 0
   viewer.scene.fog.renderable = true
   // Koschmieder 법칙의 소산 계수(3.912 / 가시거리)를 Cesium fog density에 매핑합니다.
   // 가시거리가 짧거나 AQI가 높을수록 지형과 3D Tiles가 기하급수적으로 부드럽게 묻히도록 합니다.
@@ -1023,14 +1091,22 @@ function applyAtmosphereToScene() {
   viewer.scene.backgroundColor = Color.lerp(
     Color.fromCssColorString(sky.daylight > 0.1 ? '#0f2747' : '#020617'),
     fogTint,
-    CesiumMath.lerp(0.08, 0.24, Math.max(visibilityFactor, aqiHazeFactor)),
+    CesiumMath.lerp(
+      0.08,
+      0.28,
+      Math.max(visibilityFactor, aqiHazeFactor, snowstormHazeFactor * 0.56),
+    ),
     new Color(),
   )
-  viewer.scene.fog.screenSpaceErrorFactor = CesiumMath.lerp(1.4, 3.2, visibilityFactor)
+  viewer.scene.fog.screenSpaceErrorFactor = CesiumMath.lerp(
+    1.4,
+    3.4,
+    Math.max(visibilityFactor, snowstormHazeFactor),
+  )
   viewer.scene.fog.visualDensityScalar = CesiumMath.lerp(
     0.16,
-    0.68,
-    Math.max(visibilityFactor, aqiHazeFactor),
+    0.72,
+    Math.max(visibilityFactor, aqiHazeFactor, snowstormHazeFactor),
   )
   if (viewer.scene.skyAtmosphere) {
     viewer.scene.skyAtmosphere.atmosphereLightIntensity = CesiumMath.lerp(3.0, 12.0, sky.daylight)
@@ -1040,7 +1116,9 @@ function applyAtmosphereToScene() {
     viewer.scene.skyAtmosphere.saturationShift =
       CesiumMath.lerp(-0.18, 0.08, sky.daylight) - visibilityFactor * 0.14 + aqiHazeFactor * 0.08
     viewer.scene.skyAtmosphere.brightnessShift =
-      CesiumMath.lerp(-0.55, 0.12, sky.daylight) - precipitationHazeFactor * 0.1
+      CesiumMath.lerp(-0.55, 0.12, sky.daylight) -
+      precipitationHazeFactor * 0.1 -
+      snowstormHazeFactor * 0.1
   }
   if (viewer.scene.light instanceof SunLight) {
     viewer.scene.light.intensity = CesiumMath.lerp(0.05, 2.0, sky.daylight)
@@ -1188,6 +1266,7 @@ defineExpose({
       ref="precipitationCanvas"
       class="pointer-events-none absolute inset-0 h-full w-full"
     ></canvas>
+    <div class="pointer-events-none absolute inset-0" :style="whiteoutOverlayStyle"></div>
     <div class="pointer-events-none absolute inset-0" :style="wetLensOverlayStyle">
       <span
         v-for="droplet in LENS_DROPLETS"
