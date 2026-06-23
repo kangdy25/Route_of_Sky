@@ -1,7 +1,85 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+import type { CSSProperties } from 'vue'
+
+const props = defineProps<{
   windSpeed: number
+  windDirectionDegrees: number
 }>()
+
+const normalizedDirection = computed(() => {
+  return ((Math.round(props.windDirectionDegrees) % 360) + 360) % 360
+})
+
+const windDirectionLabel = computed(() => {
+  const labels = [
+    '북풍',
+    '북북동풍',
+    '북동풍',
+    '동북동풍',
+    '동풍',
+    '동남동풍',
+    '남동풍',
+    '남남동풍',
+    '남풍',
+    '남남서풍',
+    '남서풍',
+    '서남서풍',
+    '서풍',
+    '서북서풍',
+    '북서풍',
+    '북북서풍',
+  ]
+  const index = Math.round(normalizedDirection.value / 22.5) % labels.length
+  return labels[index]
+})
+
+const windNeedleStyle = computed<CSSProperties>(() => ({
+  pointerEvents: 'none',
+  transform: `rotate(${normalizedDirection.value}deg)`,
+}))
+
+const windSpeedPercent = computed(() => {
+  return `${Math.min(100, Math.max(0, (props.windSpeed / 15) * 100))}%`
+})
+
+const windSpeedLabel = computed(() => {
+  if (props.windSpeed < 0.5) return '고요'
+  if (props.windSpeed < 3.4) return '실바람'
+  if (props.windSpeed < 5.5) return '남실바람'
+  if (props.windSpeed < 8) return '산들바람'
+  if (props.windSpeed < 10.8) return '건들바람'
+  return '강한 바람'
+})
+
+const windSpeedEnglishLabel = computed(() => {
+  if (props.windSpeed < 0.5) return 'Calm'
+  if (props.windSpeed < 3.4) return 'Light Air'
+  if (props.windSpeed < 5.5) return 'Light Breeze'
+  if (props.windSpeed < 8) return 'Gentle Breeze'
+  if (props.windSpeed < 10.8) return 'Moderate Breeze'
+  return 'Strong Breeze'
+})
+
+const windSummary = computed(() => {
+  if (props.windSpeed < 0.5) return '거의 무풍 →'
+  if (props.windSpeed < 5.5) return '안정 풍속 ↗'
+  if (props.windSpeed < 10.8) return '주의 풍속 ↗'
+  return '강풍 영향 ↗'
+})
+
+const windDescription = computed(() => {
+  if (props.windSpeed < 0.5) {
+    return '바람 영향이 거의 없어 강수 입자는 수직에 가깝게 떨어집니다.'
+  }
+  if (props.windSpeed < 5.5) {
+    return '현재 풍량은 비행 고도에서 안정적이며 강수 이동도 완만합니다.'
+  }
+  if (props.windSpeed < 10.8) {
+    return '풍속이 올라 강수 입자가 뚜렷하게 기울고 횡풍 영향이 커집니다.'
+  }
+  return '강한 바람으로 눈과 비가 빠르게 휘날리며 시정 저하가 커질 수 있습니다.'
+})
 </script>
 
 <template>
@@ -13,7 +91,7 @@ defineProps<{
         ></div>
         <span class="text-base font-bold text-cyan-50 uppercase">풍속</span>
       </div>
-      <span class="text-base font-semibold text-emerald-400 italic">적정 풍속 ↗</span>
+      <span class="text-base font-semibold text-emerald-400 italic">{{ windSummary }}</span>
     </div>
     <div class="flex items-center gap-8">
       <!-- Compass / Wind speed circular indicator -->
@@ -39,8 +117,8 @@ defineProps<{
 
         <!-- Compass Needle (glowing rotated line/arrow inside the dial) -->
         <div
-          class="absolute h-24 w-1 origin-center rotate-[225deg] transform rounded-full bg-gradient-to-b from-emerald-400 via-emerald-400 to-transparent shadow-[0_0_12px_rgba(52,211,153,0.6)]"
-          style="pointer-events: none"
+          class="absolute h-24 w-1 origin-center rounded-full bg-gradient-to-b from-emerald-400 via-emerald-400 to-transparent shadow-[0_0_12px_rgba(52,211,153,0.6)] transition-transform duration-700"
+          :style="windNeedleStyle"
         ></div>
 
         <!-- Center Value overlay -->
@@ -56,23 +134,25 @@ defineProps<{
       <div class="flex-1 space-y-4">
         <div class="flex flex-col gap-2 px-1">
           <span class="text-xl font-black text-emerald-400"
-            >남서풍
-            <span class="ml-2 font-mono text-xl font-semibold text-slate-200">225°</span></span
+            >{{ windDirectionLabel }}
+            <span class="ml-2 font-mono text-xl font-semibold text-slate-200"
+              >{{ normalizedDirection }}°</span
+            ></span
           >
           <span class="text-base font-bold text-slate-200 uppercase"
-            >산들바람 <br />
-            (Light Breeze)</span
+            >{{ windSpeedLabel }} <br />
+            ({{ windSpeedEnglishLabel }})</span
           >
         </div>
         <div class="h-6 w-full rounded-lg border border-cyan-300/10 bg-cyan-950/40 p-1.5">
           <!-- A small wind progress bar based on windSpeed (e.g. max 15 m/s) -->
           <div
             class="h-full rounded-md bg-gradient-to-r from-emerald-500/60 to-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)] transition-all duration-1000"
-            :style="{ width: Math.min(100, (windSpeed / 15) * 100) + '%' }"
+            :style="{ width: windSpeedPercent }"
           ></div>
         </div>
         <p class="px-1 text-sm leading-relaxed font-medium text-slate-200">
-          현재 비행 고도에서의 풍량은 비행하기에 매우 우호적입니다.
+          {{ windDescription }}
         </p>
       </div>
     </div>

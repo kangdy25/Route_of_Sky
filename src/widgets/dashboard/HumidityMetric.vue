@@ -1,7 +1,26 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+
+const props = defineProps<{
   humidity: number
 }>()
+
+const gaugeCircumference = 276.46
+const normalizedHumidity = computed(() => Math.min(100, Math.max(0, props.humidity)))
+const gaugeDashOffset = computed(() => {
+  return gaugeCircumference * (1 - normalizedHumidity.value / 100)
+})
+const activeBarCount = computed(() => Math.ceil(normalizedHumidity.value / 20))
+const humidityStatus = computed(() => {
+  if (normalizedHumidity.value < 35) return '건조'
+  if (normalizedHumidity.value > 75) return '습함'
+  return '안정'
+})
+const condensationLabel = computed(() => {
+  if (normalizedHumidity.value < 35) return '낮은 수분도 ↗'
+  if (normalizedHumidity.value > 75) return '높은 응결도 ↗'
+  return '안정 응결도 ↗'
+})
 </script>
 
 <template>
@@ -11,7 +30,7 @@ defineProps<{
         <div class="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.6)]"></div>
         <span class="text-base font-bold text-cyan-50 uppercase">습도</span>
       </div>
-      <span class="text-base font-semibold text-cyan-400 italic">낮은 응결도 ↗</span>
+      <span class="text-base font-semibold text-cyan-400 italic">{{ condensationLabel }}</span>
     </div>
     <div class="flex items-center gap-8">
       <!-- Enlarged Circular Gauge -->
@@ -34,7 +53,7 @@ defineProps<{
             stroke="url(#humGradient)"
             stroke-width="7"
             stroke-dasharray="276.46"
-            stroke-dashoffset="110"
+            :stroke-dashoffset="gaugeDashOffset"
             stroke-linecap="round"
             class="drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"
           />
@@ -49,7 +68,9 @@ defineProps<{
           <span class="text-4xl leading-none font-black text-white"
             >{{ humidity }}<span class="ml-1 text-xl font-normal text-slate-200">%</span></span
           >
-          <span class="mt-2 text-base font-black text-cyan-400 uppercase">안정</span>
+          <span class="mt-2 text-base font-black text-cyan-400 uppercase">{{
+            humidityStatus
+          }}</span>
         </div>
       </div>
       <div class="flex-1">
@@ -59,7 +80,9 @@ defineProps<{
             :key="i"
             :class="[
               'rounded-md border border-cyan-300/10',
-              i <= 3 ? 'bg-cyan-400/45 shadow-[0_0_10px_rgba(34,211,238,0.28)]' : 'bg-cyan-950/35',
+              i <= activeBarCount
+                ? 'bg-cyan-400/45 shadow-[0_0_10px_rgba(34,211,238,0.28)]'
+                : 'bg-cyan-950/35',
             ]"
           ></div>
         </div>

@@ -7,6 +7,8 @@ export interface WeatherState {
   humidity: number
   /** 현재 풍속입니다. 단위는 m/s입니다. */
   windSpeed: number
+  /** 바람이 불어오는 방향입니다. 0도는 북풍, 225도는 남서풍입니다. */
+  windDirectionDegrees: number
   /** 대기질 지수입니다. */
   aqi: number
   /** 하늘을 덮은 구름의 비율입니다. 0부터 100까지의 백분율입니다. */

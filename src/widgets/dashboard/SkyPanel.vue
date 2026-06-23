@@ -9,11 +9,13 @@ withDefaults(
     cloudCover?: number
     precipitation?: number
     visibility?: number
+    temperature?: number
   }>(),
   {
     cloudCover: 45,
     precipitation: 0.0,
     visibility: 15.0,
+    temperature: 18,
   },
 )
 </script>
@@ -25,7 +27,7 @@ withDefaults(
       <CloudCoverMetric :cloud-cover="cloudCover" />
 
       <!-- 강수량 지표입니다. -->
-      <PrecipitationMetric :precipitation="precipitation" />
+      <PrecipitationMetric :precipitation="precipitation" :temperature="temperature" />
 
       <!-- 가시거리 지표입니다. -->
       <VisibilityMetric :visibility="visibility" />

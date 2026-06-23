@@ -8,6 +8,7 @@ export const useWeatherStore = defineStore('weather', () => {
   const temperature = ref(defaultWeatherState.temperature)
   const humidity = ref(defaultWeatherState.humidity)
   const windSpeed = ref(defaultWeatherState.windSpeed)
+  const windDirectionDegrees = ref(defaultWeatherState.windDirectionDegrees)
   const aqi = ref(defaultWeatherState.aqi)
   const cloudCover = ref(defaultWeatherState.cloudCover)
   const precipitation = ref(defaultWeatherState.precipitation)
@@ -18,6 +19,7 @@ export const useWeatherStore = defineStore('weather', () => {
     temperature,
     humidity,
     windSpeed,
+    windDirectionDegrees,
     aqi,
     cloudCover,
     precipitation,
