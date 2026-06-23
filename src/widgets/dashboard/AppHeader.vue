@@ -1,3 +1,9 @@
+<script setup lang="ts">
+const emit = defineEmits<{
+  flyToJamsil: []
+}>()
+</script>
+
 <template>
   <header
     class="pointer-events-auto relative z-10 flex items-center justify-between rounded-lg border border-cyan-300/20 bg-slate-950/60 px-5 py-3 shadow-[inset_0_0_24px_rgba(34,211,238,0.12),0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
@@ -43,6 +49,34 @@
     </div>
 
     <div class="flex gap-4">
+      <button
+        type="button"
+        class="rounded-lg border border-cyan-300/25 bg-slate-950/55 p-3 text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] backdrop-blur-md transition-all hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/45 focus:outline-none"
+        title="Jamsil fly-through"
+        aria-label="Jamsil fly-through"
+        @click.stop="emit('flyToJamsil')"
+      >
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 17c3.2-4.8 6.1-6.7 9-5.6 2.2.8 3.6.3 5-1.4"
+          ></path>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M14 5h5v5"
+          ></path>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 17a2 2 0 100 4 2 2 0 000-4zm12-12a2 2 0 100 4 2 2 0 000-4z"
+          ></path>
+        </svg>
+      </button>
       <button
         class="rounded-lg border border-cyan-300/25 bg-slate-950/55 p-3 text-xl text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] backdrop-blur-md transition-all hover:border-cyan-200/70 hover:bg-cyan-400/15"
       >

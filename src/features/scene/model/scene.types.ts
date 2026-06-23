@@ -1,3 +1,5 @@
+// 3D scene 모듈들이 공유하는 공개 타입입니다.
+// Vue props, Cesium controller, canvas renderer 사이의 계약을 여기로 모읍니다.
 export interface SceneWeatherState {
   time: number
   cloudCover: number
@@ -18,14 +20,6 @@ export interface CameraWaypoint {
   pitchDegrees?: number
   rollDegrees?: number
   duration?: number
-}
-
-export interface LensDroplet {
-  left: number
-  top: number
-  size: number
-  stretch: number
-  alpha: number
 }
 
 export interface SkyPhase {

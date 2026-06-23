@@ -11,7 +11,7 @@ import {
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 import { cesiumIonAccessToken, hasCesiumIonAccessToken } from '@/shared/config/env'
-import { GOOGLE_3D_TILES_ION_ASSET_ID, LENS_DROPLETS } from '@/features/scene/model/scene.constants'
+import { GOOGLE_3D_TILES_ION_ASSET_ID } from '@/features/scene/model/scene.constants'
 import type { CameraWaypoint, SceneWeatherState } from '@/features/scene/model/scene.types'
 import {
   CameraFlyToController,
@@ -23,17 +23,17 @@ import {
 import { CloudController } from '@/features/scene/lib/clouds'
 import {
   getAtmosphereOverlayStyle,
-  getLensDropletStyle as resolveLensDropletStyle,
   getMistOverlayStyle,
   getSkyTimeStyle,
   getTwilightCloudGlowStyle,
-  getWetLensOverlayStyle,
   getWhiteoutOverlayStyle,
 } from '@/features/scene/lib/overlayStyles'
 import { ScreenWeatherRenderer } from '@/features/scene/lib/screenWeather'
 import { getSkyPhase, getSunPositionForTime } from '@/features/scene/lib/sky'
 import { WeatherPostProcessController } from '@/features/scene/lib/weatherPostProcess'
 
+// 이 컴포넌트는 Cesium Viewer와 Vue 템플릿을 연결하는 조립자 역할만 맡습니다.
+// 실제 날씨 계산, 캔버스 렌더링, primitive 관리는 각 lib 모듈에 위임합니다.
 const props = withDefaults(
   defineProps<{
     time?: number
@@ -67,12 +67,15 @@ const sunGlowStyle = ref<Record<string, string | number>>({ opacity: 0 })
 
 let viewer: Viewer | null = null
 let removeSunGlowUpdater: (() => void) | null = null
+let stopTilesetRenderSync: (() => void) | null = null
 let destroyed = false
 
 const sunPositionScratch = new Cartesian3()
 const sunWindowScratch = new Cartesian2()
 const sunToCameraScratch = new Cartesian3()
 
+// props를 모듈들이 공유할 수 있는 단일 상태 객체로 정규화합니다.
+// 계산 모듈은 Vue props에 직접 의존하지 않고 SceneWeatherState만 받습니다.
 const sceneState = computed<SceneWeatherState>(() => ({
   time: props.time,
   cloudCover: props.cloudCover,
@@ -98,14 +101,9 @@ const cameraController = new CameraFlyToController(() => viewer)
 
 const atmosphereOverlayStyle = computed(() => getAtmosphereOverlayStyle(sceneState.value))
 const mistOverlayStyle = computed(() => getMistOverlayStyle(sceneState.value))
-const wetLensOverlayStyle = computed(() => getWetLensOverlayStyle(sceneState.value))
 const whiteoutOverlayStyle = computed(() => getWhiteoutOverlayStyle(sceneState.value))
 const skyTimeStyle = computed(() => getSkyTimeStyle(sceneState.value))
 const twilightCloudGlowStyle = computed(() => getTwilightCloudGlowStyle(sceneState.value))
-
-function getLensDropletStyle(droplet: (typeof LENS_DROPLETS)[number]) {
-  return resolveLensDropletStyle(droplet, sceneState.value)
-}
 
 function updateSunGlowPosition() {
   if (!viewer || viewer.isDestroyed()) {
@@ -116,6 +114,7 @@ function updateSunGlowPosition() {
   const sky = getSkyPhase(sceneState.value.time)
   const sunPosition = getSunPositionForTime(viewer.clock.currentTime, sunPositionScratch)
   const toSun = Cartesian3.subtract(sunPosition, viewer.camera.positionWC, sunToCameraScratch)
+  // 태양이 카메라 뒤에 있을 때는 DOM glow를 숨겨 Cesium 태양 위치와 어긋나지 않게 합니다.
   const isInFrontOfCamera = Cartesian3.dot(toSun, viewer.camera.directionWC) > 0
   const windowPosition = isInFrontOfCamera
     ? SceneTransforms.worldToWindowCoordinates(viewer.scene, sunPosition, sunWindowScratch)
@@ -136,8 +135,11 @@ function updateSunGlowPosition() {
 }
 
 function applySceneState() {
+  screenWeatherRenderer.update()
+
   if (!viewer) return
 
+  // 시간 변경은 태양, 대기, 구름, 후처리 uniform에 모두 영향을 주므로 한 진입점에서 동기화합니다.
   applySceneTime(viewer, sceneState.value)
   updateSunGlowPosition()
   applyAtmosphereToScene(viewer, sceneState.value)
@@ -182,6 +184,8 @@ function initializeViewer() {
 async function loadGooglePhotorealisticTiles() {
   if (!viewer) return
 
+  stopTilesetRenderSync?.()
+  stopTilesetRenderSync = null
   isTilesLoading.value = true
   statusMessage.value = 'Loading Google Photorealistic 3D Tiles'
 
@@ -194,13 +198,78 @@ async function loadGooglePhotorealisticTiles() {
     if (!viewer || destroyed) return
 
     viewer.scene.primitives.add(tileset)
-    statusMessage.value = ''
+    stopTilesetRenderSync = keepRenderingUntilInitialTilesLoaded(viewer, tileset, () => {
+      if (destroyed) return
+
+      isTilesLoading.value = false
+      statusMessage.value = ''
+    })
   } catch (error) {
     console.error(error)
     statusMessage.value = 'Unable to load Google 3D Tiles asset'
-  } finally {
     isTilesLoading.value = false
   }
+}
+
+function keepRenderingUntilInitialTilesLoaded(
+  activeViewer: Viewer,
+  tileset: Cesium3DTileset,
+  onInitialTilesLoaded: () => void,
+) {
+  let animationFrame = 0
+  let stopped = false
+  const startedAt = window.performance.now()
+  const removeListeners: Array<() => void> = []
+
+  const requestRender = () => {
+    if (destroyed || activeViewer.isDestroyed()) return
+
+    activeViewer.scene.requestRender()
+  }
+
+  const stop = () => {
+    if (stopped) return
+
+    stopped = true
+    if (animationFrame) {
+      window.cancelAnimationFrame(animationFrame)
+    }
+    for (const removeListener of removeListeners) {
+      removeListener()
+    }
+    if (stopTilesetRenderSync === stop) {
+      stopTilesetRenderSync = null
+    }
+  }
+
+  const finishInitialLoad = () => {
+    requestRender()
+    onInitialTilesLoaded()
+    stop()
+  }
+
+  const tick = () => {
+    if (stopped) return
+
+    requestRender()
+    if (window.performance.now() - startedAt > 10000) {
+      onInitialTilesLoaded()
+      stop()
+      return
+    }
+
+    animationFrame = window.requestAnimationFrame(tick)
+  }
+
+  removeListeners.push(tileset.tileLoad.addEventListener(requestRender))
+  removeListeners.push(tileset.loadProgress.addEventListener(requestRender))
+  removeListeners.push(tileset.initialTilesLoaded.addEventListener(finishInitialLoad))
+  removeListeners.push(tileset.allTilesLoaded.addEventListener(finishInitialLoad))
+
+  requestRender()
+  animationFrame = window.requestAnimationFrame(tick)
+
+  return stop
 }
 
 function flyToLocation(target: CameraWaypoint) {
@@ -224,13 +293,15 @@ watch(
 
 onMounted(async () => {
   await nextTick()
-  screenWeatherRenderer.start()
+  screenWeatherRenderer.update()
   initializeViewer()
 })
 
 onBeforeUnmount(() => {
   destroyed = true
   cameraController.dispose()
+  stopTilesetRenderSync?.()
+  stopTilesetRenderSync = null
   removeSunGlowUpdater?.()
   removeSunGlowUpdater = null
   cloudController.dispose()
@@ -273,14 +344,6 @@ defineExpose({
       class="pointer-events-none absolute inset-0 h-full w-full"
     ></canvas>
     <div class="pointer-events-none absolute inset-0" :style="whiteoutOverlayStyle"></div>
-    <div class="pointer-events-none absolute inset-0" :style="wetLensOverlayStyle">
-      <span
-        v-for="droplet in LENS_DROPLETS"
-        :key="`${droplet.left}-${droplet.top}`"
-        class="lens-droplet absolute"
-        :style="getLensDropletStyle(droplet)"
-      ></span>
-    </div>
     <div
       v-if="statusMessage || isTilesLoading"
       class="pointer-events-none absolute bottom-5 left-5 rounded-full border border-white/10 bg-slate-950/60 px-4 py-2 text-sm font-bold text-cyan-200 uppercase backdrop-blur-md"
@@ -309,32 +372,5 @@ defineExpose({
 #cesiumContainer :deep(.cesium-viewer-bottom) {
   bottom: 0.75rem;
   left: 1rem;
-}
-
-.lens-droplet {
-  border-radius: 9999px 9999px 9999px 9999px / 78% 78% 118% 118%;
-  background:
-    radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.95), transparent 14%),
-    radial-gradient(circle at 70% 84%, rgba(14, 165, 233, 0.34), transparent 46%),
-    linear-gradient(145deg, rgba(241, 245, 249, 0.42), rgba(15, 23, 42, 0.18));
-  border: 1px solid rgba(241, 245, 249, 0.42);
-  box-shadow:
-    inset 5px 7px 12px rgba(255, 255, 255, 0.26),
-    inset -7px -10px 16px rgba(15, 23, 42, 0.28),
-    0 3px 14px rgba(2, 6, 23, 0.26),
-    0 0 24px rgba(125, 211, 252, 0.18);
-  backdrop-filter: blur(3.4px) saturate(1.35) contrast(1.08);
-}
-
-.lens-droplet::after {
-  position: absolute;
-  right: 20%;
-  bottom: 12%;
-  width: 34%;
-  height: 18%;
-  content: '';
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.22);
-  filter: blur(1px);
 }
 </style>

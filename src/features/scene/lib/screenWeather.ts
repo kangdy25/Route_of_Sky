@@ -2,9 +2,11 @@ import { Math as CesiumMath } from 'cesium'
 import type { Ref } from 'vue'
 
 import type { SceneWeatherState } from '../model/scene.types'
-import { clamp, clamp01, smoothstep } from './math'
+import { clampToRange, clampToUnitInterval, smoothstep } from './math'
 import { getPrecipitationMode, getSnowstormIntensity, getThunderstormIntensity } from './weather'
 
+// 화면 공간의 비, 눈, 번개를 2D canvas에 그립니다.
+// Cesium scene에 입자를 넣지 않아도 UI 위에서 빠르게 날씨 효과를 바꿀 수 있습니다.
 interface ScreenWeatherParticle {
   x: number
   y: number
@@ -50,6 +52,15 @@ export class ScreenWeatherRenderer {
     this.getState = getState
   }
 
+  update() {
+    if (getPrecipitationMode(this.getState())) {
+      this.start()
+      return
+    }
+
+    this.stop()
+  }
+
   start() {
     if (this.animationFrame) return
 
@@ -67,15 +78,23 @@ export class ScreenWeatherRenderer {
     this.particles = []
     this.lightningStrikes = []
     this.nextLightningAt = 0
+    this.clearCanvas()
   }
 
   private readonly renderFrame = (timestamp: number) => {
     const canvas = this.canvasRef.value
-    if (!canvas) return
+    if (!canvas) {
+      this.animationFrame = 0
+      return
+    }
 
     const context = canvas.getContext('2d')
-    if (!context) return
+    if (!context) {
+      this.animationFrame = 0
+      return
+    }
 
+    // CSS 크기는 레이아웃 기준, 실제 canvas 픽셀은 devicePixelRatio 기준으로 맞춰 선명도를 유지합니다.
     const { width, height, pixelRatio } = this.resizeCanvas(canvas)
     const state = this.getState()
     const mode = getPrecipitationMode(state)
@@ -86,9 +105,10 @@ export class ScreenWeatherRenderer {
     context.clearRect(0, 0, width, height)
 
     if (mode) {
-      const intensity = clamp01(state.precipitation / 12)
-      const windOffset = clamp(state.windSpeed, 0, 28) * (mode === 'snow' ? 14 : 9)
+      const intensity = clampToUnitInterval(state.precipitation / 12)
+      const windOffset = clampToRange(state.windSpeed, 0, 28) * (mode === 'snow' ? 14 : 9)
       const baseWindVector = this.getWindScreenVector(state)
+      // 눈보라는 실제 풍향보다 화면 수평 흐름을 더 강하게 섞어 whiteout 느낌을 만듭니다.
       const windVector =
         mode === 'snow'
           ? this.getSnowstormScreenVector(baseWindVector, getSnowstormIntensity(state))
@@ -101,7 +121,7 @@ export class ScreenWeatherRenderer {
           const snowstormIntensity = getSnowstormIntensity(state)
           particle.phase +=
             dt *
-            CesiumMath.lerp(2.8, 5.6, clamp01(state.windSpeed / 14)) *
+            CesiumMath.lerp(2.8, 5.6, clampToUnitInterval(state.windSpeed / 14)) *
             CesiumMath.lerp(1, 0.74, snowstormIntensity)
           particle.x +=
             (windVector.x * windOffset * CesiumMath.lerp(0.28, 0.66, snowstormIntensity) +
@@ -121,6 +141,7 @@ export class ScreenWeatherRenderer {
         }
 
         if (particle.y > height + 40 || particle.x < -80 || particle.x > width + 80) {
+          // 화면 밖으로 나간 입자는 새 객체를 만들기보다 재사용해 프레임 중 GC 부담을 줄입니다.
           Object.assign(particle, this.createParticle(width, height, state, true))
         }
       }
@@ -173,12 +194,14 @@ export class ScreenWeatherRenderer {
     const mode = getPrecipitationMode(state)
     if (!mode) return 0
 
-    const intensity = clamp01(state.precipitation / 12)
-    const humidityBoost = CesiumMath.lerp(0.82, 1.18, clamp01(state.humidity / 100))
-    const windBoost = mode === 'snow' ? CesiumMath.lerp(1, 1.32, clamp01(state.windSpeed / 14)) : 1
+    const intensity = clampToUnitInterval(state.precipitation / 12)
+    const humidityBoost = CesiumMath.lerp(0.82, 1.18, clampToUnitInterval(state.humidity / 100))
+    const windBoost =
+      mode === 'snow' ? CesiumMath.lerp(1, 1.32, clampToUnitInterval(state.windSpeed / 14)) : 1
     const snowstormBoost =
       mode === 'snow' ? CesiumMath.lerp(1, 1.22, getSnowstormIntensity(state)) : 1
-    const baseCount = mode === 'snow' ? 360 : 360
+    // 기본 입자 수는 비/눈 모두 충분히 채우고, 강도에 따라 peakCount까지 보간합니다.
+    const baseCount = 360
     const peakCount = mode === 'snow' ? 1550 : 1100
 
     return Math.round(
@@ -186,10 +209,18 @@ export class ScreenWeatherRenderer {
     )
   }
 
+  private clearCanvas() {
+    const canvas = this.canvasRef.value
+    const context = canvas?.getContext('2d')
+    if (!canvas || !context) return
+
+    context.clearRect(0, 0, canvas.width, canvas.height)
+  }
+
   private createParticle(width: number, height: number, state: SceneWeatherState, fromTop = false) {
     const mode = getPrecipitationMode(state)
-    const intensity = clamp01(state.precipitation / 12)
-    const windFactor = clamp01(state.windSpeed / 14)
+    const intensity = clampToUnitInterval(state.precipitation / 12)
+    const windFactor = clampToUnitInterval(state.windSpeed / 14)
     const snowstormIntensity = getSnowstormIntensity(state)
     const isSnow = mode === 'snow'
 
@@ -289,7 +320,9 @@ export class ScreenWeatherRenderer {
     if (windOffset > 42 || snowstormIntensity > 0.08) {
       const streakLength = windOffset * CesiumMath.lerp(0.16, 0.38, snowstormIntensity)
       context.globalAlpha =
-        particle.alpha * clamp01(windOffset / 150) * CesiumMath.lerp(0.42, 0.68, snowstormIntensity)
+        particle.alpha *
+        clampToUnitInterval(windOffset / 150) *
+        CesiumMath.lerp(0.42, 0.68, snowstormIntensity)
       context.strokeStyle = 'rgba(241, 245, 249, 0.7)'
       context.lineWidth = Math.max(0.8, radius * CesiumMath.lerp(0.32, 0.52, snowstormIntensity))
       context.beginPath()
@@ -311,6 +344,7 @@ export class ScreenWeatherRenderer {
     let previousY = -height * CesiumMath.lerp(0.02, 0.14, Math.random())
     let branchBudget = Math.round(CesiumMath.lerp(1, 4, intensity))
 
+    // 메인 번개 줄기를 위에서 아래로 진행시키고, 강도가 높을수록 가지를 더 자주 붙입니다.
     for (let step = 1; step <= steps; step += 1) {
       const progress = step / steps
       const reach = Math.sin(progress * Math.PI)
@@ -388,6 +422,7 @@ export class ScreenWeatherRenderer {
 
     if (timestamp >= this.nextLightningAt) {
       this.lightningStrikes.push(this.createLightningStrike(timestamp, width, height, intensity))
+      // 강한 뇌우일수록 다음 번개까지의 간격을 줄입니다.
       this.nextLightningAt =
         timestamp +
         CesiumMath.lerp(3600, 900, intensity) * CesiumMath.lerp(0.54, 1.36, Math.random())
@@ -408,13 +443,14 @@ export class ScreenWeatherRenderer {
 
     let flashAlpha = 0
     context.save()
+    // lighter 합성으로 푸른 외곽광과 흰 코어가 겹칠 때 번쩍임이 살아나게 합니다.
     context.globalCompositeOperation = 'lighter'
     context.lineCap = 'round'
     context.lineJoin = 'round'
 
     for (const strike of this.lightningStrikes) {
       const age = timestamp - strike.bornAt
-      const progress = clamp01(age / strike.duration)
+      const progress = clampToUnitInterval(age / strike.duration)
       const flicker = 0.72 + Math.sin(age * 0.08) * 0.28
       const alpha = (1 - smoothstep(0.18, 1, progress)) * flicker
       flashAlpha += strike.flash * alpha
@@ -442,7 +478,7 @@ export class ScreenWeatherRenderer {
 
     context.save()
     context.globalCompositeOperation = 'screen'
-    context.globalAlpha = clamp(flashAlpha, 0, 0.42)
+    context.globalAlpha = clampToRange(flashAlpha, 0, 0.42)
     context.fillStyle = 'rgba(219, 234, 254, 0.9)'
     context.fillRect(0, 0, width, height)
     context.restore()

@@ -14,10 +14,11 @@ import {
 
 import { SEOUL_JAMSIL_VIEW } from '../model/scene.constants'
 import type { CameraWaypoint, SceneWeatherState } from '../model/scene.types'
-import { clamp, clamp01, lerpRadians } from './math'
+import { clampToRange, clampToUnitInterval, lerpRadians } from './math'
 import { getSceneDateFromLocalTime, getSkyPhase } from './sky'
 import { getSnowstormIntensity, getWeatherTint } from './weather'
 
+// Cesium Viewer 자체의 상태를 다루는 모듈입니다.
 export function configureViewerScene(viewer: Viewer) {
   viewer.scene.backgroundColor = Color.fromCssColorString('#020617')
   if (viewer.scene.skyAtmosphere) {
@@ -81,14 +82,16 @@ export function setInitialJamsilView(viewer: Viewer) {
 
 export function applyAtmosphereToScene(viewer: Viewer, state: SceneWeatherState) {
   const sky = getSkyPhase(state.time)
-  const visibilityKm = clamp(state.visibility, 0.1, 30)
-  const visibilityFactor = clamp01((20 - visibilityKm) / 20)
-  const aqiHazeFactor = clamp01((state.aqi - 45) / 180)
-  const precipitationHazeFactor = clamp01(state.precipitation / 16)
+  const visibilityKm = clampToRange(state.visibility, 0.1, 30)
+  const visibilityFactor = clampToUnitInterval((20 - visibilityKm) / 20)
+  const aqiHazeFactor = clampToUnitInterval((state.aqi - 45) / 180)
+  const precipitationHazeFactor = clampToUnitInterval(state.precipitation / 16)
   const snowstormHazeFactor = getSnowstormIntensity(state)
   const nightFactor = 1 - sky.daylight
+  // Koschmieder 법칙의 소산 계수(3.912 / 가시거리)를 Cesium fog density로 압축해 사용합니다.
+  // AQI, 강수, 눈보라가 높아질수록 같은 가시거리에서도 안개가 더 두껍게 보입니다.
   const extinctionCoefficient = 3.912 / (visibilityKm * 1000)
-  const fogDensity = clamp(
+  const fogDensity = clampToRange(
     extinctionCoefficient *
       (1 + aqiHazeFactor * 2.2 + precipitationHazeFactor * 0.9 + snowstormHazeFactor * 1.8),
     0.000045,
@@ -121,6 +124,7 @@ export function applyAtmosphereToScene(viewer: Viewer, state: SceneWeatherState)
     Math.max(visibilityFactor, aqiHazeFactor, snowstormHazeFactor),
   )
   if (viewer.scene.skyAtmosphere) {
+    // Cesium Fog에는 직접 색을 넣을 수 없어 skyAtmosphere와 backgroundColor를 함께 조정합니다.
     viewer.scene.skyAtmosphere.atmosphereLightIntensity = CesiumMath.lerp(3.0, 12.0, sky.daylight)
     viewer.scene.skyAtmosphere.hueShift =
       CesiumMath.lerp(-0.08, 0.02, sky.daylight) + aqiHazeFactor * 0.06
@@ -148,6 +152,7 @@ export function applySceneTime(viewer: Viewer, state: SceneWeatherState) {
   const startTime = JulianDate.fromDate(getSceneDateFromLocalTime(0))
   const stopTime = JulianDate.fromDate(getSceneDateFromLocalTime(24))
 
+  // 실제 애니메이션 시계가 아니라 선택된 로컬 시간을 태양/달 위치 계산에 고정하기 위한 설정입니다.
   viewer.clock.startTime = startTime
   viewer.clock.stopTime = stopTime
   viewer.clock.currentTime = currentTime
@@ -189,6 +194,7 @@ export class CameraFlyToController {
     const progress = { value: 0 }
     const currentPosition = new Cartesian3()
 
+    // Cesium flyTo 대신 GSAP으로 보간해 기존 카메라 제어감과 easing을 유지합니다.
     this.activeTween = gsap.to(progress, {
       value: 1,
       duration: target.duration ?? 3.2,

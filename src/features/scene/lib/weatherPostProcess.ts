@@ -2,10 +2,12 @@ import { PostProcessStage, PostProcessStageSampleMode, Viewer } from 'cesium'
 
 import { WEATHER_POST_PROCESS_STAGE_NAME } from '../model/scene.constants'
 import type { SceneWeatherState } from '../model/scene.types'
-import { clamp01 } from './math'
+import { clampToUnitInterval } from './math'
 import { getSkyPhase } from './sky'
 import { getPrecipitationMode } from './weather'
 
+// 비/눈이 있을 때만 Cesium 최종 프레임에 색보정 post-process를 얹습니다.
+// DOM 오버레이와 달리 3D Tiles 자체의 노출, 채도, 색온도를 함께 바꾸는 역할입니다.
 export class WeatherPostProcessController {
   private stage: PostProcessStage | null = null
   private readonly getViewer: () => Viewer | null
@@ -51,6 +53,7 @@ export class WeatherPostProcessController {
     const viewer = this.getViewer()
     if (!viewer || this.stage) return
 
+    // uniform을 함수로 두면 stage를 재생성하지 않아도 최신 날씨 상태가 매 프레임 반영됩니다.
     this.stage = viewer.scene.postProcessStages.add(
       new PostProcessStage({
         name: WEATHER_POST_PROCESS_STAGE_NAME,
@@ -73,9 +76,10 @@ export class WeatherPostProcessController {
           }
         `,
         uniforms: {
-          u_intensity: () => clamp01(this.getState().precipitation / 12),
+          u_intensity: () => clampToUnitInterval(this.getState().precipitation / 12),
           u_night: () => 1 - getSkyPhase(this.getState().time).daylight,
-          u_haze: () => clamp01((10 - this.getState().visibility) / 10 + this.getState().aqi / 240),
+          u_haze: () =>
+            clampToUnitInterval((10 - this.getState().visibility) / 10 + this.getState().aqi / 240),
         },
       }),
     ) as PostProcessStage

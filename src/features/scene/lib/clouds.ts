@@ -10,10 +10,14 @@ import {
 
 import { CLOUD_LOD, SEOUL_JAMSIL_VIEW } from '../model/scene.constants'
 import type { SceneWeatherState } from '../model/scene.types'
-import { clamp, clamp01 } from './math'
+import { clampToRange, clampToUnitInterval } from './math'
 import { getSkyPhase } from './sky'
 import { getWeatherTint } from './weather'
 
+const GOLDEN_ANGLE_RADIANS = Math.PI * (3 - Math.sqrt(5))
+
+// Cesium CloudCollection의 생성, 갱신, 해제를 한곳에서 관리합니다.
+// 운량이 낮을 때는 primitive를 제거해 불필요한 WebGL 리소스를 남기지 않습니다.
 export class CloudController {
   private collection: CloudCollection | null = null
   private readonly getViewer: () => Viewer | null
@@ -29,7 +33,7 @@ export class CloudController {
     if (!viewer) return
 
     const state = this.getState()
-    const cover = clamp(state.cloudCover, 0, 100)
+    const cover = clampToRange(state.cloudCover, 0, 100)
     if (cover < CLOUD_LOD.minimumCover) {
       this.dispose()
       viewer.scene.requestRender()
@@ -42,15 +46,17 @@ export class CloudController {
     const sky = getSkyPhase(state.time)
     const desiredClouds = Math.round(CesiumMath.lerp(4, CLOUD_LOD.maxClouds, cover / 100))
     const brightness =
-      CesiumMath.lerp(0.38, 0.92, sky.daylight) - clamp01(state.precipitation / 14) * 0.16
+      CesiumMath.lerp(0.38, 0.92, sky.daylight) -
+      clampToUnitInterval(state.precipitation / 14) * 0.16
     const alpha = CesiumMath.lerp(0.36, 0.86, cover / 100)
     const tint = getWeatherTint(state)
-    const twilightWarmth = clamp01((sky.dawn + sky.dusk) * cover * 0.012)
+    const twilightWarmth = clampToUnitInterval((sky.dawn + sky.dusk) * cover * 0.012)
     const cloudRed = CesiumMath.lerp(tint.red, 1.0, twilightWarmth * 0.52)
     const cloudGreen = CesiumMath.lerp(tint.green, 0.62, twilightWarmth * 0.42)
     const cloudBlue = CesiumMath.lerp(tint.blue, 0.56, twilightWarmth * 0.36)
 
     this.collection.show = desiredClouds > 0
+    // noiseOffset을 날씨 상태와 시간에 묶어 구름이 고정된 텍스처처럼 보이지 않게 합니다.
     this.collection.noiseOffset = new Cartesian3(
       cover * 0.012,
       state.time * 0.018,
@@ -59,9 +65,10 @@ export class CloudController {
 
     for (let index = 0; index < this.collection.length; index += 1) {
       const cloud: CumulusCloud = this.collection.get(index)
+      // 높은 고도에서는 일부 구름을 숨겨 멀리서 과밀하게 겹쳐 보이는 것을 줄입니다.
       const lodDistance = viewer.camera.positionCartographic.height > 5500 && index % 2 === 1
       cloud.show = index < desiredClouds && !lodDistance
-      cloud.brightness = clamp(brightness, 0.26, 0.95)
+      cloud.brightness = clampToRange(brightness, 0.26, 0.95)
       cloud.color = new Color(cloudRed, cloudGreen, cloudBlue, alpha)
       cloud.slice = 0.38 + ((index * 19) % 24) / 100
     }
@@ -93,6 +100,7 @@ export class CloudController {
     clouds.noiseOffset = new Cartesian3(0.4, 0.2, 0.6)
     this.collection = clouds
 
+    // 황금각 기반 분포로 잠실 주변에 구름을 균일하게 흩뿌립니다.
     for (let index = 0; index < CLOUD_LOD.maxClouds; index += 1) {
       const width = 520 + ((index * 97) % 520)
       const height = 260 + ((index * 53) % 280)
@@ -100,6 +108,7 @@ export class CloudController {
 
       clouds.add({
         position: this.getCloudPosition(index),
+        // scale은 화면 billboard 크기, maximumSize는 내부 볼륨 샘플링 범위를 결정합니다.
         scale: new Cartesian2(width, height),
         maximumSize: new Cartesian3(width * 0.92, height * 0.78, depth),
         slice: 0.44 + ((index * 17) % 18) / 100,
@@ -110,7 +119,7 @@ export class CloudController {
   }
 
   private getCloudPosition(index: number) {
-    const angle = index * 2.399963229728653
+    const angle = index * GOLDEN_ANGLE_RADIANS
     const radius = Math.sqrt((index + 0.5) / CLOUD_LOD.maxClouds)
     const longitude =
       SEOUL_JAMSIL_VIEW.longitude + Math.cos(angle) * radius * CLOUD_LOD.longitudeSpan
