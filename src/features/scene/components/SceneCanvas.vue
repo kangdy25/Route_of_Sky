@@ -237,11 +237,25 @@ const skyTimeStyle = computed(() => {
   const dawnWarmth = sky.dawn + sky.dusk
   const nightOpacity = 1 - sky.daylight
   const dayBlue = 0.28 + sky.daylight * 0.42
-  const horizonWarmth = 0.12 + dawnWarmth * 0.58
+  const horizonWarmth = 0.12 + dawnWarmth * 0.72
+  const roseGlow = dawnWarmth * clamp01(props.cloudCover / 90)
 
   return {
-    opacity: CesiumMath.lerp(0.66, 0.88, sky.daylight),
-    background: `radial-gradient(ellipse at 50% 82%, rgba(251, 146, 60, ${horizonWarmth}), rgba(245, 158, 11, ${dawnWarmth * 0.28}) 30%, rgba(180, 83, 9, ${dawnWarmth * 0.12}) 54%, transparent 72%), linear-gradient(180deg, rgba(56, 189, 248, ${dayBlue}) 0%, rgba(125, 211, 252, ${0.12 + sky.daylight * 0.18}) 32%, rgba(252, 211, 77, ${dawnWarmth * 0.2}) 56%, rgba(249, 115, 22, ${dawnWarmth * 0.22}) 74%, rgba(15, 23, 42, ${0.72 * nightOpacity}) 100%)`,
+    opacity: CesiumMath.lerp(0.66, 0.92, sky.daylight),
+    background: `radial-gradient(ellipse at 50% 82%, rgba(251, 146, 60, ${horizonWarmth}), rgba(244, 114, 182, ${roseGlow * 0.26}) 24%, rgba(245, 158, 11, ${dawnWarmth * 0.32}) 38%, rgba(180, 83, 9, ${dawnWarmth * 0.16}) 58%, transparent 76%), linear-gradient(180deg, rgba(56, 189, 248, ${dayBlue}) 0%, rgba(125, 211, 252, ${0.12 + sky.daylight * 0.18}) 30%, rgba(252, 211, 77, ${dawnWarmth * 0.24}) 54%, rgba(244, 114, 182, ${roseGlow * 0.18}) 68%, rgba(249, 115, 22, ${dawnWarmth * 0.28}) 80%, rgba(15, 23, 42, ${0.72 * nightOpacity}) 100%)`,
+  }
+})
+
+const twilightCloudGlowStyle = computed(() => {
+  const sky = getSkyPhase(props.time)
+  const twilight = clamp01(sky.dawn + sky.dusk)
+  const cloudFactor = clamp01((props.cloudCover - 18) / 82)
+  const precipitationDampening = CesiumMath.lerp(1, 0.62, clamp01(props.precipitation / 14))
+  const opacity = twilight * cloudFactor * precipitationDampening
+
+  return {
+    opacity,
+    background: `linear-gradient(180deg, transparent 0%, rgba(252, 211, 77, ${0.08 * opacity}) 34%, rgba(251, 146, 60, ${0.24 * opacity}) 58%, rgba(244, 114, 182, ${0.2 * opacity}) 76%, transparent 100%), radial-gradient(ellipse at 50% 72%, rgba(251, 113, 133, ${0.22 * opacity}), rgba(251, 146, 60, ${0.14 * opacity}) 38%, transparent 72%)`,
   }
 })
 
@@ -750,9 +764,9 @@ function getWeatherTint() {
   const sky = getSkyPhase(props.time)
   const dawnWarmth = sky.dawn + sky.dusk
   const dustFactor = clamp01((props.aqi - 55) / 210)
-  const clearRed = CesiumMath.lerp(0.58, 0.9, dawnWarmth)
-  const clearGreen = CesiumMath.lerp(0.66, 0.82, sky.daylight)
-  const clearBlue = CesiumMath.lerp(0.76, 0.92, sky.daylight)
+  const clearRed = CesiumMath.lerp(0.58, 0.96, dawnWarmth)
+  const clearGreen = CesiumMath.lerp(0.66, 0.82, sky.daylight) + dawnWarmth * 0.05
+  const clearBlue = CesiumMath.lerp(0.76, 0.92, sky.daylight) - dawnWarmth * 0.18
   const red = CesiumMath.lerp(clearRed, 0.78, dustFactor)
   const green = CesiumMath.lerp(clearGreen, 0.58, dustFactor)
   const blue = CesiumMath.lerp(clearBlue, 0.34, dustFactor)
@@ -832,6 +846,10 @@ function updateClouds() {
     CesiumMath.lerp(0.38, 0.92, sky.daylight) - clamp01(props.precipitation / 14) * 0.16
   const alpha = CesiumMath.lerp(0.36, 0.86, cover / 100)
   const tint = getWeatherTint()
+  const twilightWarmth = clamp01((sky.dawn + sky.dusk) * cover * 0.012)
+  const cloudRed = CesiumMath.lerp(tint.red, 1.0, twilightWarmth * 0.52)
+  const cloudGreen = CesiumMath.lerp(tint.green, 0.62, twilightWarmth * 0.42)
+  const cloudBlue = CesiumMath.lerp(tint.blue, 0.56, twilightWarmth * 0.36)
 
   cloudCollection.show = desiredClouds > 0
   cloudCollection.noiseOffset = new Cartesian3(cover * 0.012, props.time * 0.018, props.aqi * 0.002)
@@ -841,7 +859,7 @@ function updateClouds() {
     const lodDistance = viewer.camera.positionCartographic.height > 5500 && index % 2 === 1
     cloud.show = index < desiredClouds && !lodDistance
     cloud.brightness = clamp(brightness, 0.26, 0.95)
-    cloud.color = new Color(tint.red, tint.green, tint.blue, alpha)
+    cloud.color = new Color(cloudRed, cloudGreen, cloudBlue, alpha)
     cloud.slice = 0.38 + ((index * 19) % 24) / 100
   }
 
@@ -1256,6 +1274,10 @@ defineExpose({
       @contextmenu.prevent
     ></div>
     <div class="pointer-events-none absolute inset-0 mix-blend-screen" :style="skyTimeStyle"></div>
+    <div
+      class="pointer-events-none absolute inset-0 mix-blend-screen"
+      :style="twilightCloudGlowStyle"
+    ></div>
     <div
       class="pointer-events-none absolute h-24 w-24 rounded-full bg-amber-100/80 mix-blend-screen shadow-[0_0_34px_rgba(253,224,71,0.88),0_0_110px_rgba(251,146,60,0.68),0_0_190px_rgba(180,83,9,0.32)]"
       :style="sunGlowStyle"
