@@ -56,6 +56,7 @@ const CLOUD_LOD = {
   latitudeSpan: 0.08,
 }
 const PRECIPITATION_MODE_THRESHOLD = 0.05
+const THUNDERSTORM_PRECIPITATION_THRESHOLD = 12
 const WEATHER_POST_PROCESS_STAGE_NAME = 'route-of-sky-weather-grade'
 
 interface CameraWaypoint {
@@ -81,6 +82,22 @@ interface ScreenWeatherParticle {
 interface WindScreenVector {
   x: number
   y: number
+}
+
+interface LightningSegment {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  width: number
+  alpha: number
+}
+
+interface LightningStrike {
+  bornAt: number
+  duration: number
+  flash: number
+  segments: LightningSegment[]
 }
 
 const props = withDefaults(
@@ -123,6 +140,8 @@ let weatherPostProcessStage: PostProcessStage | null = null
 let screenWeatherAnimationFrame = 0
 let lastScreenWeatherFrame = 0
 let screenWeatherParticles: ScreenWeatherParticle[] = []
+let lightningStrikes: LightningStrike[] = []
+let nextLightningAt = 0
 const sunTransformScratch = new Matrix3()
 const sunPositionScratch = new Cartesian3()
 const sunWindowScratch = new Cartesian2()
@@ -132,12 +151,13 @@ const atmosphereOverlayStyle = computed(() => {
   const sky = getSkyPhase(props.time)
   const cloudAlpha = Math.min(0.34, Math.max(0.04, props.cloudCover / 280))
   const rainAlpha = Math.min(0.22, Math.max(0, props.precipitation / 360))
+  const stormAlpha = getThunderstormIntensity() * 0.32
   const hazeAlpha = Math.min(0.28, Math.max(0.02, (20 - props.visibility) / 80 + props.aqi / 900))
   const dustAlpha = CesiumMath.lerp(0, 0.2, clamp01((props.aqi - 80) / 180))
   const dimFactor = CesiumMath.lerp(0.92, 0.42, sky.daylight)
 
   return {
-    background: `radial-gradient(circle at 50% 35%, rgba(34, 211, 238, ${0.04 + sky.daylight * 0.04}), rgba(2, 6, 23, ${0.16 * dimFactor}) 52%, rgba(2, 6, 23, ${0.48 * dimFactor}) 100%), linear-gradient(180deg, rgba(120, 86, 28, ${dustAlpha * 0.55}) 0%, rgba(161, 98, 7, ${dustAlpha}) 58%, rgba(92, 64, 24, ${dustAlpha * 0.75}) 100%), linear-gradient(180deg, rgba(15, 23, 42, ${cloudAlpha * dimFactor}) 0%, rgba(8, 13, 25, ${(rainAlpha + 0.12) * dimFactor}) 52%, rgba(2, 6, 23, ${(hazeAlpha + 0.2) * dimFactor}) 100%)`,
+    background: `radial-gradient(circle at 50% 35%, rgba(34, 211, 238, ${0.04 + sky.daylight * 0.04}), rgba(2, 6, 23, ${0.16 * dimFactor}) 52%, rgba(2, 6, 23, ${0.48 * dimFactor}) 100%), linear-gradient(180deg, rgba(15, 23, 42, ${stormAlpha}) 0%, rgba(30, 41, 59, ${stormAlpha * 0.62}) 45%, rgba(2, 6, 23, ${stormAlpha * 0.86}) 100%), linear-gradient(180deg, rgba(120, 86, 28, ${dustAlpha * 0.55}) 0%, rgba(161, 98, 7, ${dustAlpha}) 58%, rgba(92, 64, 24, ${dustAlpha * 0.75}) 100%), linear-gradient(180deg, rgba(15, 23, 42, ${cloudAlpha * dimFactor}) 0%, rgba(8, 13, 25, ${(rainAlpha + 0.12) * dimFactor}) 52%, rgba(2, 6, 23, ${(hazeAlpha + 0.2) * dimFactor}) 100%)`,
   }
 })
 
@@ -215,6 +235,21 @@ function getSunPositionForTime(time: JulianDate, result: Cartesian3) {
 function getPrecipitationMode() {
   if (props.precipitation <= PRECIPITATION_MODE_THRESHOLD) return null
   return props.temperature <= 0 ? 'snow' : 'rain'
+}
+
+function getThunderstormIntensity() {
+  if (getPrecipitationMode() !== 'rain') return 0
+  if (props.precipitation < THUNDERSTORM_PRECIPITATION_THRESHOLD) return 0
+
+  const precipitationFactor = CesiumMath.lerp(
+    0.34,
+    1,
+    clamp01((props.precipitation - THUNDERSTORM_PRECIPITATION_THRESHOLD) / 4),
+  )
+  const cloudFactor = CesiumMath.lerp(0.55, 1, clamp01((props.cloudCover - 55) / 45))
+  const humidityFactor = CesiumMath.lerp(0.72, 1, clamp01((props.humidity - 55) / 45))
+
+  return clamp01(precipitationFactor * cloudFactor * humidityFactor)
 }
 
 function getScreenWeatherTargetCount() {
@@ -352,6 +387,150 @@ function drawSnowParticle(
   }
 }
 
+function createLightningSegments(width: number, height: number, intensity: number) {
+  const segments: LightningSegment[] = []
+  const startX = CesiumMath.lerp(width * 0.16, width * 0.84, Math.random())
+  const endY = CesiumMath.lerp(height * 0.46, height * 0.82, Math.random())
+  const steps = Math.round(CesiumMath.lerp(8, 14, intensity))
+  let previousX = startX
+  let previousY = -height * CesiumMath.lerp(0.02, 0.14, Math.random())
+  let branchBudget = Math.round(CesiumMath.lerp(1, 4, intensity))
+
+  for (let step = 1; step <= steps; step += 1) {
+    const progress = step / steps
+    const reach = Math.sin(progress * Math.PI)
+    const nextX =
+      startX + CesiumMath.lerp(-width * 0.16, width * 0.16, Math.random()) * (0.35 + reach)
+    const nextY = CesiumMath.lerp(0, endY, progress)
+    const widthScale = CesiumMath.lerp(1, 0.28, progress)
+
+    segments.push({
+      x1: previousX,
+      y1: previousY,
+      x2: nextX,
+      y2: nextY,
+      width: CesiumMath.lerp(4.8, 8.6, intensity) * widthScale,
+      alpha: CesiumMath.lerp(0.96, 0.62, progress),
+    })
+
+    if (
+      branchBudget > 0 &&
+      step > 2 &&
+      step < steps - 1 &&
+      Math.random() < 0.38 + intensity * 0.24
+    ) {
+      const branchLength = CesiumMath.lerp(width * 0.08, width * 0.18, Math.random())
+      const branchDirection = Math.random() < 0.5 ? -1 : 1
+      const branchEndX = nextX + branchLength * branchDirection
+      const branchEndY = nextY + CesiumMath.lerp(height * 0.05, height * 0.14, Math.random())
+
+      segments.push({
+        x1: nextX,
+        y1: nextY,
+        x2: branchEndX,
+        y2: branchEndY,
+        width: CesiumMath.lerp(1.4, 3.2, intensity),
+        alpha: 0.54,
+      })
+      branchBudget -= 1
+    }
+
+    previousX = nextX
+    previousY = nextY
+  }
+
+  return segments
+}
+
+function createLightningStrike(
+  timestamp: number,
+  width: number,
+  height: number,
+  intensity: number,
+) {
+  return {
+    bornAt: timestamp,
+    duration: CesiumMath.lerp(520, 920, Math.random()),
+    flash: CesiumMath.lerp(0.22, 0.5, intensity) * CesiumMath.lerp(0.72, 1.22, Math.random()),
+    segments: createLightningSegments(width, height, intensity),
+  }
+}
+
+function updateLightning(timestamp: number, width: number, height: number, intensity: number) {
+  lightningStrikes = lightningStrikes.filter(
+    (strike) => timestamp - strike.bornAt < strike.duration,
+  )
+
+  if (intensity <= 0) {
+    lightningStrikes = []
+    nextLightningAt = 0
+    return
+  }
+
+  if (!nextLightningAt) {
+    nextLightningAt = timestamp + CesiumMath.lerp(240, 920, Math.random())
+  }
+
+  if (timestamp >= nextLightningAt) {
+    lightningStrikes.push(createLightningStrike(timestamp, width, height, intensity))
+    nextLightningAt =
+      timestamp + CesiumMath.lerp(3600, 900, intensity) * CesiumMath.lerp(0.54, 1.36, Math.random())
+  }
+}
+
+function drawLightning(
+  context: CanvasRenderingContext2D,
+  timestamp: number,
+  width: number,
+  height: number,
+) {
+  const intensity = getThunderstormIntensity()
+  updateLightning(timestamp, width, height, intensity)
+
+  if (!lightningStrikes.length) return
+
+  let flashAlpha = 0
+  context.save()
+  context.globalCompositeOperation = 'lighter'
+  context.lineCap = 'round'
+  context.lineJoin = 'round'
+
+  for (const strike of lightningStrikes) {
+    const age = timestamp - strike.bornAt
+    const progress = clamp01(age / strike.duration)
+    const flicker = 0.72 + Math.sin(age * 0.08) * 0.28
+    const alpha = (1 - smoothstep(0.18, 1, progress)) * flicker
+    flashAlpha += strike.flash * alpha
+
+    for (const segment of strike.segments) {
+      context.globalAlpha = alpha * segment.alpha * 0.58
+      context.strokeStyle = 'rgba(59, 130, 246, 0.9)'
+      context.lineWidth = segment.width * 4.2
+      context.beginPath()
+      context.moveTo(segment.x1, segment.y1)
+      context.lineTo(segment.x2, segment.y2)
+      context.stroke()
+
+      context.globalAlpha = alpha * segment.alpha
+      context.strokeStyle = 'rgba(224, 242, 254, 0.98)'
+      context.lineWidth = segment.width
+      context.beginPath()
+      context.moveTo(segment.x1, segment.y1)
+      context.lineTo(segment.x2, segment.y2)
+      context.stroke()
+    }
+  }
+
+  context.restore()
+
+  context.save()
+  context.globalCompositeOperation = 'screen'
+  context.globalAlpha = clamp(flashAlpha, 0, 0.42)
+  context.fillStyle = 'rgba(219, 234, 254, 0.9)'
+  context.fillRect(0, 0, width, height)
+  context.restore()
+}
+
 function renderScreenWeatherFrame(timestamp: number) {
   const canvas = precipitationCanvas.value
   if (!canvas) return
@@ -405,6 +584,8 @@ function renderScreenWeatherFrame(timestamp: number) {
     screenWeatherParticles = []
   }
 
+  drawLightning(context, timestamp, width, height)
+
   screenWeatherAnimationFrame = window.requestAnimationFrame(renderScreenWeatherFrame)
 }
 
@@ -423,6 +604,8 @@ function stopScreenWeather() {
   screenWeatherAnimationFrame = 0
   lastScreenWeatherFrame = 0
   screenWeatherParticles = []
+  lightningStrikes = []
+  nextLightningAt = 0
 }
 
 function getWeatherTint() {

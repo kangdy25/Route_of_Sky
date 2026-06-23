@@ -22,6 +22,12 @@ const {
 } = storeToRefs(weatherStore)
 
 const isSnowPreview = computed(() => precipitation.value > 0 && temperature.value <= 0)
+const isThunderstormPreview = computed(
+  () => !isSnowPreview.value && precipitation.value >= 12 && cloudCover.value >= 55,
+)
+const rainPreviewButtonText = computed(() => {
+  return isThunderstormPreview.value ? 'Storm' : 'Rain'
+})
 const precipitationTestLabel = computed(() => {
   return isSnowPreview.value ? 'Snowfall' : 'Precipitation'
 })
@@ -54,7 +60,7 @@ function setAqiFromInput(event: Event) {
 function previewRain() {
   temperature.value = Math.max(temperature.value, 12)
   cloudCover.value = Math.max(cloudCover.value, 88)
-  precipitation.value = Math.max(precipitation.value, 7.5)
+  precipitation.value = Math.max(precipitation.value, 9.5)
   windSpeed.value = Math.max(windSpeed.value, 7)
   windDirectionDegrees.value = 215
   humidity.value = Math.max(humidity.value, 82)
@@ -138,7 +144,9 @@ watch([aqi, precipitation, cloudCover], () => {
       <div class="flex items-center justify-between gap-3">
         <div>
           <h2 class="text-sm font-black tracking-wide text-cyan-200 uppercase">Weather test</h2>
-          <p class="mt-1 text-xs font-medium text-slate-400">Rain / snow realtime preview</p>
+          <p class="mt-1 text-xs font-medium text-slate-400">
+            Rain / thunderstorm / snow realtime preview
+          </p>
         </div>
         <button
           type="button"
@@ -155,7 +163,7 @@ watch([aqi, precipitation, cloudCover], () => {
           class="rounded-md border border-sky-300/35 bg-sky-500/15 px-3 py-2 text-sm font-black text-sky-100 transition hover:border-sky-200/70 hover:bg-sky-500/25 focus:ring-2 focus:ring-sky-300/40 focus:outline-none"
           @click="previewRain"
         >
-          Rain
+          {{ rainPreviewButtonText }}
         </button>
         <button
           type="button"

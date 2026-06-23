@@ -1,3 +1,5 @@
+const THUNDERSTORM_PRECIPITATION_THRESHOLD = 12
+
 export function getCloudCoverLabel(cloudCover: number) {
   if (cloudCover < 10) return '맑음'
   if (cloudCover < 50) return '구름 조금'
@@ -9,7 +11,8 @@ export function getPrecipitationLabel(precipitation: number, isSnow = false) {
   if (precipitation === 0) return '없음'
   if (precipitation < 2.5) return isSnow ? '약한 눈' : '약한 비'
   if (precipitation < 7.6) return isSnow ? '보통 눈' : '보통 비'
-  return isSnow ? '강한 눈' : '강한 비'
+  if (precipitation < THUNDERSTORM_PRECIPITATION_THRESHOLD) return isSnow ? '강한 눈' : '강한 비'
+  return isSnow ? '강한 눈' : '뇌우'
 }
 
 export function getVisibilityLabel(visibility: number) {
