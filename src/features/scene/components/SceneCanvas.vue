@@ -161,6 +161,24 @@ const atmosphereOverlayStyle = computed(() => {
   }
 })
 
+const mistOverlayStyle = computed(() => {
+  const sky = getSkyPhase(props.time)
+  const visibilityMist = clamp01((12 - props.visibility) / 10)
+  const aqiMist = clamp01((props.aqi - 80) / 180)
+  const precipitationMist = clamp01(props.precipitation / 18) * 0.38
+  const mistStrength = clamp01(visibilityMist + aqiMist * 0.46 + precipitationMist)
+  const nightBoost = CesiumMath.lerp(1.18, 0.82, sky.daylight)
+  const opacity = mistStrength * nightBoost
+  const lowerMist = CesiumMath.lerp(0.08, 0.42, opacity)
+  const horizonMist = CesiumMath.lerp(0.02, 0.24, opacity)
+
+  return {
+    opacity,
+    background: `radial-gradient(ellipse at 50% 82%, rgba(226, 232, 240, ${lowerMist}), rgba(148, 163, 184, ${horizonMist}) 34%, transparent 68%), linear-gradient(180deg, transparent 0%, rgba(203, 213, 225, ${horizonMist * 0.52}) 42%, rgba(148, 163, 184, ${lowerMist}) 100%)`,
+    backdropFilter: `blur(${CesiumMath.lerp(0, 2.8, mistStrength)}px)`,
+  }
+})
+
 const skyTimeStyle = computed(() => {
   const sky = getSkyPhase(props.time)
   const dawnWarmth = sky.dawn + sky.dusk
@@ -1110,6 +1128,7 @@ defineExpose({
       :style="sunGlowStyle"
     ></div>
     <div class="pointer-events-none absolute inset-0" :style="atmosphereOverlayStyle"></div>
+    <div class="pointer-events-none absolute inset-0" :style="mistOverlayStyle"></div>
     <canvas
       ref="precipitationCanvas"
       class="pointer-events-none absolute inset-0 h-full w-full"
