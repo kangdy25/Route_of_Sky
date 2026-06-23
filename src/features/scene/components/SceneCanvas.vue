@@ -100,6 +100,27 @@ interface LightningStrike {
   segments: LightningSegment[]
 }
 
+interface LensDroplet {
+  left: number
+  top: number
+  size: number
+  stretch: number
+  alpha: number
+}
+
+const LENS_DROPLETS: LensDroplet[] = [
+  { left: 5, top: 18, size: 58, stretch: 1.42, alpha: 0.82 },
+  { left: 13, top: 77, size: 34, stretch: 1.9, alpha: 0.66 },
+  { left: 23, top: 8, size: 28, stretch: 1.22, alpha: 0.52 },
+  { left: 73, top: 10, size: 46, stretch: 1.58, alpha: 0.76 },
+  { left: 91, top: 27, size: 36, stretch: 1.78, alpha: 0.72 },
+  { left: 84, top: 82, size: 54, stretch: 1.36, alpha: 0.7 },
+  { left: 47, top: 5, size: 30, stretch: 1.52, alpha: 0.46 },
+  { left: 98, top: 64, size: 24, stretch: 2.25, alpha: 0.58 },
+  { left: 33, top: 93, size: 42, stretch: 1.34, alpha: 0.54 },
+  { left: 64, top: 96, size: 32, stretch: 1.72, alpha: 0.48 },
+]
+
 const props = withDefaults(
   defineProps<{
     time?: number
@@ -176,6 +197,25 @@ const mistOverlayStyle = computed(() => {
     opacity,
     background: `radial-gradient(ellipse at 50% 82%, rgba(226, 232, 240, ${lowerMist}), rgba(148, 163, 184, ${horizonMist}) 34%, transparent 68%), linear-gradient(180deg, transparent 0%, rgba(203, 213, 225, ${horizonMist * 0.52}) 42%, rgba(148, 163, 184, ${lowerMist}) 100%)`,
     backdropFilter: `blur(${CesiumMath.lerp(0, 2.8, mistStrength)}px)`,
+  }
+})
+
+const wetLensIntensity = computed(() => {
+  if (getPrecipitationMode() !== 'rain') return 0
+
+  const rainFactor = clamp01((props.precipitation - 4.5) / 9)
+  const humidityFactor = CesiumMath.lerp(0.82, 1.2, clamp01((props.humidity - 45) / 55))
+  const stormBoost = getThunderstormIntensity() * 0.36
+
+  return clamp01(rainFactor * humidityFactor + stormBoost)
+})
+
+const wetLensOverlayStyle = computed(() => {
+  const intensity = wetLensIntensity.value
+
+  return {
+    opacity: intensity,
+    background: `radial-gradient(circle at 12% 20%, rgba(226, 232, 240, ${0.16 * intensity}), transparent 20%), radial-gradient(circle at 88% 78%, rgba(125, 211, 252, ${0.14 * intensity}), transparent 22%), radial-gradient(ellipse at 50% 108%, rgba(15, 23, 42, ${0.16 * intensity}), transparent 52%)`,
   }
 })
 
@@ -362,8 +402,8 @@ function drawRainParticle(
   context.beginPath()
   context.moveTo(particle.x, particle.y)
   context.lineTo(
-    particle.x - windVector.x * windOffset * 0.26,
-    particle.y - particle.size - windVector.y * windOffset * 0.08,
+    particle.x - windVector.x * windOffset * 0.14,
+    particle.y - particle.size - windVector.y * windOffset * 0.04,
   )
   context.stroke()
 }
@@ -549,6 +589,21 @@ function drawLightning(
   context.restore()
 }
 
+function getLensDropletStyle(droplet: LensDroplet) {
+  const intensity = wetLensIntensity.value
+  const width = droplet.size
+  const height = droplet.size * droplet.stretch
+
+  return {
+    left: `${droplet.left}%`,
+    top: `${droplet.top}%`,
+    width: `${width}px`,
+    height: `${height}px`,
+    opacity: droplet.alpha * intensity,
+    transform: `translate(-50%, -50%) rotate(${CesiumMath.lerp(-10, 12, droplet.left / 100)}deg)`,
+  }
+}
+
 function renderScreenWeatherFrame(timestamp: number) {
   const canvas = precipitationCanvas.value
   if (!canvas) return
@@ -568,7 +623,7 @@ function renderScreenWeatherFrame(timestamp: number) {
 
   if (mode) {
     const intensity = clamp01(props.precipitation / 12)
-    const windOffset = clamp(props.windSpeed, 0, 28) * (mode === 'snow' ? 14 : 18)
+    const windOffset = clamp(props.windSpeed, 0, 28) * (mode === 'snow' ? 14 : 9)
     const windVector = getWindScreenVector()
     syncScreenWeatherParticles(width, height)
     context.lineCap = 'round'
@@ -581,8 +636,8 @@ function renderScreenWeatherFrame(timestamp: number) {
         particle.y += (particle.speed + windVector.y * windOffset * 0.16) * dt
         drawSnowParticle(context, particle, windVector, windOffset)
       } else {
-        particle.x += windVector.x * windOffset * dt
-        particle.y += (particle.speed + windVector.y * windOffset * 0.12) * dt
+        particle.x += windVector.x * windOffset * 0.62 * dt
+        particle.y += (particle.speed + windVector.y * windOffset * 0.06) * dt
         drawRainParticle(context, particle, windVector, windOffset)
       }
 
@@ -1133,6 +1188,14 @@ defineExpose({
       ref="precipitationCanvas"
       class="pointer-events-none absolute inset-0 h-full w-full"
     ></canvas>
+    <div class="pointer-events-none absolute inset-0" :style="wetLensOverlayStyle">
+      <span
+        v-for="droplet in LENS_DROPLETS"
+        :key="`${droplet.left}-${droplet.top}`"
+        class="lens-droplet absolute"
+        :style="getLensDropletStyle(droplet)"
+      ></span>
+    </div>
     <div
       v-if="statusMessage || isTilesLoading"
       class="pointer-events-none absolute bottom-5 left-5 rounded-full border border-white/10 bg-slate-950/60 px-4 py-2 text-sm font-bold text-cyan-200 uppercase backdrop-blur-md"
@@ -1161,5 +1224,32 @@ defineExpose({
 #cesiumContainer :deep(.cesium-viewer-bottom) {
   bottom: 0.75rem;
   left: 1rem;
+}
+
+.lens-droplet {
+  border-radius: 9999px 9999px 9999px 9999px / 78% 78% 118% 118%;
+  background:
+    radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.95), transparent 14%),
+    radial-gradient(circle at 70% 84%, rgba(14, 165, 233, 0.34), transparent 46%),
+    linear-gradient(145deg, rgba(241, 245, 249, 0.42), rgba(15, 23, 42, 0.18));
+  border: 1px solid rgba(241, 245, 249, 0.42);
+  box-shadow:
+    inset 5px 7px 12px rgba(255, 255, 255, 0.26),
+    inset -7px -10px 16px rgba(15, 23, 42, 0.28),
+    0 3px 14px rgba(2, 6, 23, 0.26),
+    0 0 24px rgba(125, 211, 252, 0.18);
+  backdrop-filter: blur(3.4px) saturate(1.35) contrast(1.08);
+}
+
+.lens-droplet::after {
+  position: absolute;
+  right: 20%;
+  bottom: 12%;
+  width: 34%;
+  height: 18%;
+  content: '';
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.22);
+  filter: blur(1px);
 }
 </style>
