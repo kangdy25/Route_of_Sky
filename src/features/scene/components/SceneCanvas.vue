@@ -167,6 +167,8 @@ function initializeViewer() {
     selectionIndicator: false,
     baseLayer: false,
     shouldAnimate: false,
+    useDefaultRenderLoop: true,
+    requestRenderMode: false,
   })
 
   configureViewerScene(viewer)
@@ -191,13 +193,26 @@ async function loadGooglePhotorealisticTiles() {
 
   try {
     const tileset = await Cesium3DTileset.fromIonAssetId(GOOGLE_3D_TILES_ION_ASSET_ID, {
-      maximumScreenSpaceError: 2,
+      maximumScreenSpaceError: 16,
       cullWithChildrenBounds: true,
+      cullRequestsWhileMoving: false,
+      dynamicScreenSpaceError: true,
+      foveatedScreenSpaceError: true,
+      foveatedConeSize: 0.55,
+      foveatedTimeDelay: 0,
+      progressiveResolutionHeightFraction: 0.35,
+      skipLevelOfDetail: true,
+      baseScreenSpaceError: 1024,
+      skipScreenSpaceErrorFactor: 16,
+      skipLevels: 1,
+      immediatelyLoadDesiredLevelOfDetail: false,
+      loadSiblings: true,
     })
 
     if (!viewer || destroyed) return
 
     viewer.scene.primitives.add(tileset)
+    setInitialJamsilView(viewer)
     stopTilesetRenderSync = keepRenderingUntilInitialTilesLoaded(viewer, tileset, () => {
       if (destroyed) return
 
@@ -218,6 +233,7 @@ function keepRenderingUntilInitialTilesLoaded(
 ) {
   let animationFrame = 0
   let stopped = false
+  let initialTilesSettled = false
   const startedAt = window.performance.now()
   const removeListeners: Array<() => void> = []
 
@@ -225,6 +241,15 @@ function keepRenderingUntilInitialTilesLoaded(
     if (destroyed || activeViewer.isDestroyed()) return
 
     activeViewer.scene.requestRender()
+  }
+
+  const renderFrame = () => {
+    if (destroyed || activeViewer.isDestroyed()) return
+
+    // 첫 로드에서는 사용자가 카메라를 건드리지 않아도 3D Tiles traversal과 요청 큐가 즉시 진행되게 합니다.
+    activeViewer.forceResize()
+    activeViewer.scene.requestRender()
+    activeViewer.render()
   }
 
   const stop = () => {
@@ -242,18 +267,27 @@ function keepRenderingUntilInitialTilesLoaded(
     }
   }
 
-  const finishInitialLoad = () => {
-    requestRender()
+  const settleInitialTiles = () => {
+    if (initialTilesSettled) return
+
+    initialTilesSettled = true
+    tileset.maximumScreenSpaceError = 2
     onInitialTilesLoaded()
+    requestRender()
+  }
+
+  const finishInitialLoad = () => {
+    renderFrame()
+    settleInitialTiles()
     stop()
   }
 
   const tick = () => {
     if (stopped) return
 
-    requestRender()
-    if (window.performance.now() - startedAt > 10000) {
-      onInitialTilesLoaded()
+    renderFrame()
+    if (window.performance.now() - startedAt > 15000) {
+      settleInitialTiles()
       stop()
       return
     }
@@ -261,12 +295,17 @@ function keepRenderingUntilInitialTilesLoaded(
     animationFrame = window.requestAnimationFrame(tick)
   }
 
-  removeListeners.push(tileset.tileLoad.addEventListener(requestRender))
+  removeListeners.push(
+    tileset.tileLoad.addEventListener(() => {
+      requestRender()
+      settleInitialTiles()
+    }),
+  )
   removeListeners.push(tileset.loadProgress.addEventListener(requestRender))
   removeListeners.push(tileset.initialTilesLoaded.addEventListener(finishInitialLoad))
   removeListeners.push(tileset.allTilesLoaded.addEventListener(finishInitialLoad))
 
-  requestRender()
+  renderFrame()
   animationFrame = window.requestAnimationFrame(tick)
 
   return stop

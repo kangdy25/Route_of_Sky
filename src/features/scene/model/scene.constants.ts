@@ -29,7 +29,7 @@ export const SEOUL_SUMMER_SOLAR = {
 export const CLOUD_LOD = {
   minimumCover: 8,
   maxClouds: 34,
-  altitude: 1550,
+  altitude: 2800,
   longitudeSpan: 0.11,
   latitudeSpan: 0.08,
 }
