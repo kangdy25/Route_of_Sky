@@ -137,6 +137,7 @@ function updateSunGlowPosition() {
 function applySceneState() {
   screenWeatherRenderer.update()
 
+  /* v8 ignore next -- Vue lifecycle 밖에서 호출될 때를 위한 방어 guard입니다. */
   if (!viewer) return
 
   // 시간 변경은 태양, 대기, 구름, 후처리 uniform에 모두 영향을 주므로 한 진입점에서 동기화합니다.
@@ -148,6 +149,7 @@ function applySceneState() {
 }
 
 function initializeViewer() {
+  /* v8 ignore next -- 템플릿 ref가 비어 있는 비정상 마운트 방어 guard입니다. */
   if (!cesiumContainer.value) return
 
   if (hasCesiumIonAccessToken) {
@@ -184,6 +186,7 @@ function initializeViewer() {
 }
 
 async function loadGooglePhotorealisticTiles() {
+  /* v8 ignore next -- private async 진입점의 viewer 소실 방어 guard입니다. */
   if (!viewer) return
 
   stopTilesetRenderSync?.()
@@ -262,6 +265,7 @@ function keepRenderingUntilInitialTilesLoaded(
     for (const removeListener of removeListeners) {
       removeListener()
     }
+    /* v8 ignore next -- 이전 tileset stop 함수가 뒤늦게 호출될 때의 stale guard입니다. */
     if (stopTilesetRenderSync === stop) {
       stopTilesetRenderSync = null
     }

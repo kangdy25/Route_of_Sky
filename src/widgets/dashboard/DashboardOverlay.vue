@@ -26,6 +26,7 @@ defineProps<{
 }>()
 
 onMounted(() => {
+  /* v8 ignore next -- 템플릿 ref가 비어 있는 비정상 마운트 방어 guard입니다. */
   if (!overlayRef.value) return
 
   gsap.fromTo(

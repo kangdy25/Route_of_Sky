@@ -99,7 +99,7 @@ export function applyAtmosphereToScene(viewer: Viewer, state: SceneWeatherState)
   )
   const fogTint = getWeatherTint(state)
   viewer.scene.fog.enabled =
-    visibilityKm < 22 || state.aqi > 65 || state.precipitation > 0.2 || snowstormHazeFactor > 0
+    visibilityKm < 22 || state.aqi > 65 || snowstormHazeFactor > 0 || state.precipitation > 0.2
   viewer.scene.fog.renderable = true
   viewer.scene.fog.density = fogDensity
   viewer.scene.fog.minimumBrightness = CesiumMath.lerp(0.018, 0.16, sky.daylight)

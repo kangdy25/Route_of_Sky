@@ -13,6 +13,11 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    coverage: {
+      all: true,
+      include: ['src/**/*.{ts,vue}'],
+      exclude: ['src/**/*.spec.ts', 'src/**/*.types.ts', 'src/env.d.ts', 'src/main.ts'],
+    },
     exclude: [
       '**/node_modules/**',
       '**/dist/**',

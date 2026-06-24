@@ -96,7 +96,9 @@ export class CloudController {
         show: true,
         noiseDetail: 16,
       }),
-    ) as CloudCollection
+    ) as CloudCollection | null
+    if (!clouds) return
+
     clouds.noiseOffset = new Cartesian3(0.4, 0.2, 0.6)
     this.collection = clouds
 
