@@ -45,14 +45,68 @@ describe('대시보드 오버레이', () => {
     expect(fromTo).toHaveBeenCalled()
   })
 
-  it('헤더의 잠실 비행 이벤트를 상위로 전달해야 한다', async () => {
+  it('헤더의 타임스퀘어 비행 이벤트를 상위로 전달해야 한다', async () => {
     const wrapper = mount(DashboardOverlay, {
       props: baseProps,
     })
 
-    await wrapper.find('button[aria-label="Jamsil fly-through"]').trigger('click')
+    await wrapper.find('button[aria-label="Times Square fly-through"]').trigger('click')
 
-    expect(wrapper.emitted('flyToJamsil')).toHaveLength(1)
+    expect(wrapper.emitted('flyToTimesSquare')).toHaveLength(1)
+  })
+
+  it('헤더 설정 버튼을 누르면 설정 패널을 열어야 한다', async () => {
+    const wrapper = mount(DashboardOverlay, {
+      props: baseProps,
+      global: {
+        stubs: {
+          teleport: true,
+        },
+      },
+    })
+
+    await wrapper.find('button[aria-label="Open settings"]').trigger('click')
+
+    expect(wrapper.text()).toContain('Settings')
+    expect(wrapper.text()).toContain('Weather Lab')
+  })
+
+  it('설정 패널의 날씨 변경과 닫기 이벤트를 처리해야 한다', async () => {
+    const wrapper = mount(DashboardOverlay, {
+      props: baseProps,
+      global: {
+        stubs: {
+          teleport: true,
+        },
+      },
+    })
+
+    await wrapper.find('button[aria-label="Open settings"]').trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Dawn')
+      ?.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Rain')
+      ?.trigger('click')
+
+    expect(wrapper.emitted('update:time')?.[0]).toEqual([6.2])
+    expect(wrapper.emitted('update:temperature')?.[0]).toEqual([15])
+    expect(wrapper.emitted('update:humidity')?.[0]).toEqual([86])
+    expect(wrapper.emitted('update:windSpeed')?.[0]).toEqual([6.5])
+    expect(
+      wrapper.emitted('update:windDirectionDegrees')?.[0] ??
+        wrapper.emitted('update:wind-direction-degrees')?.[0],
+    ).toEqual([160])
+    expect(wrapper.emitted('update:aqi')?.[0]).toEqual([25])
+    expect(wrapper.emitted('update:cloudCover')?.[0]).toEqual([88])
+    expect(wrapper.emitted('update:precipitation')?.[0]).toEqual([7.2])
+    expect(wrapper.emitted('update:visibility')).toContainEqual([17.2])
+
+    await wrapper.findAll('button[aria-label="Close settings"]')[1].trigger('click')
+
+    expect(wrapper.text()).not.toContain('Weather Lab')
   })
 
   it('시간 패널의 v-model 업데이트를 전달해야 한다', async () => {

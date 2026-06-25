@@ -8,7 +8,7 @@ import {
   Viewer,
 } from 'cesium'
 
-import { CLOUD_LOD, SEOUL_JAMSIL_VIEW } from '../model/scene.constants'
+import { CLOUD_LOD, NEW_YORK_TIMES_SQUARE_VIEW } from '../model/scene.constants'
 import type { SceneWeatherState } from '../model/scene.types'
 import { clampToRange, clampToUnitInterval } from './math'
 import { getSkyPhase } from './sky'
@@ -102,7 +102,7 @@ export class CloudController {
     clouds.noiseOffset = new Cartesian3(0.4, 0.2, 0.6)
     this.collection = clouds
 
-    // 황금각 기반 분포로 잠실 주변에 구름을 균일하게 흩뿌립니다.
+    // 황금각 기반 분포로 타임스퀘어 주변에 구름을 균일하게 흩뿌립니다.
     for (let index = 0; index < CLOUD_LOD.maxClouds; index += 1) {
       const width = 520 + ((index * 97) % 520)
       const height = 260 + ((index * 53) % 280)
@@ -124,8 +124,9 @@ export class CloudController {
     const angle = index * GOLDEN_ANGLE_RADIANS
     const radius = Math.sqrt((index + 0.5) / CLOUD_LOD.maxClouds)
     const longitude =
-      SEOUL_JAMSIL_VIEW.longitude + Math.cos(angle) * radius * CLOUD_LOD.longitudeSpan
-    const latitude = SEOUL_JAMSIL_VIEW.latitude + Math.sin(angle) * radius * CLOUD_LOD.latitudeSpan
+      NEW_YORK_TIMES_SQUARE_VIEW.longitude + Math.cos(angle) * radius * CLOUD_LOD.longitudeSpan
+    const latitude =
+      NEW_YORK_TIMES_SQUARE_VIEW.latitude + Math.sin(angle) * radius * CLOUD_LOD.latitudeSpan
     const altitude = CLOUD_LOD.altitude + ((index * 179) % 620)
 
     return Cartesian3.fromDegrees(longitude, latitude, altitude)

@@ -1,13 +1,16 @@
 # Route of Sky
 
-3D 하늘과 기상 대시보드를 함께 보여주는 Vue 3 + TresJS 기반 웹 애플리케이션입니다. Google Maps API 키가 있으면 Google Photorealistic 3D Tiles를 사용하고, 없으면 기본 절차적 하늘/지형 씬으로 동작합니다.
+뉴욕 타임스퀘어 상공의 3D 도시 씬과 날씨 대시보드를 함께 보여주는 Vue 3 웹 애플리케이션입니다. Cesium ion 토큰이 있으면 Google Photorealistic 3D Tiles를 불러오고, 토큰이 없을 때도 기본 Cesium 씬과 날씨 오버레이 UI는 동작합니다.
 
 ## 주요 기능
 
-- 시간대에 따라 변하는 절차적 하늘, 태양, 구름, 안개 표현
-- Google Photorealistic 3D Tiles 기반 실사 지형 렌더링
+- 뉴욕 타임스퀘어 기준 3D 도시 카메라 뷰
+- Cesium 기반 Google Photorealistic 3D Tiles 렌더링
+- 시간대에 따라 변하는 태양, 하늘 색, 노을 glow, 안개 표현
+- 구름, 비, 폭풍, 눈, 연무 시각 효과
 - 기온, 습도, 풍속, 운량, 강수량, 가시거리, AQI 대시보드
-- 시간대 탐색 컨트롤과 씬 조명/대기 상태 동기화
+- 설정 드로어의 Scene Time 프리셋과 Weather Lab 시뮬레이션
+- API 연동 전에도 날씨 상태를 조정할 수 있는 Pinia 기반 상태 모델
 
 ## 기술 스택
 
@@ -15,20 +18,21 @@
 - TypeScript
 - Vite
 - Tailwind CSS
-- TresJS / Three.js
+- Cesium
 - Pinia
+- GSAP
 - Vitest
 - Playwright
 
 ## 환경 변수
 
-Google 3D Tiles를 사용하려면 프로젝트 루트에 `.env` 파일을 만들고 아래 값을 설정합니다.
+Google Photorealistic 3D Tiles는 Cesium ion asset을 통해 로드합니다. 프로젝트 루트에 `.env` 파일을 만들고 아래 값을 설정하세요.
 
 ```bash
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+VITE_CESIUM_ION_ACCESS_TOKEN=your_cesium_ion_access_token
 ```
 
-API 키가 없으면 Google Tiles 대신 기본 3D 씬이 렌더링됩니다.
+현재 Google 3D Tiles asset id는 `2275207`입니다. 토큰이 없으면 3D Tiles 요청은 건너뛰고 화면 하단에 안내 메시지가 표시됩니다.
 
 ## 실행
 
@@ -42,7 +46,6 @@ pnpm dev
 ## 검증 명령
 
 ```bash
-pnpm format
 pnpm lint
 pnpm test:unit
 pnpm test:coverage
@@ -50,25 +53,26 @@ pnpm test:e2e
 pnpm build
 ```
 
+참고: 현재 `pnpm build`는 일부 spec 타입과 `vite.config.ts` coverage 옵션 타입 문제로 실패할 수 있습니다. 런타임 기능 검증은 `pnpm lint`와 `pnpm test:unit`을 우선 확인하세요.
+
 ## 구조
 
 ```bash
 src/
-  app/             # 앱 루트 컴포넌트
-  pages/           # 페이지 단위 조립
+  pages/              # 페이지 단위 조립
   widgets/
-    dashboard/     # 대시보드 오버레이와 패널/지표 위젯
+    dashboard/        # 대시보드 오버레이, 설정 패널, 지표 위젯
   features/
-    scene/         # 씬 컴포넌트, composable, 지형 유틸, shader source
-    weather/       # 날씨 상태 모델, store, 표시 라벨 유틸
+    scene/            # Cesium 씬 컴포넌트, 카메라, 구름, 하늘, 날씨 효과 로직
+    weather/          # 날씨 상태 모델, store, 표시 라벨 유틸
   shared/
-    config/        # 환경 설정 접근
-    ui/            # 공통 UI 컴포넌트
+    config/           # 환경 변수 접근
+    ui/               # 공통 UI 컴포넌트
 ```
 
-## 참고
+## 개발 메모
 
-- Google Tiles 렌더러는 `useGoogleTilesRenderer` composable에서 생명주기를 관리합니다.
-- 대시보드 카드의 공통 패널 스타일은 `shared/ui/Panel.vue`를 사용합니다.
-- 시간대 탐색의 원형 버튼은 `shared/ui/IconButton.vue`를 사용합니다.
-- Vite build 시 Three.js 계열 번들 크기로 인해 chunk size warning이 발생할 수 있습니다.
+- 기준 위치는 `NEW_YORK_TIMES_SQUARE_VIEW` 상수에서 관리합니다.
+- 뉴욕 여름 일출/일몰 기준은 `NEW_YORK_SUMMER_SOLAR`에 모아 두었습니다.
+- 날씨 대시보드와 3D 씬은 같은 Pinia weather store를 바라봅니다.
+- API 연동 전까지는 설정 드로어의 Weather Lab으로 비, 폭풍, 눈, 연무 상태를 미리 볼 수 있습니다.

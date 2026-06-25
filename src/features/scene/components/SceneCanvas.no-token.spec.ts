@@ -57,7 +57,7 @@ vi.mock('@/features/scene/lib/cesiumScene', () => ({
   applyAtmosphereToScene: vi.fn(),
   applySceneTime: vi.fn(),
   configureViewerScene: vi.fn(),
-  setInitialJamsilView: vi.fn(),
+  setInitialTimesSquareView: vi.fn(),
 }))
 
 vi.mock('@/features/scene/lib/clouds', () => ({

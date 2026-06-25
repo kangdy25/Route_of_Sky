@@ -5,24 +5,24 @@ import { hasCesiumIonAccessToken } from '@/shared/config/env'
 import AppHeader from './AppHeader.vue'
 import AtmospherePanel from './AtmospherePanel.vue'
 import EnvironmentPanel from './EnvironmentPanel.vue'
+import SettingsPanel from './SettingsPanel.vue'
 import SkyPanel from './SkyPanel.vue'
 import TimePanel from './TimePanel.vue'
 
 const time = defineModel<number>('time', { required: true })
-const overlayRef = ref<HTMLElement | null>(null)
-const emit = defineEmits<{
-  flyToJamsil: []
-}>()
+const temperature = defineModel<number>('temperature', { required: true })
+const humidity = defineModel<number>('humidity', { required: true })
+const windSpeed = defineModel<number>('windSpeed', { required: true })
+const windDirectionDegrees = defineModel<number>('windDirectionDegrees', { required: true })
+const aqi = defineModel<number>('aqi', { required: true })
+const cloudCover = defineModel<number>('cloudCover', { required: true })
+const precipitation = defineModel<number>('precipitation', { required: true })
+const visibility = defineModel<number>('visibility', { required: true })
 
-defineProps<{
-  temperature: number
-  humidity: number
-  windSpeed: number
-  windDirectionDegrees: number
-  aqi: number
-  cloudCover: number
-  precipitation: number
-  visibility: number
+const overlayRef = ref<HTMLElement | null>(null)
+const isSettingsOpen = ref(false)
+const emit = defineEmits<{
+  flyToTimesSquare: []
 }>()
 
 onMounted(() => {
@@ -69,7 +69,10 @@ onMounted(() => {
     <div
       class="pointer-events-none absolute inset-x-20 bottom-3 h-px bg-gradient-to-r from-transparent via-cyan-300/35 to-transparent"
     ></div>
-    <AppHeader @fly-to-jamsil="emit('flyToJamsil')" />
+    <AppHeader
+      @fly-to-times-square="emit('flyToTimesSquare')"
+      @open-settings="isSettingsOpen = true"
+    />
 
     <!-- Cesium ion 토큰이 없을 때 3D Tiles 활성화 방법을 안내합니다. -->
     <div
@@ -114,6 +117,20 @@ onMounted(() => {
         <TimePanel v-model="time" />
       </aside>
     </div>
+
+    <SettingsPanel
+      v-model:time="time"
+      v-model:temperature="temperature"
+      v-model:humidity="humidity"
+      v-model:wind-speed="windSpeed"
+      v-model:wind-direction-degrees="windDirectionDegrees"
+      v-model:aqi="aqi"
+      v-model:cloud-cover="cloudCover"
+      v-model:precipitation="precipitation"
+      v-model:visibility="visibility"
+      :open="isSettingsOpen"
+      @close="isSettingsOpen = false"
+    />
   </div>
 </template>
 

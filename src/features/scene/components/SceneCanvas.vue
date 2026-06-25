@@ -18,7 +18,7 @@ import {
   applyAtmosphereToScene,
   applySceneTime,
   configureViewerScene,
-  setInitialJamsilView,
+  setInitialTimesSquareView,
 } from '@/features/scene/lib/cesiumScene'
 import { CloudController } from '@/features/scene/lib/clouds'
 import {
@@ -174,7 +174,7 @@ function initializeViewer() {
   })
 
   configureViewerScene(viewer)
-  setInitialJamsilView(viewer)
+  setInitialTimesSquareView(viewer)
   removeSunGlowUpdater = viewer.scene.postRender.addEventListener(updateSunGlowPosition)
   applySceneState()
 
@@ -215,7 +215,7 @@ async function loadGooglePhotorealisticTiles() {
     if (!viewer || destroyed) return
 
     viewer.scene.primitives.add(tileset)
-    setInitialJamsilView(viewer)
+    setInitialTimesSquareView(viewer)
     stopTilesetRenderSync = keepRenderingUntilInitialTilesLoaded(viewer, tileset, () => {
       if (destroyed) return
 

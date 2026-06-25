@@ -29,6 +29,15 @@ describe('기온 지표 카드', () => {
     expect(wrapper.text()).toContain('현재 고도에서 열 변화가 안정적으로 유지되고 있습니다.')
   })
 
+  it('온도 기준 범위를 -20도부터 40도까지 표시해야 한다', () => {
+    const wrapper = mount(TemperatureMetric, { props: { temperature: 24.5 } })
+
+    expect(wrapper.text()).toContain('-20°')
+    expect(wrapper.text()).toContain('40°')
+    expect(wrapper.text()).toContain('-8°')
+    expect(wrapper.text()).toContain('34°')
+  })
+
   it('높은 기온이면 고온 상태와 설명을 렌더링해야 한다', () => {
     const wrapper = mount(TemperatureMetric, { props: { temperature: 32 } })
 

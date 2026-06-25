@@ -7,7 +7,7 @@ import {
   applySceneTime,
   configureCameraControls,
   configureViewerScene,
-  setInitialJamsilView,
+  setInitialTimesSquareView,
 } from './cesiumScene'
 
 const { gsapTo } = vi.hoisted(() => ({
@@ -38,7 +38,7 @@ function createViewer() {
     heading: 0.1,
     pitch: -0.4,
     roll: 0,
-    positionWC: Cartesian3.fromDegrees(127.1, 37.5, 1000),
+    positionWC: Cartesian3.fromDegrees(-73.98, 40.75, 1000),
     setView: vi.fn(),
   }
 
@@ -96,10 +96,10 @@ describe('Cesium scene 설정', () => {
     expect(viewer.scene.screenSpaceCameraController.lookEventTypes).toHaveLength(2)
   })
 
-  it('초기 잠실 뷰를 카메라에 적용해야 한다', () => {
+  it('초기 타임스퀘어 뷰를 카메라에 적용해야 한다', () => {
     const viewer = createViewer()
 
-    setInitialJamsilView(viewer as never)
+    setInitialTimesSquareView(viewer as never)
 
     expect(viewer.camera.setView).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -191,7 +191,7 @@ describe('카메라 flyTo 컨트롤러', () => {
   it('viewer가 없으면 이동하지 않아야 한다', () => {
     const controller = new CameraFlyToController(() => null)
 
-    controller.flyToLocation({ longitude: 127, latitude: 37 })
+    controller.flyToLocation({ longitude: -73.98, latitude: 40.75 })
 
     expect(gsapTo).not.toHaveBeenCalled()
   })
@@ -207,7 +207,7 @@ describe('카메라 flyTo 컨트롤러', () => {
     })
     const controller = new CameraFlyToController(() => viewer as never)
 
-    controller.flyToLocation({ longitude: 127.2, latitude: 37.6, duration: 1 })
+    controller.flyToLocation({ longitude: -73.98, latitude: 40.76, duration: 1 })
     controller.dispose()
 
     expect(gsapTo).toHaveBeenCalled()
@@ -220,8 +220,8 @@ describe('카메라 flyTo 컨트롤러', () => {
     gsapTo.mockReturnValue({ kill })
     const controller = new CameraFlyToController(() => viewer as never)
 
-    controller.flyToLocation({ longitude: 127.2, latitude: 37.6 })
-    controller.flyToLocation({ longitude: 127.3, latitude: 37.7 })
+    controller.flyToLocation({ longitude: -73.98, latitude: 40.76 })
+    controller.flyToLocation({ longitude: -73.99, latitude: 40.77 })
 
     expect(kill).toHaveBeenCalled()
   })
@@ -236,7 +236,7 @@ describe('카메라 flyTo 컨트롤러', () => {
     })
     const controller = new CameraFlyToController(() => activeViewer as never)
 
-    controller.flyToLocation({ longitude: 127.2, latitude: 37.6 })
+    controller.flyToLocation({ longitude: -73.98, latitude: 40.76 })
 
     expect(viewer.camera.setView).not.toHaveBeenCalled()
   })

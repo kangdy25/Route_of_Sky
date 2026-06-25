@@ -48,7 +48,7 @@ const mocks = vi.hoisted(() => {
     viewerCtor: vi.fn(),
     fromIonAssetId: vi.fn(),
     configureViewerScene: vi.fn(),
-    setInitialJamsilView: vi.fn(),
+    setInitialTimesSquareView: vi.fn(),
     applySceneTime: vi.fn(),
     applyAtmosphereToScene: vi.fn(),
     cameraInstances: [] as Array<{
@@ -131,7 +131,7 @@ vi.mock('@/features/scene/lib/cesiumScene', () => ({
   applyAtmosphereToScene: mocks.applyAtmosphereToScene,
   applySceneTime: mocks.applySceneTime,
   configureViewerScene: mocks.configureViewerScene,
-  setInitialJamsilView: mocks.setInitialJamsilView,
+  setInitialTimesSquareView: mocks.setInitialTimesSquareView,
 }))
 
 vi.mock('@/features/scene/lib/clouds', () => ({
@@ -200,7 +200,7 @@ describe('SceneCanvas', () => {
     mocks.fromIonAssetId.mockReset()
     mocks.fromIonAssetId.mockResolvedValue(mocks.tileset)
     mocks.configureViewerScene.mockClear()
-    mocks.setInitialJamsilView.mockClear()
+    mocks.setInitialTimesSquareView.mockClear()
     mocks.applySceneTime.mockClear()
     mocks.applyAtmosphereToScene.mockClear()
     mocks.cameraInstances.length = 0
@@ -221,7 +221,7 @@ describe('SceneCanvas', () => {
 
     expect(mocks.viewerCtor).toHaveBeenCalled()
     expect(mocks.configureViewerScene).toHaveBeenCalledWith(mocks.viewer)
-    expect(mocks.setInitialJamsilView).toHaveBeenCalledTimes(2)
+    expect(mocks.setInitialTimesSquareView).toHaveBeenCalledTimes(2)
     expect(mocks.fromIonAssetId).toHaveBeenCalledWith(
       2275207,
       expect.objectContaining({

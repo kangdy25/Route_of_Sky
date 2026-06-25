@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const emit = defineEmits<{
-  flyToJamsil: []
+  flyToTimesSquare: []
+  openSettings: []
 }>()
 </script>
 
@@ -45,16 +46,16 @@ const emit = defineEmits<{
           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
         ></path>
       </svg>
-      <span class="text-lg font-bold text-cyan-50">SEOUL, JAMSIL</span>
+      <span class="text-lg font-bold text-cyan-50">NYC, TIMES SQUARE</span>
     </div>
 
     <div class="flex gap-4">
       <button
         type="button"
         class="rounded-lg border border-cyan-300/25 bg-slate-950/55 p-3 text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] backdrop-blur-md transition-all hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/45 focus:outline-none"
-        title="Jamsil fly-through"
-        aria-label="Jamsil fly-through"
-        @click.stop="emit('flyToJamsil')"
+        title="Times Square fly-through"
+        aria-label="Times Square fly-through"
+        @click.stop="emit('flyToTimesSquare')"
       >
         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -78,14 +79,26 @@ const emit = defineEmits<{
         </svg>
       </button>
       <button
-        class="rounded-lg border border-cyan-300/25 bg-slate-950/55 p-3 text-xl text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] backdrop-blur-md transition-all hover:border-cyan-200/70 hover:bg-cyan-400/15"
+        type="button"
+        class="rounded-lg border border-cyan-300/25 bg-slate-950/55 p-3 text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] backdrop-blur-md transition-all hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/45 focus:outline-none"
+        title="Open settings"
+        aria-label="Open settings"
+        @click.stop="emit('openSettings')"
       >
-        ⚙️
-      </button>
-      <button
-        class="rounded-lg border border-cyan-300/25 bg-slate-950/55 p-3 text-xl text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] backdrop-blur-md transition-all hover:border-cyan-200/70 hover:bg-cyan-400/15"
-      >
-        👤
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10.3 4.3 11 2h2l.7 2.3a7.7 7.7 0 0 1 1.8.8l2.1-1.1 1.4 1.4-1.1 2.1c.3.6.6 1.2.8 1.8L21 10v2l-2.3.7a7.7 7.7 0 0 1-.8 1.8l1.1 2.1-1.4 1.4-2.1-1.1c-.6.3-1.2.6-1.8.8L13 20h-2l-.7-2.3a7.7 7.7 0 0 1-1.8-.8L6.4 18 5 16.6l1.1-2.1a7.7 7.7 0 0 1-.8-1.8L3 12v-2l2.3-.7c.2-.6.5-1.2.8-1.8L5 5.4 6.4 4l2.1 1.1c.6-.3 1.2-.6 1.8-.8Z"
+          ></path>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 11a3 3 0 1 0 6 0 3 3 0 0 0-6 0Z"
+          ></path>
+        </svg>
       </button>
     </div>
   </header>

@@ -13,8 +13,8 @@ describe('하늘 시간 계산', () => {
   })
 
   it('일출과 일몰 근처에는 horizonGlow를 높여야 한다', () => {
-    expect(getSkyPhase(5.15).horizonGlow).toBeGreaterThan(0.9)
-    expect(getSkyPhase(19.95).horizonGlow).toBeGreaterThan(0.9)
+    expect(getSkyPhase(5.4).horizonGlow).toBeGreaterThan(0.9)
+    expect(getSkyPhase(20.5).horizonGlow).toBeGreaterThan(0.9)
   })
 
   it('시간 값은 24시간 단위로 래핑되어야 한다', () => {
@@ -22,8 +22,8 @@ describe('하늘 시간 계산', () => {
     expect(getSkyPhase(25)).toEqual(getSkyPhase(1))
   })
 
-  it('서울 로컬 시간을 Cesium에 넣을 UTC Date로 변환해야 한다', () => {
-    expect(getSceneDateFromLocalTime(16.5).toISOString()).toBe('2026-06-20T07:30:00.000Z')
+  it('뉴욕 로컬 시간을 Cesium에 넣을 UTC Date로 변환해야 한다', () => {
+    expect(getSceneDateFromLocalTime(16.5).toISOString()).toBe('2026-06-20T20:30:00.000Z')
   })
 
   it('JulianDate 기준 태양 위치 벡터를 계산해야 한다', () => {

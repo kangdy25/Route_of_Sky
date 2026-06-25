@@ -12,7 +12,7 @@ import {
   Viewer,
 } from 'cesium'
 
-import { SEOUL_JAMSIL_VIEW } from '../model/scene.constants'
+import { NEW_YORK_TIMES_SQUARE_VIEW } from '../model/scene.constants'
 import type { CameraWaypoint, SceneWeatherState } from '../model/scene.types'
 import { clampToRange, clampToUnitInterval, lerpRadians } from './math'
 import { getSceneDateFromLocalTime, getSkyPhase } from './sky'
@@ -65,16 +65,16 @@ export function configureCameraControls(viewer: Viewer) {
   ]
 }
 
-export function setInitialJamsilView(viewer: Viewer) {
+export function setInitialTimesSquareView(viewer: Viewer) {
   viewer.camera.setView({
     destination: Cartesian3.fromDegrees(
-      SEOUL_JAMSIL_VIEW.longitude,
-      SEOUL_JAMSIL_VIEW.latitude,
-      SEOUL_JAMSIL_VIEW.height,
+      NEW_YORK_TIMES_SQUARE_VIEW.longitude,
+      NEW_YORK_TIMES_SQUARE_VIEW.latitude,
+      NEW_YORK_TIMES_SQUARE_VIEW.height,
     ),
     orientation: {
-      heading: CesiumMath.toRadians(SEOUL_JAMSIL_VIEW.headingDegrees),
-      pitch: CesiumMath.toRadians(SEOUL_JAMSIL_VIEW.pitchDegrees),
+      heading: CesiumMath.toRadians(NEW_YORK_TIMES_SQUARE_VIEW.headingDegrees),
+      pitch: CesiumMath.toRadians(NEW_YORK_TIMES_SQUARE_VIEW.pitchDegrees),
       roll: 0,
     },
   })
@@ -181,15 +181,17 @@ export class CameraFlyToController {
     const endPosition = Cartesian3.fromDegrees(
       target.longitude,
       target.latitude,
-      target.height ?? SEOUL_JAMSIL_VIEW.height,
+      target.height ?? NEW_YORK_TIMES_SQUARE_VIEW.height,
     )
     const startHeading = camera.heading
     const startPitch = camera.pitch
     const startRoll = camera.roll
     const endHeading = CesiumMath.toRadians(
-      target.headingDegrees ?? SEOUL_JAMSIL_VIEW.headingDegrees,
+      target.headingDegrees ?? NEW_YORK_TIMES_SQUARE_VIEW.headingDegrees,
     )
-    const endPitch = CesiumMath.toRadians(target.pitchDegrees ?? SEOUL_JAMSIL_VIEW.pitchDegrees)
+    const endPitch = CesiumMath.toRadians(
+      target.pitchDegrees ?? NEW_YORK_TIMES_SQUARE_VIEW.pitchDegrees,
+    )
     const endRoll = CesiumMath.toRadians(target.rollDegrees ?? 0)
     const progress = { value: 0 }
     const currentPosition = new Cartesian3()
