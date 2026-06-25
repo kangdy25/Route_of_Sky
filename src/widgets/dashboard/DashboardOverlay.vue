@@ -5,27 +5,28 @@ import { hasCesiumIonAccessToken } from '@/shared/config/env'
 import AppHeader from './AppHeader.vue'
 import AtmospherePanel from './AtmospherePanel.vue'
 import EnvironmentPanel from './EnvironmentPanel.vue'
+import SettingsPanel from './SettingsPanel.vue'
 import SkyPanel from './SkyPanel.vue'
 import TimePanel from './TimePanel.vue'
 
 const time = defineModel<number>('time', { required: true })
-const overlayRef = ref<HTMLElement | null>(null)
-const emit = defineEmits<{
-  flyToJamsil: []
-}>()
+const temperature = defineModel<number>('temperature', { required: true })
+const humidity = defineModel<number>('humidity', { required: true })
+const windSpeed = defineModel<number>('windSpeed', { required: true })
+const windDirectionDegrees = defineModel<number>('windDirectionDegrees', { required: true })
+const aqi = defineModel<number>('aqi', { required: true })
+const cloudCover = defineModel<number>('cloudCover', { required: true })
+const precipitation = defineModel<number>('precipitation', { required: true })
+const visibility = defineModel<number>('visibility', { required: true })
 
-defineProps<{
-  temperature: number
-  humidity: number
-  windSpeed: number
-  windDirectionDegrees: number
-  aqi: number
-  cloudCover: number
-  precipitation: number
-  visibility: number
+const overlayRef = ref<HTMLElement | null>(null)
+const isSettingsOpen = ref(false)
+const emit = defineEmits<{
+  flyToTimesSquare: []
 }>()
 
 onMounted(() => {
+  /* v8 ignore next -- 템플릿 ref가 비어 있는 비정상 마운트 방어 guard입니다. */
   if (!overlayRef.value) return
 
   gsap.fromTo(
@@ -68,7 +69,10 @@ onMounted(() => {
     <div
       class="pointer-events-none absolute inset-x-20 bottom-3 h-px bg-gradient-to-r from-transparent via-cyan-300/35 to-transparent"
     ></div>
-    <AppHeader />
+    <AppHeader
+      @fly-to-times-square="emit('flyToTimesSquare')"
+      @open-settings="isSettingsOpen = true"
+    />
 
     <!-- Cesium ion 토큰이 없을 때 3D Tiles 활성화 방법을 안내합니다. -->
     <div
@@ -100,15 +104,6 @@ onMounted(() => {
           :wind-speed="windSpeed"
           :wind-direction-degrees="windDirectionDegrees"
         />
-        <button
-          type="button"
-          class="rounded-lg border border-cyan-300/30 bg-slate-950/70 px-5 py-4 text-left shadow-[inset_0_0_20px_rgba(34,211,238,0.12),0_18px_36px_rgba(0,0,0,0.28)] backdrop-blur-2xl transition-all hover:border-cyan-200/70 hover:bg-cyan-950/45 hover:shadow-[0_0_24px_rgba(34,211,238,0.28)] focus:ring-2 focus:ring-cyan-300/50 focus:outline-none"
-          @click.stop="emit('flyToJamsil')"
-        >
-          <span class="block text-sm font-bold text-cyan-300 uppercase"> Scenic route </span>
-          <span class="mt-2 block text-lg font-black text-white">Jamsil fly-through</span>
-          <span class="mt-1 block text-base font-medium text-slate-300">Seoul aerial approach</span>
-        </button>
       </aside>
 
       <aside class="pointer-events-auto flex w-full flex-col gap-6 lg:w-[390px] lg:shrink-0">
@@ -122,6 +117,20 @@ onMounted(() => {
         <TimePanel v-model="time" />
       </aside>
     </div>
+
+    <SettingsPanel
+      v-model:time="time"
+      v-model:temperature="temperature"
+      v-model:humidity="humidity"
+      v-model:wind-speed="windSpeed"
+      v-model:wind-direction-degrees="windDirectionDegrees"
+      v-model:aqi="aqi"
+      v-model:cloud-cover="cloudCover"
+      v-model:precipitation="precipitation"
+      v-model:visibility="visibility"
+      :open="isSettingsOpen"
+      @close="isSettingsOpen = false"
+    />
   </div>
 </template>
 

@@ -5,10 +5,10 @@ const props = defineProps<{
   temperature: number
 }>()
 
-const minTemperature = 24.5
-const maxTemperature = 32.0
-const rangeMin = 18
-const rangeMax = 36
+const minTemperature = -8
+const maxTemperature = 34
+const rangeMin = -20
+const rangeMax = 40
 
 const temperaturePercent = computed(() => {
   const normalized = ((props.temperature - rangeMin) / (rangeMax - rangeMin)) * 100
