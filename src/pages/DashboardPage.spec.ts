@@ -6,6 +6,24 @@ import { useWeatherStore } from '@/features/weather/model/weather.store'
 import DashboardPage from './DashboardPage.vue'
 
 const flyToLocation = vi.fn()
+const loadCurrentWeather = vi.fn()
+
+vi.mock('@/features/weather/model/weather.store', async () => {
+  const actual = await vi.importActual<typeof import('@/features/weather/model/weather.store')>(
+    '@/features/weather/model/weather.store',
+  )
+
+  return {
+    ...actual,
+    useWeatherStore: () => {
+      const store = actual.useWeatherStore()
+
+      store.loadCurrentWeather = loadCurrentWeather
+
+      return store
+    },
+  }
+})
 
 function mountDashboardPage() {
   setActivePinia(createPinia())
@@ -102,6 +120,7 @@ function mountDashboardPage() {
 describe('대시보드 페이지', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    loadCurrentWeather.mockResolvedValue(false)
   })
 
   it('기본 날씨 상태와 대시보드 오버레이를 렌더링해야 한다', () => {
@@ -109,6 +128,7 @@ describe('대시보드 페이지', () => {
 
     expect(wrapper.find('[data-testid="scene-canvas"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="dashboard-overlay"]').text()).toContain('24.5/0/15')
+    expect(loadCurrentWeather).toHaveBeenCalledTimes(1)
   })
 
   it('오버레이 시간 업데이트를 store에 반영해야 한다', async () => {

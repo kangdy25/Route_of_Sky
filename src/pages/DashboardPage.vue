@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import SceneCanvas from '@/features/scene/components/SceneCanvas.vue'
 import { useWeatherStore } from '@/features/weather/model/weather.store'
@@ -31,6 +31,10 @@ function flyToTimesSquare() {
     duration: 3.4,
   })
 }
+
+onMounted(() => {
+  void weatherStore.loadCurrentWeather()
+})
 </script>
 
 <template>
