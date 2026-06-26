@@ -139,9 +139,10 @@ vi.mock('@/features/scene/lib/clouds', () => ({
     update = vi.fn()
     dispose = vi.fn()
 
-    constructor(getViewer: () => unknown, getState: () => unknown) {
+    constructor(getViewer: () => unknown, getState: () => unknown, getLocation: () => unknown) {
       getViewer()
       getState()
+      getLocation()
       mocks.cloudInstances.push(this)
     }
   },

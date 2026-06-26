@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { hasCesiumIonAccessToken } from '@/shared/config/env'
+import type { SceneLocation } from '@/features/scene/model/scene.types'
 import AppHeader from './AppHeader.vue'
 import AtmospherePanel from './AtmospherePanel.vue'
 import EnvironmentPanel from './EnvironmentPanel.vue'
@@ -19,10 +20,16 @@ const cloudCover = defineModel<number>('cloudCover', { required: true })
 const precipitation = defineModel<number>('precipitation', { required: true })
 const visibility = defineModel<number>('visibility', { required: true })
 
+defineProps<{
+  locations: SceneLocation[]
+  selectedLocationId: string
+}>()
+
 const overlayRef = ref<HTMLElement | null>(null)
 const isSettingsOpen = ref(false)
 const emit = defineEmits<{
-  flyToTimesSquare: []
+  flyToSelectedLocation: []
+  selectLocation: [locationId: string]
 }>()
 
 onMounted(() => {
@@ -70,7 +77,10 @@ onMounted(() => {
       class="pointer-events-none absolute inset-x-20 bottom-3 h-px bg-gradient-to-r from-transparent via-cyan-300/35 to-transparent"
     ></div>
     <AppHeader
-      @fly-to-times-square="emit('flyToTimesSquare')"
+      :locations="locations"
+      :selected-location-id="selectedLocationId"
+      @fly-to-selected-location="emit('flyToSelectedLocation')"
+      @select-location="emit('selectLocation', $event)"
       @open-settings="isSettingsOpen = true"
     />
 

@@ -11,8 +11,15 @@ import {
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 import { cesiumIonAccessToken, hasCesiumIonAccessToken } from '@/shared/config/env'
-import { GOOGLE_3D_TILES_ION_ASSET_ID } from '@/features/scene/model/scene.constants'
-import type { CameraWaypoint, SceneWeatherState } from '@/features/scene/model/scene.types'
+import {
+  GOOGLE_3D_TILES_ION_ASSET_ID,
+  WORLD_LOCATIONS,
+} from '@/features/scene/model/scene.constants'
+import type {
+  CameraWaypoint,
+  SceneLocation,
+  SceneWeatherState,
+} from '@/features/scene/model/scene.types'
 import {
   CameraFlyToController,
   applyAtmosphereToScene,
@@ -45,6 +52,7 @@ const props = withDefaults(
     windSpeed?: number
     windDirectionDegrees?: number
     humidity?: number
+    location?: SceneLocation
   }>(),
   {
     time: 16.5,
@@ -56,6 +64,7 @@ const props = withDefaults(
     windSpeed: 3.2,
     windDirectionDegrees: 225,
     humidity: 62,
+    location: () => WORLD_LOCATIONS[1],
   },
 )
 
@@ -91,6 +100,7 @@ const sceneState = computed<SceneWeatherState>(() => ({
 const cloudController = new CloudController(
   () => viewer,
   () => sceneState.value,
+  () => props.location,
 )
 const weatherPostProcessController = new WeatherPostProcessController(
   () => viewer,
@@ -330,6 +340,7 @@ watch(
     props.windSpeed,
     props.windDirectionDegrees,
     props.humidity,
+    props.location.id,
   ],
   applySceneState,
 )
