@@ -15,6 +15,8 @@ function mountDashboardPage() {
     global: {
       stubs: {
         SceneCanvas: defineComponent({
+          props: ['location'],
+          name: 'SceneCanvas',
           setup(_, { expose }) {
             expose({ flyToLocation })
             return () => h('div', { 'data-testid': 'scene-canvas' })
@@ -31,9 +33,12 @@ function mountDashboardPage() {
             'cloudCover',
             'precipitation',
             'visibility',
+            'locations',
+            'selectedLocationId',
           ],
           emits: [
-            'flyToTimesSquare',
+            'flyToSelectedLocation',
+            'selectLocation',
             'update:time',
             'update:temperature',
             'update:humidity',
@@ -55,10 +60,18 @@ function mountDashboardPage() {
                 h(
                   'button',
                   {
-                    'data-testid': 'fly-to-times-square',
-                    onClick: () => emit('flyToTimesSquare'),
+                    'data-testid': 'fly-to-selected-location',
+                    onClick: () => emit('flyToSelectedLocation'),
                   },
                   'Fly',
+                ),
+                h(
+                  'button',
+                  {
+                    'data-testid': 'select-jerusalem',
+                    onClick: () => emit('selectLocation', 'il-jerusalem'),
+                  },
+                  'Jerusalem',
                 ),
                 h(
                   'button',
@@ -141,15 +154,53 @@ describe('대시보드 페이지', () => {
     expect(store.visibility).toBe(19)
   })
 
-  it('오버레이 타임스퀘어 비행 이벤트를 SceneCanvas로 전달해야 한다', async () => {
+  it('오버레이 비행 이벤트를 현재 선택된 지역으로 전달해야 한다', async () => {
     const { wrapper } = mountDashboardPage()
 
-    await wrapper.find('[data-testid="fly-to-times-square"]').trigger('click')
+    await wrapper.find('[data-testid="fly-to-selected-location"]').trigger('click')
 
     expect(flyToLocation).toHaveBeenCalledWith({
       longitude: -73.9855,
       latitude: 40.758,
-      height: 1350,
+      height: 1650,
+      headingDegrees: 28,
+      pitchDegrees: -38,
+      duration: 3.4,
+    })
+  })
+
+  it('오버레이 지역 선택 이벤트를 SceneCanvas 이동과 선택 상태에 반영해야 한다', async () => {
+    const { wrapper } = mountDashboardPage()
+
+    await wrapper.find('[data-testid="select-jerusalem"]').trigger('click')
+
+    expect(flyToLocation).toHaveBeenCalledWith({
+      longitude: 35.2345,
+      latitude: 31.7767,
+      height: 1650,
+      headingDegrees: 28,
+      pitchDegrees: -38,
+      duration: 3.4,
+    })
+    expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
+      id: 'il-jerusalem',
+      label: '이스라엘',
+      city: '예루살렘',
+      landmark: '통곡의 벽',
+    })
+  })
+
+  it('지역 변경 후 비행 버튼을 누르면 변경된 지역으로 다시 이동해야 한다', async () => {
+    const { wrapper } = mountDashboardPage()
+
+    await wrapper.find('[data-testid="select-jerusalem"]').trigger('click')
+    flyToLocation.mockClear()
+    await wrapper.find('[data-testid="fly-to-selected-location"]').trigger('click')
+
+    expect(flyToLocation).toHaveBeenCalledWith({
+      longitude: 35.2345,
+      latitude: 31.7767,
+      height: 1650,
       headingDegrees: 28,
       pitchDegrees: -38,
       duration: 3.4,

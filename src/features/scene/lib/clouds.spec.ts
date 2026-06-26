@@ -1,7 +1,7 @@
 import { CloudCollection } from 'cesium'
 import { describe, expect, it, vi } from 'vitest'
 import type { SceneWeatherState } from '../model/scene.types'
-import { CLOUD_LOD } from '../model/scene.constants'
+import { CLOUD_LOD, WORLD_LOCATIONS } from '../model/scene.constants'
 import { CloudController } from './clouds'
 
 const baseState: SceneWeatherState = {
@@ -46,6 +46,7 @@ describe('구름 컨트롤러', () => {
     const controller = new CloudController(
       () => viewer as never,
       () => ({ ...baseState, cloudCover: CLOUD_LOD.minimumCover - 1 }),
+      () => WORLD_LOCATIONS[1],
     )
 
     controller.update()
@@ -59,6 +60,7 @@ describe('구름 컨트롤러', () => {
     const controller = new CloudController(
       () => viewer as never,
       () => ({ ...baseState, cloudCover: 100, aqi: 120 }),
+      () => WORLD_LOCATIONS[1],
     )
 
     controller.update()
@@ -75,6 +77,7 @@ describe('구름 컨트롤러', () => {
     const controller = new CloudController(
       () => null,
       () => ({ ...baseState, cloudCover: 100 }),
+      () => WORLD_LOCATIONS[1],
     )
 
     expect(() => controller.update()).not.toThrow()
@@ -85,6 +88,7 @@ describe('구름 컨트롤러', () => {
     const controller = new CloudController(
       () => viewer as never,
       () => ({ ...baseState, cloudCover: 100 }),
+      () => WORLD_LOCATIONS[1],
     )
 
     controller.update()
@@ -93,12 +97,30 @@ describe('구름 컨트롤러', () => {
     expect(primitives.add).toHaveBeenCalledTimes(1)
   })
 
+  it('지역이 바뀌면 기존 구름 collection을 새 위치 기준으로 다시 만들어야 한다', () => {
+    const { primitives, viewer } = createViewer()
+    let location = WORLD_LOCATIONS[1]
+    const controller = new CloudController(
+      () => viewer as never,
+      () => ({ ...baseState, cloudCover: 100 }),
+      () => location,
+    )
+
+    controller.update()
+    location = WORLD_LOCATIONS[3]
+    controller.update()
+
+    expect(primitives.remove).toHaveBeenCalledTimes(1)
+    expect(primitives.add).toHaveBeenCalledTimes(2)
+  })
+
   it('primitive 추가가 실패해도 안전하게 빠져나와야 한다', () => {
     const { primitives, viewer } = createViewer()
     primitives.add.mockReturnValueOnce(null as never)
     const controller = new CloudController(
       () => viewer as never,
       () => ({ ...baseState, cloudCover: 100 }),
+      () => WORLD_LOCATIONS[1],
     )
 
     expect(() => controller.update()).not.toThrow()
@@ -109,6 +131,7 @@ describe('구름 컨트롤러', () => {
     const controller = new CloudController(
       () => viewer as never,
       () => ({ ...baseState, cloudCover: 100 }),
+      () => WORLD_LOCATIONS[1],
     )
 
     controller.update()
@@ -122,6 +145,7 @@ describe('구름 컨트롤러', () => {
     const controller = new CloudController(
       () => viewer as never,
       () => ({ ...baseState, cloudCover: 100 }),
+      () => WORLD_LOCATIONS[1],
     )
 
     controller.update()
@@ -133,6 +157,7 @@ describe('구름 컨트롤러', () => {
     const detachedController = new CloudController(
       () => null,
       () => baseState,
+      () => WORLD_LOCATIONS[1],
     )
     expect(() => detachedController.dispose()).not.toThrow()
   })

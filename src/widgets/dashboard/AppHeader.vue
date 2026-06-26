@@ -1,7 +1,15 @@
 <script setup lang="ts">
+import type { SceneLocation } from '@/features/scene/model/scene.types'
+
+defineProps<{
+  locations: SceneLocation[]
+  selectedLocationId: string
+}>()
+
 const emit = defineEmits<{
-  flyToTimesSquare: []
+  flyToSelectedLocation: []
   openSettings: []
+  selectLocation: [locationId: string]
 }>()
 </script>
 
@@ -29,8 +37,8 @@ const emit = defineEmits<{
       </h1>
     </div>
 
-    <div
-      class="flex items-center gap-3 rounded-full border border-cyan-300/25 bg-cyan-950/20 px-8 py-3 shadow-[inset_0_0_14px_rgba(34,211,238,0.10)] backdrop-blur-md"
+    <label
+      class="flex items-center gap-3 rounded-lg border border-cyan-300/25 bg-cyan-950/20 px-4 py-3 shadow-[inset_0_0_14px_rgba(34,211,238,0.10)] backdrop-blur-md"
     >
       <svg class="h-5 w-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
@@ -46,16 +54,31 @@ const emit = defineEmits<{
           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
         ></path>
       </svg>
-      <span class="text-lg font-bold text-cyan-50">NYC, TIMES SQUARE</span>
-    </div>
+      <span class="sr-only">지역 선택</span>
+      <select
+        class="min-w-44 bg-transparent text-base font-black text-cyan-50 uppercase outline-none"
+        :value="selectedLocationId"
+        aria-label="지역 선택"
+        @change="emit('selectLocation', ($event.target as HTMLSelectElement).value)"
+      >
+        <option
+          v-for="location in locations"
+          :key="location.id"
+          class="bg-slate-950 text-cyan-50"
+          :value="location.id"
+        >
+          {{ location.label }}, {{ location.city }}
+        </option>
+      </select>
+    </label>
 
     <div class="flex gap-4">
       <button
         type="button"
         class="rounded-lg border border-cyan-300/25 bg-slate-950/55 p-3 text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] backdrop-blur-md transition-all hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/45 focus:outline-none"
-        title="Times Square fly-through"
-        aria-label="Times Square fly-through"
-        @click.stop="emit('flyToTimesSquare')"
+        title="Fly to selected location"
+        aria-label="Fly to selected location"
+        @click.stop="emit('flyToSelectedLocation')"
       >
         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
