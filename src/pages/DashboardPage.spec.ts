@@ -75,6 +75,14 @@ function mountDashboardPage() {
                 ),
                 h(
                   'button',
+                  {
+                    'data-testid': 'select-missing-location',
+                    onClick: () => emit('selectLocation', 'missing-location'),
+                  },
+                  'Missing location',
+                ),
+                h(
+                  'button',
                   { 'data-testid': 'set-time', onClick: () => emit('update:time', 8) },
                   'Set time',
                 ),
@@ -204,6 +212,17 @@ describe('대시보드 페이지', () => {
       headingDegrees: 28,
       pitchDegrees: -38,
       duration: 3.4,
+    })
+  })
+
+  it('알 수 없는 지역 선택 이벤트는 무시해야 한다', async () => {
+    const { wrapper } = mountDashboardPage()
+
+    await wrapper.find('[data-testid="select-missing-location"]').trigger('click')
+
+    expect(flyToLocation).not.toHaveBeenCalled()
+    expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
+      id: 'us-new-york',
     })
   })
 })

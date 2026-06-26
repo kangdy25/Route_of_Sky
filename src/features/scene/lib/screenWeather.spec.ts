@@ -238,6 +238,24 @@ describe('화면 날씨 렌더러', () => {
     randomSpy.mockRestore()
   })
 
+  it('번개 가지가 왼쪽으로 뻗는 경로도 만들 수 있어야 한다', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.4)
+    const renderer = new ScreenWeatherRenderer(ref(createCanvas()), () => baseState)
+
+    const segments = (
+      renderer as never as {
+        createLightningSegments: (
+          width: number,
+          height: number,
+          intensity: number,
+        ) => Array<{ x1: number; x2: number; alpha: number }>
+      }
+    ).createLightningSegments(320, 180, 1)
+
+    expect(segments.some((segment) => segment.alpha === 0.54 && segment.x2 < segment.x1)).toBe(true)
+    randomSpy.mockRestore()
+  })
+
   it('강수가 없는 프레임에서는 입자 목록을 비워야 한다', () => {
     const context = createContext()
     const renderer = new ScreenWeatherRenderer(ref(createCanvas(context)), () => baseState)
