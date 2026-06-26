@@ -22,6 +22,15 @@ export interface CameraWaypoint {
   duration?: number
 }
 
+export interface SceneLocation {
+  id: string
+  label: string
+  city: string
+  landmark: string
+  lat: number
+  lng: number
+}
+
 export interface SkyPhase {
   daylight: number
   dawn: number

@@ -8,8 +8,8 @@ import {
   Viewer,
 } from 'cesium'
 
-import { CLOUD_LOD, NEW_YORK_TIMES_SQUARE_VIEW } from '../model/scene.constants'
-import type { SceneWeatherState } from '../model/scene.types'
+import { CLOUD_LOD } from '../model/scene.constants'
+import type { SceneLocation, SceneWeatherState } from '../model/scene.types'
 import { clampToRange, clampToUnitInterval } from './math'
 import { getSkyPhase } from './sky'
 import { getWeatherTint } from './weather'
@@ -22,15 +22,28 @@ export class CloudController {
   private collection: CloudCollection | null = null
   private readonly getViewer: () => Viewer | null
   private readonly getState: () => SceneWeatherState
+  private readonly getLocation: () => SceneLocation
+  private locationKey = ''
 
-  constructor(getViewer: () => Viewer | null, getState: () => SceneWeatherState) {
+  constructor(
+    getViewer: () => Viewer | null,
+    getState: () => SceneWeatherState,
+    getLocation: () => SceneLocation,
+  ) {
     this.getViewer = getViewer
     this.getState = getState
+    this.getLocation = getLocation
   }
 
   update() {
     const viewer = this.getViewer()
     if (!viewer) return
+
+    const location = this.getLocation()
+    const nextLocationKey = `${location.lat}:${location.lng}`
+    if (this.collection && this.locationKey !== nextLocationKey) {
+      this.dispose()
+    }
 
     const state = this.getState()
     const cover = clampToRange(state.cloudCover, 0, 100)
@@ -101,8 +114,10 @@ export class CloudController {
 
     clouds.noiseOffset = new Cartesian3(0.4, 0.2, 0.6)
     this.collection = clouds
+    const location = this.getLocation()
+    this.locationKey = `${location.lat}:${location.lng}`
 
-    // 황금각 기반 분포로 타임스퀘어 주변에 구름을 균일하게 흩뿌립니다.
+    // 황금각 기반 분포로 현재 선택 지역 주변에 구름을 균일하게 흩뿌립니다.
     for (let index = 0; index < CLOUD_LOD.maxClouds; index += 1) {
       const width = 520 + ((index * 97) % 520)
       const height = 260 + ((index * 53) % 280)
@@ -123,10 +138,9 @@ export class CloudController {
   private getCloudPosition(index: number) {
     const angle = index * GOLDEN_ANGLE_RADIANS
     const radius = Math.sqrt((index + 0.5) / CLOUD_LOD.maxClouds)
-    const longitude =
-      NEW_YORK_TIMES_SQUARE_VIEW.longitude + Math.cos(angle) * radius * CLOUD_LOD.longitudeSpan
-    const latitude =
-      NEW_YORK_TIMES_SQUARE_VIEW.latitude + Math.sin(angle) * radius * CLOUD_LOD.latitudeSpan
+    const location = this.getLocation()
+    const longitude = location.lng + Math.cos(angle) * radius * CLOUD_LOD.longitudeSpan
+    const latitude = location.lat + Math.sin(angle) * radius * CLOUD_LOD.latitudeSpan
     const altitude = CLOUD_LOD.altitude + ((index * 179) % 620)
 
     return Cartesian3.fromDegrees(longitude, latitude, altitude)

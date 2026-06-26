@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+import { WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
 import DashboardOverlay from './DashboardOverlay.vue'
 
 const { fromTo } = vi.hoisted(() => ({
@@ -22,6 +23,8 @@ const baseProps = {
   cloudCover: 35,
   precipitation: 0,
   visibility: 15,
+  locations: WORLD_LOCATIONS,
+  selectedLocationId: 'us-new-york',
 }
 
 describe('대시보드 오버레이', () => {
@@ -45,14 +48,24 @@ describe('대시보드 오버레이', () => {
     expect(fromTo).toHaveBeenCalled()
   })
 
-  it('헤더의 타임스퀘어 비행 이벤트를 상위로 전달해야 한다', async () => {
+  it('헤더의 선택 지역 비행 이벤트를 상위로 전달해야 한다', async () => {
     const wrapper = mount(DashboardOverlay, {
       props: baseProps,
     })
 
-    await wrapper.find('button[aria-label="Times Square fly-through"]').trigger('click')
+    await wrapper.find('button[aria-label="Fly to selected location"]').trigger('click')
 
-    expect(wrapper.emitted('flyToTimesSquare')).toHaveLength(1)
+    expect(wrapper.emitted('flyToSelectedLocation')).toHaveLength(1)
+  })
+
+  it('헤더의 지역 선택 이벤트를 상위로 전달해야 한다', async () => {
+    const wrapper = mount(DashboardOverlay, {
+      props: baseProps,
+    })
+
+    await wrapper.find('select[aria-label="지역 선택"]').setValue('il-jerusalem')
+
+    expect(wrapper.emitted('selectLocation')?.[0]).toEqual(['il-jerusalem'])
   })
 
   it('헤더 설정 버튼을 누르면 설정 패널을 열어야 한다', async () => {
