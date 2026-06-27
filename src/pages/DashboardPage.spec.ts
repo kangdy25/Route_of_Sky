@@ -247,6 +247,37 @@ describe('대시보드 페이지', () => {
     expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855')
   })
 
+  it('저장소를 읽을 수 없으면 기본 뉴욕 지역으로 초기화해야 한다', () => {
+    const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('storage unavailable')
+    })
+
+    const { wrapper } = mountDashboardPage()
+
+    expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
+      id: 'us-new-york',
+    })
+    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855')
+
+    getItemSpy.mockRestore()
+  })
+
+  it('저장소에 쓸 수 없어도 지역 선택은 현재 세션 상태에 반영해야 한다', async () => {
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('storage unavailable')
+    })
+    const { wrapper } = mountDashboardPage()
+
+    await wrapper.find('[data-testid="select-jerusalem"]').trigger('click')
+
+    expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
+      id: 'il-jerusalem',
+    })
+    expect(loadCurrentWeather).toHaveBeenLastCalledWith('31.7767,35.2345')
+
+    setItemSpy.mockRestore()
+  })
+
   it('지역 변경 후 비행 버튼을 누르면 변경된 지역으로 다시 이동해야 한다', async () => {
     const { wrapper } = mountDashboardPage()
 

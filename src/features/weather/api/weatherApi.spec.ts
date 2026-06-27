@@ -72,6 +72,44 @@ describe('WeatherAPI 클라이언트', () => {
     expect(weather.aqi).toBe(175)
   })
 
+  it('localtime과 대기질 정보가 없으면 기본 시간과 AQI를 사용해야 한다', () => {
+    const weather = mapWeatherApiCurrentResponse({
+      location: {},
+      current: {
+        temp_c: 12,
+        humidity: 48,
+        wind_kph: 0,
+        wind_degree: 0,
+        cloud: 20,
+        precip_mm: 0,
+        vis_km: 16,
+      },
+    })
+
+    expect(weather.time).toBe(12)
+    expect(weather.aqi).toBe(45)
+    expect(weather.temperatureMin).toBe(12)
+    expect(weather.temperatureMax).toBe(12)
+  })
+
+  it('PM2.5가 AQI 표 범위를 넘으면 마지막 구간으로 제한해야 한다', () => {
+    const weather = mapWeatherApiCurrentResponse({
+      location: { localtime: '2026-06-26 12:00' },
+      current: {
+        temp_c: 12,
+        humidity: 48,
+        wind_kph: 0,
+        wind_degree: 0,
+        cloud: 20,
+        precip_mm: 0,
+        vis_km: 16,
+        air_quality: { pm2_5: 700 },
+      },
+    })
+
+    expect(weather.aqi).toBe(500)
+  })
+
   it('좌표를 WeatherAPI 위치 쿼리로 변환해야 한다', () => {
     expect(createWeatherLocationQuery(37.5512, 126.9882)).toBe('37.5512,126.9882')
   })
@@ -128,6 +166,17 @@ describe('WeatherAPI 클라이언트', () => {
 
     await expect(fetchCurrentWeather('bad-key', 'Seoul', fetcher)).rejects.toThrow(
       'API key is invalid.',
+    )
+  })
+
+  it('WeatherAPI 오류 메시지가 없으면 기본 실패 메시지를 사용해야 한다', async () => {
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: false,
+      json: () => Promise.resolve({}),
+    })
+
+    await expect(fetchCurrentWeather('bad-key', 'Seoul', fetcher)).rejects.toThrow(
+      'WeatherAPI 요청에 실패했습니다.',
     )
   })
 })

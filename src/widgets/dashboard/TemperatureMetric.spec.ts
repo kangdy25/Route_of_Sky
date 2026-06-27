@@ -62,4 +62,12 @@ describe('기온 지표 카드', () => {
     expect(lowWrapper.find('.bg-gradient-to-r').attributes('style')).toContain('width: 0%;')
     expect(highWrapper.find('.bg-gradient-to-r').attributes('style')).toContain('width: 100%;')
   })
+
+  it('최저/최고 기온이 같으면 진행 막대를 가득 채워야 한다', () => {
+    const wrapper = mount(TemperatureMetric, {
+      props: { temperature: 12, temperatureMin: 12, temperatureMax: 12 },
+    })
+
+    expect(wrapper.find('.bg-gradient-to-r').attributes('style')).toContain('width: 100%;')
+  })
 })

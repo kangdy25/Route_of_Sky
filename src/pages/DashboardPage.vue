@@ -11,10 +11,6 @@ const SELECTED_LOCATION_STORAGE_KEY = 'route-of-sky:selected-location-id'
 const defaultLocation = WORLD_LOCATIONS[1]
 
 function getStoredSelectedLocation() {
-  if (typeof window === 'undefined') {
-    return defaultLocation
-  }
-
   try {
     const locationId = window.localStorage.getItem(SELECTED_LOCATION_STORAGE_KEY)
 

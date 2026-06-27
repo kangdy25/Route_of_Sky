@@ -97,4 +97,14 @@ describe('날씨 store', () => {
     expect(store.errorMessage).toBe('날씨 API 오류')
     expect(store.isLoading).toBe(false)
   })
+
+  it('실시간 날씨 호출이 Error가 아닌 값으로 실패하면 기본 오류 메시지를 저장해야 한다', async () => {
+    mockedFetchCurrentWeather.mockRejectedValue('날씨 API 문자열 오류')
+    const store = useWeatherStore()
+
+    await expect(store.loadCurrentWeather()).resolves.toBe(false)
+
+    expect(store.errorMessage).toBe('실시간 날씨 정보를 불러오지 못했습니다.')
+    expect(store.isLoading).toBe(false)
+  })
 })
