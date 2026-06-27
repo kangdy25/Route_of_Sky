@@ -4,6 +4,8 @@ import type { WeatherState } from './weather.types'
 export const defaultWeatherState: WeatherState = {
   time: 16.5,
   temperature: 24.5,
+  temperatureMin: -8,
+  temperatureMax: 34,
   humidity: 62,
   windSpeed: 5,
   windDirectionDegrees: 225,

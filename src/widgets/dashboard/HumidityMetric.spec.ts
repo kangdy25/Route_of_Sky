@@ -35,4 +35,12 @@ describe('습도 지표 카드', () => {
       highWrapper.find('circle[stroke="url(#humGradient)"]').attributes('stroke-dashoffset'),
     ).toBe('0')
   })
+
+  it('습도 막대는 20퍼센트 단위 반올림 값만큼 활성화해야 한다', () => {
+    const wrapper = mount(HumidityMetric, { props: { humidity: 49 } })
+    const bars = wrapper.findAll('.grid > div')
+    const activeBars = bars.filter((bar) => bar.classes().includes('bg-cyan-400/45'))
+
+    expect(activeBars).toHaveLength(2)
+  })
 })

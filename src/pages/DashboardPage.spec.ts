@@ -6,6 +6,24 @@ import { useWeatherStore } from '@/features/weather/model/weather.store'
 import DashboardPage from './DashboardPage.vue'
 
 const flyToLocation = vi.fn()
+const loadCurrentWeather = vi.fn()
+
+vi.mock('@/features/weather/model/weather.store', async () => {
+  const actual = await vi.importActual<typeof import('@/features/weather/model/weather.store')>(
+    '@/features/weather/model/weather.store',
+  )
+
+  return {
+    ...actual,
+    useWeatherStore: () => {
+      const store = actual.useWeatherStore()
+
+      store.loadCurrentWeather = loadCurrentWeather
+
+      return store
+    },
+  }
+})
 
 function mountDashboardPage() {
   setActivePinia(createPinia())
@@ -26,6 +44,8 @@ function mountDashboardPage() {
           props: [
             'time',
             'temperature',
+            'temperatureMin',
+            'temperatureMax',
             'humidity',
             'windSpeed',
             'windDirectionDegrees',
@@ -123,6 +143,8 @@ function mountDashboardPage() {
 describe('대시보드 페이지', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    window.localStorage.clear()
+    loadCurrentWeather.mockResolvedValue(false)
   })
 
   it('기본 날씨 상태와 대시보드 오버레이를 렌더링해야 한다', () => {
@@ -130,6 +152,7 @@ describe('대시보드 페이지', () => {
 
     expect(wrapper.find('[data-testid="scene-canvas"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="dashboard-overlay"]').text()).toContain('24.5/0/15')
+    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855')
   })
 
   it('오버레이 시간 업데이트를 store에 반영해야 한다', async () => {
@@ -196,6 +219,63 @@ describe('대시보드 페이지', () => {
       city: '예루살렘',
       landmark: '통곡의 벽',
     })
+    expect(loadCurrentWeather).toHaveBeenLastCalledWith('31.7767,35.2345')
+    expect(window.localStorage.getItem('route-of-sky:selected-location-id')).toBe('il-jerusalem')
+  })
+
+  it('저장된 지역이 있으면 새로고침 후에도 해당 지역으로 초기화해야 한다', () => {
+    window.localStorage.setItem('route-of-sky:selected-location-id', 'jp-tokyo')
+
+    const { wrapper } = mountDashboardPage()
+
+    expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
+      id: 'jp-tokyo',
+      label: '일본',
+      city: '도쿄',
+    })
+    expect(loadCurrentWeather).toHaveBeenCalledWith('35.6586,139.7454')
+  })
+
+  it('저장된 지역이 유효하지 않으면 기본 뉴욕 지역으로 초기화해야 한다', () => {
+    window.localStorage.setItem('route-of-sky:selected-location-id', 'unknown')
+
+    const { wrapper } = mountDashboardPage()
+
+    expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
+      id: 'us-new-york',
+    })
+    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855')
+  })
+
+  it('저장소를 읽을 수 없으면 기본 뉴욕 지역으로 초기화해야 한다', () => {
+    const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('storage unavailable')
+    })
+
+    const { wrapper } = mountDashboardPage()
+
+    expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
+      id: 'us-new-york',
+    })
+    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855')
+
+    getItemSpy.mockRestore()
+  })
+
+  it('저장소에 쓸 수 없어도 지역 선택은 현재 세션 상태에 반영해야 한다', async () => {
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('storage unavailable')
+    })
+    const { wrapper } = mountDashboardPage()
+
+    await wrapper.find('[data-testid="select-jerusalem"]').trigger('click')
+
+    expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
+      id: 'il-jerusalem',
+    })
+    expect(loadCurrentWeather).toHaveBeenLastCalledWith('31.7767,35.2345')
+
+    setItemSpy.mockRestore()
   })
 
   it('지역 변경 후 비행 버튼을 누르면 변경된 지역으로 다시 이동해야 한다', async () => {
@@ -224,5 +304,6 @@ describe('대시보드 페이지', () => {
     expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
       id: 'us-new-york',
     })
+    expect(loadCurrentWeather).toHaveBeenCalledTimes(1)
   })
 })

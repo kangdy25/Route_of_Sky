@@ -10,7 +10,9 @@ const normalizedHumidity = computed(() => Math.min(100, Math.max(0, props.humidi
 const gaugeDashOffset = computed(() => {
   return gaugeCircumference * (1 - normalizedHumidity.value / 100)
 })
-const activeBarCount = computed(() => Math.ceil(normalizedHumidity.value / 20))
+const activeBarCount = computed(() =>
+  Math.min(5, Math.max(0, Math.round(normalizedHumidity.value / 20))),
+)
 const humidityStatus = computed(() => {
   if (normalizedHumidity.value < 35) return '건조'
   if (normalizedHumidity.value > 75) return '습함'

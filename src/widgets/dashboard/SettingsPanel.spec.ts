@@ -3,7 +3,7 @@ import { defineComponent, h, nextTick, reactive } from 'vue'
 import { describe, expect, it } from 'vitest'
 import SettingsPanel from './SettingsPanel.vue'
 
-function mountSettingsPanel() {
+function mountSettingsPanel(open = true) {
   const state = reactive({
     time: 16.5,
     temperature: 24.5,
@@ -21,7 +21,7 @@ function mountSettingsPanel() {
       setup() {
         return () =>
           h(SettingsPanel, {
-            open: true,
+            open,
             time: state.time,
             temperature: state.temperature,
             humidity: state.humidity,
@@ -335,5 +335,17 @@ describe('설정 패널', () => {
     await autoVisibilityInput?.setValue(true)
 
     expect(state.visibility).toBe(2.9)
+  })
+
+  it('패널이 닫혀 있으면 API로 들어온 가시거리를 자동 계산값으로 덮어쓰지 않아야 한다', async () => {
+    const { state } = mountSettingsPanel(false)
+
+    state.visibility = 16
+    state.aqi = 45
+    state.cloudCover = 35
+    state.precipitation = 0
+    await nextTick()
+
+    expect(state.visibility).toBe(16)
   })
 })

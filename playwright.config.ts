@@ -6,7 +6,7 @@ export default defineConfig({
   fullyParallel: true,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:5173', // Vite 기본 포트
+    baseURL: 'http://127.0.0.1:5173', // Vite 기본 포트
     trace: 'on-first-retry',
   },
   projects: [
@@ -18,8 +18,12 @@ export default defineConfig({
   ],
   // 테스트 실행 전 로컬 서버 자동 시작
   webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:5173',
+    command: './node_modules/.bin/vite --host 127.0.0.1',
+    url: 'http://127.0.0.1:5173',
     reuseExistingServer: !process.env.CI,
+    env: {
+      ...process.env,
+      VITE_WEATHER_API_KEY: process.env.VITE_WEATHER_API_KEY || 'e2e-weather-api-key',
+    },
   },
 })

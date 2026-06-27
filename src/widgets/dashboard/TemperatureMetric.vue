@@ -3,15 +3,18 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   temperature: number
+  temperatureMin: number
+  temperatureMax: number
 }>()
 
-const minTemperature = -8
-const maxTemperature = 34
-const rangeMin = -20
-const rangeMax = 40
+const rangeMin = computed(() => props.temperatureMin)
+const rangeMax = computed(() => props.temperatureMax)
 
 const temperaturePercent = computed(() => {
-  const normalized = ((props.temperature - rangeMin) / (rangeMax - rangeMin)) * 100
+  const temperatureRange = rangeMax.value - rangeMin.value
+  if (temperatureRange <= 0) return 100
+
+  const normalized = ((props.temperature - rangeMin.value) / temperatureRange) * 100
   return Math.min(100, Math.max(0, normalized))
 })
 
@@ -75,13 +78,13 @@ const temperatureDescription = computed(() => {
           <div>
             <span class="block text-sm font-semibold text-blue-300">최저 기온</span>
             <span class="mt-1 block font-mono text-lg font-black text-slate-100">
-              {{ minTemperature }}°
+              {{ temperatureMin }}°
             </span>
           </div>
           <div class="text-right">
             <span class="block text-sm font-semibold text-orange-300">최고 기온</span>
             <span class="mt-1 block font-mono text-lg font-black text-slate-100">
-              {{ maxTemperature }}°
+              {{ temperatureMax }}°
             </span>
           </div>
         </div>

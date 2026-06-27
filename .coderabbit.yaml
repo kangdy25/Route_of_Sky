@@ -2,3 +2,6 @@ language: "ko-KR"
 reviews:
   profile: "chill" # 너무 딱딱하지 않은 스타일
   indent_style: "space"
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
