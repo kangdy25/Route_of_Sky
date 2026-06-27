@@ -2,10 +2,21 @@
 import { computed, ref, onUnmounted } from 'vue'
 import { formatTime } from '@/features/weather/lib/formatTime'
 import { getTimeStatus } from '@/features/weather/lib/weatherLabels'
+import { WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
+import { getCurrentLocalTimeForLocation } from '@/features/scene/lib/sky'
+import type { SceneLocation } from '@/features/scene/model/scene.types'
 import IconButton from '@/shared/ui/IconButton.vue'
 import Panel from '@/shared/ui/Panel.vue'
 
 const time = defineModel<number>({ default: 16.5 })
+const props = withDefaults(
+  defineProps<{
+    location?: SceneLocation
+  }>(),
+  {
+    location: () => WORLD_LOCATIONS[1],
+  },
+)
 
 const formattedTime = computed(() => {
   return formatTime(time.value)
@@ -51,6 +62,10 @@ const skipBackward = () => {
 
 const resetTime = () => {
   time.value = 0
+}
+
+const resetToCurrentTime = () => {
+  time.value = getCurrentLocalTimeForLocation(props.location)
 }
 
 const leftOpacity = computed(() => {
@@ -136,6 +151,9 @@ onUnmounted(() => {
           {{ isPlaying ? '❚❚' : '▶' }}
         </IconButton>
         <IconButton title="2시간 빨리 감기" @click="skipForward">⏭</IconButton>
+        <IconButton title="현재 시간으로 리셋" class="text-xl" @click="resetToCurrentTime">
+          ◷
+        </IconButton>
       </div>
     </div>
   </Panel>

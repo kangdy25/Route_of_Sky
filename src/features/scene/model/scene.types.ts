@@ -29,6 +29,7 @@ export interface SceneLocation {
   landmark: string
   lat: number
   lng: number
+  utcOffsetHours: number
 }
 
 export interface SkyPhase {

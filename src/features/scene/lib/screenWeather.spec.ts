@@ -45,7 +45,6 @@ function createCanvas(context: ReturnType<typeof createContext> | null = createC
   return {
     width: 0,
     height: 0,
-    getBoundingClientRect: () => ({ width: 320, height: 180 }),
     getContext: vi.fn(() => context),
   } as unknown as HTMLCanvasElement
 }
@@ -53,10 +52,19 @@ function createCanvas(context: ReturnType<typeof createContext> | null = createC
 describe('화면 날씨 렌더러', () => {
   beforeEach(() => {
     vi.stubGlobal(
-      'requestAnimationFrame',
+      'setTimeout',
       vi.fn(() => 7),
     )
-    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    vi.stubGlobal('clearTimeout', vi.fn())
+    vi.stubGlobal('ResizeObserver', undefined)
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 320,
+    })
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 180,
+    })
     Object.defineProperty(window, 'devicePixelRatio', {
       configurable: true,
       value: 2,
@@ -72,7 +80,7 @@ describe('화면 날씨 렌더러', () => {
     renderer.update()
     renderer.start()
 
-    expect(window.requestAnimationFrame).toHaveBeenCalledTimes(1)
+    expect(window.setTimeout).toHaveBeenCalledTimes(1)
   })
 
   it('강수가 없으면 애니메이션과 캔버스를 정리해야 한다', () => {
@@ -82,7 +90,7 @@ describe('화면 날씨 렌더러', () => {
     renderer.start()
     renderer.update()
 
-    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(7)
+    expect(window.clearTimeout).toHaveBeenCalledWith(7)
     expect(context.clearRect).toHaveBeenCalled()
   })
 
@@ -91,7 +99,7 @@ describe('화면 날씨 렌더러', () => {
 
     renderer.stop()
 
-    expect(window.cancelAnimationFrame).not.toHaveBeenCalled()
+    expect(window.clearTimeout).not.toHaveBeenCalled()
   })
 
   it('canvas나 context가 없으면 프레임을 중단해야 한다', () => {
@@ -152,9 +160,23 @@ describe('화면 날씨 렌더러', () => {
     }))
 
     ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(16)
-    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(32)
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(50)
 
     expect(context.clearRect).toHaveBeenCalledTimes(2)
+  })
+
+  it('너무 가까운 animation frame은 그리기를 건너뛰어야 한다', () => {
+    const context = createContext()
+    const renderer = new ScreenWeatherRenderer(ref(createCanvas(context)), () => ({
+      ...baseState,
+      precipitation: 4,
+    }))
+
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(16)
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(32)
+
+    expect(context.clearRect).toHaveBeenCalledTimes(1)
+    expect(window.setTimeout).toHaveBeenCalledTimes(2)
   })
 
   it('devicePixelRatio가 없으면 1배율로 canvas를 맞춰야 한다', () => {

@@ -25,7 +25,7 @@ import {
   applyAtmosphereToScene,
   applySceneTime,
   configureViewerScene,
-  setInitialTimesSquareView,
+  setInitialLocationView,
 } from '@/features/scene/lib/cesiumScene'
 import { CloudController } from '@/features/scene/lib/clouds'
 import {
@@ -38,6 +38,8 @@ import {
 import { ScreenWeatherRenderer } from '@/features/scene/lib/screenWeather'
 import { getSkyPhase, getSunPositionForTime } from '@/features/scene/lib/sky'
 import { WeatherPostProcessController } from '@/features/scene/lib/weatherPostProcess'
+
+const TILESET_WARMUP_TIMEOUT_MS = 6000
 
 // 이 컴포넌트는 Cesium Viewer와 Vue 템플릿을 연결하는 조립자 역할만 맡습니다.
 // 실제 날씨 계산, 캔버스 렌더링, primitive 관리는 각 lib 모듈에 위임합니다.
@@ -82,6 +84,9 @@ let destroyed = false
 const sunPositionScratch = new Cartesian3()
 const sunWindowScratch = new Cartesian2()
 const sunToCameraScratch = new Cartesian3()
+const locationSurfaceScratch = new Cartesian3()
+const surfaceNormalScratch = new Cartesian3()
+const sunToLocationScratch = new Cartesian3()
 
 // props를 모듈들이 공유할 수 있는 단일 상태 객체로 정규화합니다.
 // 계산 모듈은 Vue props에 직접 의존하지 않고 SceneWeatherState만 받습니다.
@@ -123,6 +128,22 @@ function updateSunGlowPosition() {
 
   const sky = getSkyPhase(sceneState.value.time)
   const sunPosition = getSunPositionForTime(viewer.clock.currentTime, sunPositionScratch)
+  const locationSurface = Cartesian3.fromDegrees(
+    props.location.lng,
+    props.location.lat,
+    0,
+    undefined,
+    locationSurfaceScratch,
+  )
+  const surfaceNormal = Cartesian3.normalize(locationSurface, surfaceNormalScratch)
+  const sunToLocation = Cartesian3.subtract(sunPosition, locationSurface, sunToLocationScratch)
+  const isAboveLocalHorizon = Cartesian3.dot(surfaceNormal, sunToLocation) > 0
+
+  if (!isAboveLocalHorizon) {
+    sunGlowStyle.value = { opacity: 0 }
+    return
+  }
+
   const toSun = Cartesian3.subtract(sunPosition, viewer.camera.positionWC, sunToCameraScratch)
   // 태양이 카메라 뒤에 있을 때는 DOM glow를 숨겨 Cesium 태양 위치와 어긋나지 않게 합니다.
   const isInFrontOfCamera = Cartesian3.dot(toSun, viewer.camera.directionWC) > 0
@@ -151,7 +172,7 @@ function applySceneState() {
   if (!viewer) return
 
   // 시간 변경은 태양, 대기, 구름, 후처리 uniform에 모두 영향을 주므로 한 진입점에서 동기화합니다.
-  applySceneTime(viewer, sceneState.value)
+  applySceneTime(viewer, sceneState.value, props.location)
   updateSunGlowPosition()
   applyAtmosphereToScene(viewer, sceneState.value)
   cloudController.update()
@@ -180,11 +201,12 @@ function initializeViewer() {
     baseLayer: false,
     shouldAnimate: false,
     useDefaultRenderLoop: true,
-    requestRenderMode: false,
+    requestRenderMode: true,
+    maximumRenderTimeChange: Number.POSITIVE_INFINITY,
   })
 
   configureViewerScene(viewer)
-  setInitialTimesSquareView(viewer)
+  setInitialLocationView(viewer, props.location)
   removeSunGlowUpdater = viewer.scene.postRender.addEventListener(updateSunGlowPosition)
   applySceneState()
 
@@ -225,7 +247,7 @@ async function loadGooglePhotorealisticTiles() {
     if (!viewer || destroyed) return
 
     viewer.scene.primitives.add(tileset)
-    setInitialTimesSquareView(viewer)
+    setInitialLocationView(viewer, props.location)
     stopTilesetRenderSync = keepRenderingUntilInitialTilesLoaded(viewer, tileset, () => {
       if (destroyed) return
 
@@ -244,10 +266,9 @@ function keepRenderingUntilInitialTilesLoaded(
   tileset: Cesium3DTileset,
   onInitialTilesLoaded: () => void,
 ) {
-  let animationFrame = 0
+  let timeoutId = 0
   let stopped = false
   let initialTilesSettled = false
-  const startedAt = window.performance.now()
   const removeListeners: Array<() => void> = []
 
   const requestRender = () => {
@@ -256,21 +277,12 @@ function keepRenderingUntilInitialTilesLoaded(
     activeViewer.scene.requestRender()
   }
 
-  const renderFrame = () => {
-    if (destroyed || activeViewer.isDestroyed()) return
-
-    // 첫 로드에서는 사용자가 카메라를 건드리지 않아도 3D Tiles traversal과 요청 큐가 즉시 진행되게 합니다.
-    activeViewer.forceResize()
-    activeViewer.scene.requestRender()
-    activeViewer.render()
-  }
-
   const stop = () => {
     if (stopped) return
 
     stopped = true
-    if (animationFrame) {
-      window.cancelAnimationFrame(animationFrame)
+    if (timeoutId) {
+      window.clearTimeout(timeoutId)
     }
     for (const removeListener of removeListeners) {
       removeListener()
@@ -291,22 +303,9 @@ function keepRenderingUntilInitialTilesLoaded(
   }
 
   const finishInitialLoad = () => {
-    renderFrame()
+    requestRender()
     settleInitialTiles()
     stop()
-  }
-
-  const tick = () => {
-    if (stopped) return
-
-    renderFrame()
-    if (window.performance.now() - startedAt > 15000) {
-      settleInitialTiles()
-      stop()
-      return
-    }
-
-    animationFrame = window.requestAnimationFrame(tick)
   }
 
   removeListeners.push(
@@ -315,12 +314,15 @@ function keepRenderingUntilInitialTilesLoaded(
       settleInitialTiles()
     }),
   )
-  removeListeners.push(tileset.loadProgress.addEventListener(requestRender))
+  removeListeners.push(tileset.loadProgress.addEventListener(() => requestRender()))
   removeListeners.push(tileset.initialTilesLoaded.addEventListener(finishInitialLoad))
   removeListeners.push(tileset.allTilesLoaded.addEventListener(finishInitialLoad))
 
-  renderFrame()
-  animationFrame = window.requestAnimationFrame(tick)
+  requestRender()
+  timeoutId = window.setTimeout(() => {
+    settleInitialTiles()
+    stop()
+  }, TILESET_WARMUP_TIMEOUT_MS)
 
   return stop
 }

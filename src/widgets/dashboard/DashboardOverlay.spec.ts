@@ -124,6 +124,25 @@ describe('대시보드 오버레이', () => {
     expect(wrapper.text()).not.toContain('Weather Lab')
   })
 
+  it('설정 패널의 현재 날씨 렌더링 이벤트를 상위로 전달해야 한다', async () => {
+    const wrapper = mount(DashboardOverlay, {
+      props: baseProps,
+      global: {
+        stubs: {
+          teleport: true,
+        },
+      },
+    })
+
+    await wrapper.find('button[aria-label="Open settings"]').trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Render Current Weather')
+      ?.trigger('click')
+
+    expect(wrapper.emitted('renderCurrentWeather')).toHaveLength(1)
+  })
+
   it('시간 패널의 v-model 업데이트를 전달해야 한다', async () => {
     const wrapper = mount(DashboardOverlay, {
       props: {

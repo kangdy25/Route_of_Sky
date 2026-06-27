@@ -59,6 +59,7 @@ function mountDashboardPage() {
           emits: [
             'flyToSelectedLocation',
             'selectLocation',
+            'renderCurrentWeather',
             'update:time',
             'update:temperature',
             'update:humidity',
@@ -100,6 +101,14 @@ function mountDashboardPage() {
                     onClick: () => emit('selectLocation', 'missing-location'),
                   },
                   'Missing location',
+                ),
+                h(
+                  'button',
+                  {
+                    'data-testid': 'render-current-weather',
+                    onClick: () => emit('renderCurrentWeather'),
+                  },
+                  'Render current weather',
                 ),
                 h(
                   'button',
@@ -293,6 +302,15 @@ describe('대시보드 페이지', () => {
       pitchDegrees: -38,
       duration: 3.4,
     })
+  })
+
+  it('현재 날씨 렌더링 이벤트를 받으면 선택된 지역의 실제 날씨를 다시 불러와야 한다', async () => {
+    const { wrapper } = mountDashboardPage()
+    loadCurrentWeather.mockClear()
+
+    await wrapper.find('[data-testid="render-current-weather"]').trigger('click')
+
+    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855')
   })
 
   it('알 수 없는 지역 선택 이벤트는 무시해야 한다', async () => {

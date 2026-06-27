@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, it, expect, vi } from 'vitest'
+import { WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
 import TimePanel from './TimePanel.vue'
 
 describe('시간대 탐색 카드', () => {
@@ -60,6 +61,24 @@ describe('시간대 탐색 카드', () => {
     await resetButton.trigger('click')
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([0])
+  })
+
+  it('현재 시간 버튼을 클릭하면 선택 도시의 현재 현지 시간으로 되돌려야 한다', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-27T03:15:00.000Z'))
+    const wrapper = mount(TimePanel, {
+      props: {
+        modelValue: 12.0,
+        location: WORLD_LOCATIONS[2],
+        'onUpdate:modelValue': (e: number) => wrapper.setProps({ modelValue: e }),
+      },
+    })
+
+    const currentTimeButton = wrapper.find('button[title="현재 시간으로 리셋"]')
+    expect(currentTimeButton.exists()).toBe(true)
+    await currentTimeButton.trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([12.3])
   })
 
   it('뒤로 감기 버튼을 클릭하면 시간을 2시간 되돌려야 한다', async () => {
