@@ -23,7 +23,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       ...process.env,
-      VITE_WEATHER_API_KEY: process.env.VITE_WEATHER_API_KEY ?? 'e2e-weather-api-key',
+      VITE_WEATHER_API_KEY: process.env.VITE_WEATHER_API_KEY || 'e2e-weather-api-key',
     },
   },
 })
