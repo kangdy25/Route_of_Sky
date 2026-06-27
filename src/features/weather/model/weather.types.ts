@@ -3,6 +3,10 @@ export interface WeatherState {
   time: number
   /** 현재 기온입니다. 단위는 섭씨입니다. */
   temperature: number
+  /** 오늘 최저 기온입니다. 단위는 섭씨입니다. */
+  temperatureMin: number
+  /** 오늘 최고 기온입니다. 단위는 섭씨입니다. */
+  temperatureMax: number
   /** 현재 습도입니다. 0부터 100까지의 백분율입니다. */
   humidity: number
   /** 현재 풍속입니다. 단위는 m/s입니다. */

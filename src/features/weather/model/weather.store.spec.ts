@@ -27,6 +27,8 @@ describe('날씨 store', () => {
 
     expect(store.time).toBe(defaultWeatherState.time)
     expect(store.temperature).toBe(defaultWeatherState.temperature)
+    expect(store.temperatureMin).toBe(defaultWeatherState.temperatureMin)
+    expect(store.temperatureMax).toBe(defaultWeatherState.temperatureMax)
     expect(store.humidity).toBe(defaultWeatherState.humidity)
     expect(store.windSpeed).toBe(defaultWeatherState.windSpeed)
     expect(store.windDirectionDegrees).toBe(defaultWeatherState.windDirectionDegrees)
@@ -52,6 +54,8 @@ describe('날씨 store', () => {
     mockedFetchCurrentWeather.mockResolvedValue({
       time: 14.5,
       temperature: 21,
+      temperatureMin: 16,
+      temperatureMax: 27,
       humidity: 58,
       windSpeed: 4,
       windDirectionDegrees: 270,
@@ -62,9 +66,16 @@ describe('날씨 store', () => {
     })
     const store = useWeatherStore()
 
-    await expect(store.loadCurrentWeather()).resolves.toBe(true)
+    await expect(store.loadCurrentWeather('37.5512,126.9882')).resolves.toBe(true)
 
+    expect(mockedFetchCurrentWeather).toHaveBeenCalledWith(
+      'test-key',
+      '37.5512,126.9882',
+      expect.any(Function),
+    )
     expect(store.temperature).toBe(21)
+    expect(store.temperatureMin).toBe(16)
+    expect(store.temperatureMax).toBe(27)
     expect(store.humidity).toBe(58)
     expect(store.windSpeed).toBe(4)
     expect(store.windDirectionDegrees).toBe(270)

@@ -6,6 +6,8 @@ import WindSpeedMetric from './WindSpeedMetric.vue'
 
 defineProps<{
   temperature: number
+  temperatureMin: number
+  temperatureMax: number
   humidity: number
   windSpeed: number
   windDirectionDegrees: number
@@ -21,7 +23,11 @@ defineProps<{
     class="transition-all"
   >
     <!-- 기온 지표입니다. -->
-    <TemperatureMetric :temperature="temperature" />
+    <TemperatureMetric
+      :temperature="temperature"
+      :temperature-min="temperatureMin"
+      :temperature-max="temperatureMax"
+    />
 
     <!-- 습도 지표입니다. -->
     <HumidityMetric :humidity="humidity" />

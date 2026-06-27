@@ -1,6 +1,7 @@
 import type { WeatherState } from '@/features/weather/model/weather.types'
 
 export const WEATHER_API_CURRENT_ENDPOINT = 'https://api.weatherapi.com/v1/current.json'
+export const WEATHER_API_FORECAST_ENDPOINT = 'https://api.weatherapi.com/v1/forecast.json'
 export const DEFAULT_WEATHER_LOCATION_QUERY = '40.758,-73.9855'
 
 type WeatherApiFetcher = typeof fetch
@@ -25,9 +26,19 @@ interface WeatherApiLocation {
   localtime?: string
 }
 
+interface WeatherApiForecastDay {
+  day?: {
+    mintemp_c?: number
+    maxtemp_c?: number
+  }
+}
+
 interface WeatherApiCurrentResponse {
   location: WeatherApiLocation
   current: WeatherApiCurrent
+  forecast?: {
+    forecastday?: WeatherApiForecastDay[]
+  }
 }
 
 interface WeatherApiErrorResponse {
@@ -102,21 +113,30 @@ function convertUsEpaIndexToAqi(usEpaIndex?: number) {
 }
 
 function createWeatherApiUrl(apiKey: string, locationQuery: string) {
-  const url = new URL(WEATHER_API_CURRENT_ENDPOINT)
+  const url = new URL(WEATHER_API_FORECAST_ENDPOINT)
 
   url.searchParams.set('key', apiKey)
   url.searchParams.set('q', locationQuery)
+  url.searchParams.set('days', '1')
   url.searchParams.set('aqi', 'yes')
 
   return url
 }
 
+export function createWeatherLocationQuery(latitude: number, longitude: number) {
+  return `${latitude},${longitude}`
+}
+
 export function mapWeatherApiCurrentResponse(response: WeatherApiCurrentResponse): WeatherState {
   const { current, location } = response
+  const forecastDay = response.forecast?.forecastday?.[0]?.day
+  const temperature = roundTo(current.temp_c, 1)
 
   return {
     time: roundTo(parseLocalWeatherHour(location.localtime), 2),
-    temperature: roundTo(current.temp_c, 1),
+    temperature,
+    temperatureMin: roundTo(forecastDay?.mintemp_c ?? temperature, 1),
+    temperatureMax: roundTo(forecastDay?.maxtemp_c ?? temperature, 1),
     humidity: clamp(Math.round(current.humidity), 0, 100),
     windSpeed: roundTo(current.wind_kph / 3.6, 1),
     windDirectionDegrees: clamp(Math.round(current.wind_degree), 0, 360),
@@ -141,5 +161,14 @@ export async function fetchCurrentWeather(
     throw new Error(payload.error?.message || 'WeatherAPI 요청에 실패했습니다.')
   }
 
-  return mapWeatherApiCurrentResponse(payload)
+  const weather = mapWeatherApiCurrentResponse(payload)
+
+  console.info('[WeatherAPI] Current weather fetch succeeded', {
+    query: locationQuery,
+    location: payload.location,
+  })
+  console.info('[WeatherAPI] Raw current weather response', payload)
+  console.info('[WeatherAPI] Mapped weather state', weather)
+
+  return weather
 }

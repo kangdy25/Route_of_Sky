@@ -12,7 +12,7 @@ const cloudCover = defineModel<number>('cloudCover', { required: true })
 const precipitation = defineModel<number>('precipitation', { required: true })
 const visibility = defineModel<number>('visibility', { required: true })
 
-defineProps<{
+const props = defineProps<{
   open: boolean
 }>()
 
@@ -54,7 +54,7 @@ function estimateVisibilityFromAirQuality(aqiValue: number) {
 }
 
 function syncVisibilityFromAirQuality() {
-  if (!autoVisibility.value) return
+  if (!props.open || !autoVisibility.value) return
 
   visibility.value = estimateVisibilityFromAirQuality(aqi.value)
 }

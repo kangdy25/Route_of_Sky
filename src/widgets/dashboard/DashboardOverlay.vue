@@ -21,6 +21,8 @@ const precipitation = defineModel<number>('precipitation', { required: true })
 const visibility = defineModel<number>('visibility', { required: true })
 
 defineProps<{
+  temperatureMin: number
+  temperatureMax: number
   locations: SceneLocation[]
   selectedLocationId: string
 }>()
@@ -110,6 +112,8 @@ onMounted(() => {
       <aside class="pointer-events-auto flex w-full flex-col gap-6 lg:w-[380px] lg:shrink-0">
         <EnvironmentPanel
           :temperature="temperature"
+          :temperature-min="temperatureMin"
+          :temperature-max="temperatureMax"
           :humidity="humidity"
           :wind-speed="windSpeed"
           :wind-direction-degrees="windDirectionDegrees"

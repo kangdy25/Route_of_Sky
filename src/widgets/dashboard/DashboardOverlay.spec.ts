@@ -16,6 +16,8 @@ vi.mock('gsap', () => ({
 const baseProps = {
   time: 16.5,
   temperature: 24.5,
+  temperatureMin: 12,
+  temperatureMax: 31,
   humidity: 62,
   windSpeed: 5,
   windDirectionDegrees: 225,

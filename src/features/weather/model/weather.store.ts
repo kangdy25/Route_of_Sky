@@ -9,6 +9,8 @@ import type { WeatherState } from './weather.types'
 export const useWeatherStore = defineStore('weather', () => {
   const time = ref(defaultWeatherState.time)
   const temperature = ref(defaultWeatherState.temperature)
+  const temperatureMin = ref(defaultWeatherState.temperatureMin)
+  const temperatureMax = ref(defaultWeatherState.temperatureMax)
   const humidity = ref(defaultWeatherState.humidity)
   const windSpeed = ref(defaultWeatherState.windSpeed)
   const windDirectionDegrees = ref(defaultWeatherState.windDirectionDegrees)
@@ -23,6 +25,8 @@ export const useWeatherStore = defineStore('weather', () => {
   function applyWeatherState(state: WeatherState) {
     time.value = state.time
     temperature.value = state.temperature
+    temperatureMin.value = state.temperatureMin
+    temperatureMax.value = state.temperatureMax
     humidity.value = state.humidity
     windSpeed.value = state.windSpeed
     windDirectionDegrees.value = state.windDirectionDegrees
@@ -32,7 +36,7 @@ export const useWeatherStore = defineStore('weather', () => {
     visibility.value = state.visibility
   }
 
-  async function loadCurrentWeather(fetcher: typeof fetch = fetch) {
+  async function loadCurrentWeather(locationQuery?: string, fetcher: typeof fetch = fetch) {
     if (!hasWeatherApiKey) {
       return false
     }
@@ -41,7 +45,7 @@ export const useWeatherStore = defineStore('weather', () => {
     errorMessage.value = ''
 
     try {
-      applyWeatherState(await fetchCurrentWeather(weatherApiKey, undefined, fetcher))
+      applyWeatherState(await fetchCurrentWeather(weatherApiKey, locationQuery, fetcher))
       lastUpdatedAt.value = Date.now()
 
       return true
@@ -58,6 +62,8 @@ export const useWeatherStore = defineStore('weather', () => {
   return {
     time,
     temperature,
+    temperatureMin,
+    temperatureMax,
     humidity,
     windSpeed,
     windDirectionDegrees,
