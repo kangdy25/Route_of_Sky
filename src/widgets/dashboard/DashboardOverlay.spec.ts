@@ -156,6 +156,23 @@ describe('대시보드 오버레이', () => {
     expect(wrapper.emitted('update:time')?.[0]).toEqual([19.5])
   })
 
+  it('선택 지역 id가 목록에 없으면 첫 번째 지역을 시간 컨트롤에 사용해야 한다', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-27T03:15:00.000Z'))
+    const wrapper = mount(DashboardOverlay, {
+      props: {
+        ...baseProps,
+        selectedLocationId: 'missing-location',
+        'onUpdate:time': (value: number) => wrapper.setProps({ time: value }),
+      },
+    })
+
+    await wrapper.find('button[title="현재 시간으로 리셋"]').trigger('click')
+
+    expect(wrapper.emitted('update:time')?.[0]).toEqual([12.3])
+    vi.useRealTimers()
+  })
+
   it('대시보드 영역의 포인터 이벤트가 배경 scene으로 전파되지 않아야 한다', async () => {
     const wrapper = mount(DashboardOverlay, {
       props: baseProps,

@@ -413,7 +413,7 @@ describe('SceneCanvas', () => {
 
   it('태양이 카메라 뒤에 있으면 glow를 숨겨야 한다', async () => {
     const { Cartesian3 } = await import('cesium')
-    vi.mocked(Cartesian3.dot).mockReturnValueOnce(-1)
+    vi.mocked(Cartesian3.dot).mockReturnValueOnce(1).mockReturnValueOnce(-1)
     const wrapper = mount(SceneCanvas)
     await flushAsyncWork()
 
