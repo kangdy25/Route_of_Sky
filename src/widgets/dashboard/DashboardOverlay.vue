@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { hasCesiumIonAccessToken } from '@/shared/config/env'
 import type { SceneLocation } from '@/features/scene/model/scene.types'
@@ -20,7 +20,7 @@ const cloudCover = defineModel<number>('cloudCover', { required: true })
 const precipitation = defineModel<number>('precipitation', { required: true })
 const visibility = defineModel<number>('visibility', { required: true })
 
-defineProps<{
+const props = defineProps<{
   temperatureMin: number
   temperatureMax: number
   locations: SceneLocation[]
@@ -32,7 +32,14 @@ const isSettingsOpen = ref(false)
 const emit = defineEmits<{
   flyToSelectedLocation: []
   selectLocation: [locationId: string]
+  renderCurrentWeather: []
 }>()
+
+const selectedLocation = computed(
+  () =>
+    props.locations.find((location) => location.id === props.selectedLocationId) ??
+    props.locations[0],
+)
 
 onMounted(() => {
   /* v8 ignore next -- 템플릿 ref가 비어 있는 비정상 마운트 방어 guard입니다. */
@@ -128,7 +135,7 @@ onMounted(() => {
           :temperature="temperature"
         />
         <AtmospherePanel :aqi="aqi" />
-        <TimePanel v-model="time" />
+        <TimePanel v-model="time" :location="selectedLocation" />
       </aside>
     </div>
 
@@ -143,7 +150,9 @@ onMounted(() => {
       v-model:precipitation="precipitation"
       v-model:visibility="visibility"
       :open="isSettingsOpen"
+      :location="selectedLocation"
       @close="isSettingsOpen = false"
+      @render-current-weather="emit('renderCurrentWeather')"
     />
   </div>
 </template>

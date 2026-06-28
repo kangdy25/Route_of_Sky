@@ -1,10 +1,7 @@
 import { Cartesian3, JulianDate, Matrix3, Simon1994PlanetaryPositions, Transforms } from 'cesium'
 
-import {
-  NEW_YORK_SUMMER_SOLAR,
-  NEW_YORK_TIMEZONE_OFFSET_HOURS,
-  SCENE_DATE,
-} from '../model/scene.constants'
+import { NEW_YORK_SUMMER_SOLAR, SCENE_DATE, WORLD_LOCATIONS } from '../model/scene.constants'
+import type { SceneLocation } from '../model/scene.types'
 import { clampToUnitInterval, smoothstep } from './math'
 
 const sunTransformScratch = new Matrix3()
@@ -29,20 +26,36 @@ export function getSkyPhase(time: number) {
   }
 }
 
-export function getSceneDateFromLocalTime(time: number) {
+export function getSceneDateFromLocalTime(
+  time: number,
+  location: SceneLocation = WORLD_LOCATIONS[1],
+) {
   const hour = Math.floor(time)
   const minutes = Math.round((time - hour) * 60)
 
-  // UI의 뉴욕 로컬 시간을 UTC Date로 바꿔 Cesium JulianDate에 넣습니다.
+  // UI의 선택 도시 로컬 시간을 UTC Date로 바꿔 Cesium JulianDate에 넣습니다.
   return new Date(
     Date.UTC(
       SCENE_DATE.year,
       SCENE_DATE.monthIndex,
       SCENE_DATE.day,
-      hour + NEW_YORK_TIMEZONE_OFFSET_HOURS,
+      hour - location.utcOffsetHours,
       minutes,
     ),
   )
+}
+
+export function getCurrentLocalTimeForLocation(
+  location: SceneLocation = WORLD_LOCATIONS[1],
+  date = new Date(),
+) {
+  const utcHours =
+    date.getUTCHours() +
+    date.getUTCMinutes() / 60 +
+    date.getUTCSeconds() / 3600 +
+    date.getUTCMilliseconds() / 3600000
+
+  return Math.round(((((utcHours + location.utcOffsetHours) % 24) + 24) % 24) * 10) / 10
 }
 
 export function getSunPositionForTime(time: JulianDate, result: Cartesian3) {

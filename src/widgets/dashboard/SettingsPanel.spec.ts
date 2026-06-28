@@ -1,9 +1,10 @@
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, reactive } from 'vue'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
 import SettingsPanel from './SettingsPanel.vue'
 
-function mountSettingsPanel(open = true) {
+function mountSettingsPanel(open = true, location = WORLD_LOCATIONS[1]) {
   const state = reactive({
     time: 16.5,
     temperature: 24.5,
@@ -31,6 +32,7 @@ function mountSettingsPanel(open = true) {
             cloudCover: state.cloudCover,
             precipitation: state.precipitation,
             visibility: state.visibility,
+            location,
             'onUpdate:time': (value: number) => {
               state.time = value
             },
@@ -74,12 +76,17 @@ function mountSettingsPanel(open = true) {
 }
 
 describe('설정 패널', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('날씨 실험실 설정을 렌더링해야 한다', () => {
     const { wrapper } = mountSettingsPanel()
 
     expect(wrapper.text()).toContain('Settings')
     expect(wrapper.text()).toContain('Scene Time')
     expect(wrapper.text()).toContain('Weather Lab')
+    expect(wrapper.text()).toContain('Render Current Weather')
     expect(wrapper.text()).toContain('Sunny')
     expect(wrapper.text()).toContain('Precipitation')
     expect(wrapper.text()).toContain('0.0 mm/h')
@@ -104,6 +111,30 @@ describe('설정 패널', () => {
 
     expect(state.time).toBe(6.2)
     expect(wrapper.text()).toContain('06:12')
+  })
+
+  it('현재 시간 버튼은 선택 도시의 현재 현지 시간을 반영해야 한다', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-27T03:15:00.000Z'))
+    const { wrapper, state } = mountSettingsPanel(true, WORLD_LOCATIONS[2])
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Current Time')
+      ?.trigger('click')
+
+    expect(state.time).toBe(12.3)
+  })
+
+  it('현재 날씨 렌더링 버튼은 현재 날씨 이벤트를 발생시켜야 한다', async () => {
+    const { wrapper } = mountSettingsPanel()
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Render Current Weather')
+      ?.trigger('click')
+
+    expect(wrapper.findComponent(SettingsPanel).emitted('renderCurrentWeather')).toHaveLength(1)
   })
 
   it('비 프리뷰 버튼은 비 상태를 반영해야 한다', async () => {

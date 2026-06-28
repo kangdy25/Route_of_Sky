@@ -12,8 +12,8 @@ import {
   Viewer,
 } from 'cesium'
 
-import { NEW_YORK_TIMES_SQUARE_VIEW } from '../model/scene.constants'
-import type { CameraWaypoint, SceneWeatherState } from '../model/scene.types'
+import { NEW_YORK_TIMES_SQUARE_VIEW, WORLD_LOCATIONS } from '../model/scene.constants'
+import type { CameraWaypoint, SceneLocation, SceneWeatherState } from '../model/scene.types'
 import { clampToRange, clampToUnitInterval, lerpRadians } from './math'
 import { getSceneDateFromLocalTime, getSkyPhase } from './sky'
 import { getSnowstormIntensity, getWeatherTint } from './weather'
@@ -65,11 +65,14 @@ export function configureCameraControls(viewer: Viewer) {
   ]
 }
 
-export function setInitialTimesSquareView(viewer: Viewer) {
+export function setInitialLocationView(
+  viewer: Viewer,
+  location: SceneLocation = WORLD_LOCATIONS[1],
+) {
   viewer.camera.setView({
     destination: Cartesian3.fromDegrees(
-      NEW_YORK_TIMES_SQUARE_VIEW.longitude,
-      NEW_YORK_TIMES_SQUARE_VIEW.latitude,
+      location.lng,
+      location.lat,
       NEW_YORK_TIMES_SQUARE_VIEW.height,
     ),
     orientation: {
@@ -78,6 +81,10 @@ export function setInitialTimesSquareView(viewer: Viewer) {
       roll: 0,
     },
   })
+}
+
+export function setInitialTimesSquareView(viewer: Viewer) {
+  setInitialLocationView(viewer, WORLD_LOCATIONS[1])
 }
 
 export function applyAtmosphereToScene(viewer: Viewer, state: SceneWeatherState) {
@@ -147,10 +154,14 @@ export function applyAtmosphereToScene(viewer: Viewer, state: SceneWeatherState)
   viewer.scene.requestRender()
 }
 
-export function applySceneTime(viewer: Viewer, state: SceneWeatherState) {
-  const currentTime = JulianDate.fromDate(getSceneDateFromLocalTime(state.time))
-  const startTime = JulianDate.fromDate(getSceneDateFromLocalTime(0))
-  const stopTime = JulianDate.fromDate(getSceneDateFromLocalTime(24))
+export function applySceneTime(
+  viewer: Viewer,
+  state: SceneWeatherState,
+  location: SceneLocation = WORLD_LOCATIONS[1],
+) {
+  const currentTime = JulianDate.fromDate(getSceneDateFromLocalTime(state.time, location))
+  const startTime = JulianDate.fromDate(getSceneDateFromLocalTime(0, location))
+  const stopTime = JulianDate.fromDate(getSceneDateFromLocalTime(24, location))
 
   // 실제 애니메이션 시계가 아니라 선택된 로컬 시간을 태양/달 위치 계산에 고정하기 위한 설정입니다.
   viewer.clock.startTime = startTime

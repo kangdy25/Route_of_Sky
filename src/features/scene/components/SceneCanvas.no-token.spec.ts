@@ -33,6 +33,8 @@ vi.mock('cesium', () => ({
   Cartesian3: class {
     static subtract = vi.fn(() => ({}))
     static dot = vi.fn(() => 1)
+    static fromDegrees = vi.fn(() => ({}))
+    static normalize = vi.fn(() => ({}))
   },
   Cesium3DTileset: {
     fromIonAssetId: mocks.fromIonAssetId,
@@ -57,7 +59,7 @@ vi.mock('@/features/scene/lib/cesiumScene', () => ({
   applyAtmosphereToScene: vi.fn(),
   applySceneTime: vi.fn(),
   configureViewerScene: vi.fn(),
-  setInitialTimesSquareView: vi.fn(),
+  setInitialLocationView: vi.fn(),
 }))
 
 vi.mock('@/features/scene/lib/clouds', () => ({

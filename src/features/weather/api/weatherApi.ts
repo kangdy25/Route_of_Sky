@@ -163,12 +163,5 @@ export async function fetchCurrentWeather(
 
   const weather = mapWeatherApiCurrentResponse(payload)
 
-  console.info('[WeatherAPI] Current weather fetch succeeded', {
-    query: locationQuery,
-    location: payload.location,
-  })
-  console.info('[WeatherAPI] Raw current weather response', payload)
-  console.info('[WeatherAPI] Mapped weather state', weather)
-
   return weather
 }

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { formatTime } from '@/features/weather/lib/formatTime'
+import { getCurrentLocalTimeForLocation } from '@/features/scene/lib/sky'
+import { WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
+import type { SceneLocation } from '@/features/scene/model/scene.types'
 
 const time = defineModel<number>('time', { required: true })
 const temperature = defineModel<number>('temperature', { required: true })
@@ -12,12 +15,19 @@ const cloudCover = defineModel<number>('cloudCover', { required: true })
 const precipitation = defineModel<number>('precipitation', { required: true })
 const visibility = defineModel<number>('visibility', { required: true })
 
-const props = defineProps<{
-  open: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    open: boolean
+    location?: SceneLocation
+  }>(),
+  {
+    location: () => WORLD_LOCATIONS[1],
+  },
+)
 
 const emit = defineEmits<{
   close: []
+  renderCurrentWeather: []
 }>()
 
 const autoVisibility = ref(true)
@@ -140,6 +150,10 @@ function setTimePreset(nextTime: number) {
   time.value = nextTime
 }
 
+function resetToCurrentTime() {
+  time.value = getCurrentLocalTimeForLocation(props.location)
+}
+
 function setManualVisibility(event: Event) {
   const target = event.target as HTMLInputElement
   visibility.value = Number(target.value)
@@ -256,6 +270,16 @@ watch(autoVisibility, (enabled) => {
               </button>
             </div>
 
+            <div class="mt-3 flex justify-end">
+              <button
+                type="button"
+                class="rounded-md border border-cyan-200/45 bg-cyan-300/15 px-3 py-2 text-xs font-black text-cyan-50 transition hover:border-cyan-100/80 hover:bg-cyan-300/25 focus:ring-2 focus:ring-cyan-200/45 focus:outline-none"
+                @click="resetToCurrentTime"
+              >
+                Current Time
+              </button>
+            </div>
+
             <label class="mt-4 block">
               <span class="flex justify-between gap-3 text-xs font-bold text-slate-300">
                 <span>Time scrubber</span>
@@ -285,6 +309,13 @@ watch(autoVisibility, (enabled) => {
             </div>
 
             <div class="mt-4 grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                class="col-span-3 rounded-md border border-cyan-200/55 bg-cyan-300/22 px-3 py-3 text-sm font-black text-cyan-50 shadow-[0_0_16px_rgba(103,232,249,0.18)] transition hover:border-cyan-100/80 hover:bg-cyan-300/30 focus:ring-2 focus:ring-cyan-100/55 focus:outline-none"
+                @click="emit('renderCurrentWeather')"
+              >
+                Render Current Weather
+              </button>
               <button
                 type="button"
                 class="rounded-md border border-emerald-300/35 bg-emerald-400/10 px-3 py-2 text-sm font-black text-emerald-100 transition hover:border-emerald-200/70 hover:bg-emerald-400/20 focus:ring-2 focus:ring-emerald-300/40 focus:outline-none"

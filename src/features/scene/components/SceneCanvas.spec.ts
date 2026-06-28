@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
+import { WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
 import SceneCanvas from './SceneCanvas.vue'
 
 const mocks = vi.hoisted(() => {
@@ -48,7 +49,7 @@ const mocks = vi.hoisted(() => {
     viewerCtor: vi.fn(),
     fromIonAssetId: vi.fn(),
     configureViewerScene: vi.fn(),
-    setInitialTimesSquareView: vi.fn(),
+    setInitialLocationView: vi.fn(),
     applySceneTime: vi.fn(),
     applyAtmosphereToScene: vi.fn(),
     cameraInstances: [] as Array<{
@@ -91,6 +92,8 @@ vi.mock('cesium', () => {
 
     static subtract = vi.fn(() => ({}))
     static dot = vi.fn(() => 1)
+    static fromDegrees = vi.fn(() => ({}))
+    static normalize = vi.fn(() => ({}))
   }
 
   return {
@@ -131,7 +134,7 @@ vi.mock('@/features/scene/lib/cesiumScene', () => ({
   applyAtmosphereToScene: mocks.applyAtmosphereToScene,
   applySceneTime: mocks.applySceneTime,
   configureViewerScene: mocks.configureViewerScene,
-  setInitialTimesSquareView: mocks.setInitialTimesSquareView,
+  setInitialLocationView: mocks.setInitialLocationView,
 }))
 
 vi.mock('@/features/scene/lib/clouds', () => ({
@@ -201,7 +204,7 @@ describe('SceneCanvas', () => {
     mocks.fromIonAssetId.mockReset()
     mocks.fromIonAssetId.mockResolvedValue(mocks.tileset)
     mocks.configureViewerScene.mockClear()
-    mocks.setInitialTimesSquareView.mockClear()
+    mocks.setInitialLocationView.mockClear()
     mocks.applySceneTime.mockClear()
     mocks.applyAtmosphereToScene.mockClear()
     mocks.cameraInstances.length = 0
@@ -209,10 +212,10 @@ describe('SceneCanvas', () => {
     mocks.postProcessInstances.length = 0
     mocks.screenWeatherInstances.length = 0
     vi.stubGlobal(
-      'requestAnimationFrame',
+      'setTimeout',
       vi.fn(() => 42),
     )
-    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    vi.stubGlobal('clearTimeout', vi.fn())
   })
 
   it('Viewer를 초기화하고 Google 3D Tiles를 로드해야 한다', async () => {
@@ -221,8 +224,19 @@ describe('SceneCanvas', () => {
     await flushAsyncWork()
 
     expect(mocks.viewerCtor).toHaveBeenCalled()
+    expect(mocks.viewerCtor).toHaveBeenCalledWith(
+      expect.any(HTMLDivElement),
+      expect.objectContaining({
+        requestRenderMode: true,
+        maximumRenderTimeChange: Number.POSITIVE_INFINITY,
+      }),
+    )
     expect(mocks.configureViewerScene).toHaveBeenCalledWith(mocks.viewer)
-    expect(mocks.setInitialTimesSquareView).toHaveBeenCalledTimes(2)
+    expect(mocks.setInitialLocationView).toHaveBeenCalledTimes(2)
+    expect(mocks.setInitialLocationView).toHaveBeenCalledWith(
+      mocks.viewer,
+      expect.objectContaining({ id: 'us-new-york' }),
+    )
     expect(mocks.fromIonAssetId).toHaveBeenCalledWith(
       2275207,
       expect.objectContaining({
@@ -231,9 +245,37 @@ describe('SceneCanvas', () => {
       }),
     )
     expect(mocks.viewer.scene.primitives.add).toHaveBeenCalledWith(mocks.tileset)
-    expect(mocks.viewer.forceResize).toHaveBeenCalled()
-    expect(mocks.viewer.render).toHaveBeenCalled()
+    expect(mocks.viewer.forceResize).not.toHaveBeenCalled()
+    expect(mocks.viewer.scene.requestRender).toHaveBeenCalled()
+    expect(mocks.viewer.render).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Loading Google Photorealistic 3D Tiles')
+  })
+
+  it('선택된 지역이 있으면 첫 카메라 뷰와 타일 로드 후 재정렬에 반영해야 한다', async () => {
+    mount(SceneCanvas, {
+      props: {
+        location: WORLD_LOCATIONS[2],
+      },
+    })
+
+    await flushAsyncWork()
+
+    expect(mocks.setInitialLocationView).toHaveBeenCalledTimes(2)
+    expect(mocks.setInitialLocationView).toHaveBeenNthCalledWith(
+      1,
+      mocks.viewer,
+      WORLD_LOCATIONS[2],
+    )
+    expect(mocks.setInitialLocationView).toHaveBeenNthCalledWith(
+      2,
+      mocks.viewer,
+      WORLD_LOCATIONS[2],
+    )
+    expect(mocks.applySceneTime).toHaveBeenCalledWith(
+      mocks.viewer,
+      expect.objectContaining({ time: 16.5 }),
+      WORLD_LOCATIONS[2],
+    )
   })
 
   it('context menu 기본 동작을 막아 Cesium 캔버스 조작을 유지해야 한다', async () => {
@@ -267,38 +309,24 @@ describe('SceneCanvas', () => {
     mocks.tileset.allTilesLoaded.listeners[0]()
 
     expect(mocks.viewer.scene.requestRender).toHaveBeenCalled()
-    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(42)
+    expect(window.clearTimeout).toHaveBeenCalledWith(42)
     wrapper.unmount()
   })
 
-  it('워밍업 중 타임아웃 전에는 다음 프레임을 예약해야 한다', async () => {
-    const frameCallbacks: Array<FrameRequestCallback> = []
-    vi.stubGlobal(
-      'requestAnimationFrame',
-      vi.fn((callback: FrameRequestCallback) => {
-        frameCallbacks.push(callback)
-        return frameCallbacks.length
-      }),
-    )
-    const nowSpy = vi.spyOn(window.performance, 'now').mockReturnValue(0)
+  it('워밍업 중에는 타임아웃 정리를 예약하고 로딩 상태를 유지해야 한다', async () => {
     const wrapper = mount(SceneCanvas)
     await flushAsyncWork()
 
-    nowSpy.mockReturnValue(1000)
-    frameCallbacks[0]?.(1000)
-    await flushAsyncWork()
-
-    expect(frameCallbacks).toHaveLength(2)
+    expect(window.setTimeout).toHaveBeenCalledWith(expect.any(Function), 6000)
     expect(wrapper.text()).toContain('Loading Google Photorealistic 3D Tiles')
-    nowSpy.mockRestore()
   })
 
-  it('워밍업이 정리된 뒤 남은 frame callback은 아무 작업도 하지 않아야 한다', async () => {
-    let frameCallback: FrameRequestCallback | null = null
+  it('워밍업이 정리된 뒤 남은 timeout callback은 아무 작업도 하지 않아야 한다', async () => {
+    let timeoutCallback: (() => void) | null = null
     vi.stubGlobal(
-      'requestAnimationFrame',
-      vi.fn((callback: FrameRequestCallback) => {
-        frameCallback = callback
+      'setTimeout',
+      vi.fn((callback: () => void) => {
+        timeoutCallback = callback
         return 42
       }),
     )
@@ -306,33 +334,30 @@ describe('SceneCanvas', () => {
     await flushAsyncWork()
 
     mocks.tileset.initialTilesLoaded.listeners[0]()
-    mocks.viewer.render.mockClear()
-    frameCallback?.(1000)
+    mocks.viewer.scene.requestRender.mockClear()
+    timeoutCallback?.()
 
-    expect(mocks.viewer.render).not.toHaveBeenCalled()
+    expect(mocks.viewer.scene.requestRender).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 
   it('워밍업 시간이 오래 지나면 타임아웃으로 초기 로딩을 정리해야 한다', async () => {
-    let frameCallback: FrameRequestCallback | null = null
+    let timeoutCallback: (() => void) | null = null
     vi.stubGlobal(
-      'requestAnimationFrame',
-      vi.fn((callback: FrameRequestCallback) => {
-        frameCallback = callback
+      'setTimeout',
+      vi.fn((callback: () => void) => {
+        timeoutCallback = callback
         return 77
       }),
     )
-    const nowSpy = vi.spyOn(window.performance, 'now').mockReturnValue(0)
     const wrapper = mount(SceneCanvas)
     await flushAsyncWork()
 
-    nowSpy.mockReturnValue(16001)
-    frameCallback?.(16001)
+    timeoutCallback?.()
     await flushAsyncWork()
 
     expect(wrapper.text()).not.toContain('Loading Google Photorealistic 3D Tiles')
-    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(77)
-    nowSpy.mockRestore()
+    expect(window.clearTimeout).toHaveBeenCalledWith(77)
   })
 
   it('언마운트 이후 타일 이벤트가 들어와도 안전해야 한다', async () => {
@@ -388,7 +413,7 @@ describe('SceneCanvas', () => {
 
   it('태양이 카메라 뒤에 있으면 glow를 숨겨야 한다', async () => {
     const { Cartesian3 } = await import('cesium')
-    vi.mocked(Cartesian3.dot).mockReturnValueOnce(-1)
+    vi.mocked(Cartesian3.dot).mockReturnValueOnce(1).mockReturnValueOnce(-1)
     const wrapper = mount(SceneCanvas)
     await flushAsyncWork()
 
@@ -399,12 +424,36 @@ describe('SceneCanvas', () => {
     expect(sunGlow?.attributes('style')).toContain('opacity: 0')
   })
 
-  it('viewer가 destroy된 상태에서 워밍업 frame이 들어와도 렌더링하지 않아야 한다', async () => {
-    let frameCallback: FrameRequestCallback | null = null
+  it('태양이 선택 지역의 지평선 아래에 있으면 glow를 숨겨야 한다', async () => {
+    const { Cartesian3 } = await import('cesium')
+    vi.mocked(Cartesian3.dot).mockReturnValueOnce(-1)
+    const wrapper = mount(SceneCanvas, {
+      props: {
+        location: WORLD_LOCATIONS[2],
+      },
+    })
+    await flushAsyncWork()
+
+    mocks.viewer.scene.postRender.listeners[0]()
+    await nextTick()
+
+    const sunGlow = wrapper.findAll('div').find((element) => element.classes().includes('h-24'))
+    expect(Cartesian3.fromDegrees).toHaveBeenCalledWith(
+      139.7454,
+      35.6586,
+      0,
+      undefined,
+      expect.anything(),
+    )
+    expect(sunGlow?.attributes('style')).toContain('opacity: 0')
+  })
+
+  it('viewer가 destroy된 상태에서 워밍업 timeout이 들어와도 렌더링하지 않아야 한다', async () => {
+    let timeoutCallback: (() => void) | null = null
     vi.stubGlobal(
-      'requestAnimationFrame',
-      vi.fn((callback: FrameRequestCallback) => {
-        frameCallback = callback
+      'setTimeout',
+      vi.fn((callback: () => void) => {
+        timeoutCallback = callback
         return 42
       }),
     )
@@ -412,25 +461,25 @@ describe('SceneCanvas', () => {
     await flushAsyncWork()
 
     mocks.viewer.isDestroyed.mockReturnValue(true)
-    mocks.viewer.render.mockClear()
-    frameCallback?.(1000)
+    mocks.viewer.scene.requestRender.mockClear()
+    timeoutCallback?.()
 
-    expect(mocks.viewer.render).not.toHaveBeenCalled()
+    expect(mocks.viewer.scene.requestRender).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 
-  it('animation frame id가 없으면 취소 요청 없이 워밍업을 정리해야 한다', async () => {
+  it('timeout id가 없으면 취소 요청 없이 워밍업을 정리해야 한다', async () => {
     vi.stubGlobal(
-      'requestAnimationFrame',
+      'setTimeout',
       vi.fn(() => 0),
     )
     const wrapper = mount(SceneCanvas)
     await flushAsyncWork()
-    vi.mocked(window.cancelAnimationFrame).mockClear()
+    vi.mocked(window.clearTimeout).mockClear()
 
     mocks.tileset.initialTilesLoaded.listeners[0]()
 
-    expect(window.cancelAnimationFrame).not.toHaveBeenCalled()
+    expect(window.clearTimeout).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 
@@ -476,7 +525,7 @@ describe('SceneCanvas', () => {
 
     wrapper.unmount()
 
-    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(42)
+    expect(window.clearTimeout).toHaveBeenCalledWith(42)
     expect(mocks.cameraInstances[0].dispose).toHaveBeenCalled()
     expect(mocks.cloudInstances[0].dispose).toHaveBeenCalled()
     expect(mocks.postProcessInstances[0].dispose).toHaveBeenCalled()

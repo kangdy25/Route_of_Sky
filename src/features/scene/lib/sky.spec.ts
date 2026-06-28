@@ -1,6 +1,12 @@
 import { Cartesian3, JulianDate, Transforms } from 'cesium'
 import { describe, expect, it, vi } from 'vitest'
-import { getSceneDateFromLocalTime, getSkyPhase, getSunPositionForTime } from './sky'
+import { WORLD_LOCATIONS } from '../model/scene.constants'
+import {
+  getCurrentLocalTimeForLocation,
+  getSceneDateFromLocalTime,
+  getSkyPhase,
+  getSunPositionForTime,
+} from './sky'
 
 describe('하늘 시간 계산', () => {
   it('낮 시간에는 daylight가 높고 새벽/노을 계수가 낮아야 한다', () => {
@@ -24,6 +30,24 @@ describe('하늘 시간 계산', () => {
 
   it('뉴욕 로컬 시간을 Cesium에 넣을 UTC Date로 변환해야 한다', () => {
     expect(getSceneDateFromLocalTime(16.5).toISOString()).toBe('2026-06-20T20:30:00.000Z')
+  })
+
+  it('선택 도시의 UTC 오프셋으로 로컬 시간을 변환해야 한다', () => {
+    expect(getSceneDateFromLocalTime(16.5, WORLD_LOCATIONS[2]).toISOString()).toBe(
+      '2026-06-20T07:30:00.000Z',
+    )
+    expect(getSceneDateFromLocalTime(16.5, WORLD_LOCATIONS[9]).toISOString()).toBe(
+      '2026-06-20T10:30:00.000Z',
+    )
+  })
+
+  it('현재 UTC 시간을 선택 도시의 24시간 현지 시간으로 변환해야 한다', () => {
+    expect(
+      getCurrentLocalTimeForLocation(WORLD_LOCATIONS[2], new Date('2026-06-27T03:15:00.000Z')),
+    ).toBe(12.3)
+    expect(
+      getCurrentLocalTimeForLocation(WORLD_LOCATIONS[1], new Date('2026-06-27T03:15:00.000Z')),
+    ).toBe(23.3)
   })
 
   it('JulianDate 기준 태양 위치 벡터를 계산해야 한다', () => {

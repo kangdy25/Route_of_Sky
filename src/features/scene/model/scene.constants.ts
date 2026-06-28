@@ -27,6 +27,7 @@ export const WORLD_LOCATIONS = [
     landmark: '남산서울타워',
     lat: 37.5512,
     lng: 126.9882,
+    utcOffsetHours: 9,
   },
   {
     id: 'us-new-york',
@@ -35,6 +36,7 @@ export const WORLD_LOCATIONS = [
     landmark: '타임스퀘어',
     lat: 40.758,
     lng: -73.9855,
+    utcOffsetHours: -4,
   },
   {
     id: 'jp-tokyo',
@@ -43,6 +45,7 @@ export const WORLD_LOCATIONS = [
     landmark: '도쿄타워',
     lat: 35.6586,
     lng: 139.7454,
+    utcOffsetHours: 9,
   },
   {
     id: 'il-jerusalem',
@@ -51,6 +54,7 @@ export const WORLD_LOCATIONS = [
     landmark: '통곡의 벽',
     lat: 31.7767,
     lng: 35.2345,
+    utcOffsetHours: 3,
   },
   {
     id: 'gb-london',
@@ -59,6 +63,7 @@ export const WORLD_LOCATIONS = [
     landmark: '빅벤',
     lat: 51.5007,
     lng: -0.1246,
+    utcOffsetHours: 1,
   },
   {
     id: 'fr-paris',
@@ -67,6 +72,7 @@ export const WORLD_LOCATIONS = [
     landmark: '에펠탑',
     lat: 48.8584,
     lng: 2.2945,
+    utcOffsetHours: 2,
   },
   {
     id: 'de-berlin',
@@ -75,6 +81,7 @@ export const WORLD_LOCATIONS = [
     landmark: '브란덴부르크 문',
     lat: 52.5163,
     lng: 13.3777,
+    utcOffsetHours: 2,
   },
   {
     id: 'au-sydney',
@@ -83,6 +90,7 @@ export const WORLD_LOCATIONS = [
     landmark: '시드니 오페라 하우스',
     lat: -33.8568,
     lng: 151.2153,
+    utcOffsetHours: 10,
   },
   {
     id: 'br-rio',
@@ -91,6 +99,7 @@ export const WORLD_LOCATIONS = [
     landmark: '구세주 그리스도상',
     lat: -22.9519,
     lng: -43.2105,
+    utcOffsetHours: -3,
   },
   {
     id: 'in-agra',
@@ -99,6 +108,7 @@ export const WORLD_LOCATIONS = [
     landmark: '타지마할',
     lat: 27.1751,
     lng: 78.0421,
+    utcOffsetHours: 5.5,
   },
 ] satisfies SceneLocation[]
 

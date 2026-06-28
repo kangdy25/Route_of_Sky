@@ -116,6 +116,7 @@ onMounted(() => {
       :selected-location-id="selectedLocation.id"
       @fly-to-selected-location="flyToSelectedLocation"
       @select-location="selectLocation"
+      @render-current-weather="loadSelectedLocationWeather"
     />
   </main>
 </template>

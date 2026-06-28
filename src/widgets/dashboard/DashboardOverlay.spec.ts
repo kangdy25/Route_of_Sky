@@ -124,6 +124,25 @@ describe('대시보드 오버레이', () => {
     expect(wrapper.text()).not.toContain('Weather Lab')
   })
 
+  it('설정 패널의 현재 날씨 렌더링 이벤트를 상위로 전달해야 한다', async () => {
+    const wrapper = mount(DashboardOverlay, {
+      props: baseProps,
+      global: {
+        stubs: {
+          teleport: true,
+        },
+      },
+    })
+
+    await wrapper.find('button[aria-label="Open settings"]').trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Render Current Weather')
+      ?.trigger('click')
+
+    expect(wrapper.emitted('renderCurrentWeather')).toHaveLength(1)
+  })
+
   it('시간 패널의 v-model 업데이트를 전달해야 한다', async () => {
     const wrapper = mount(DashboardOverlay, {
       props: {
@@ -135,6 +154,23 @@ describe('대시보드 오버레이', () => {
     await wrapper.find('input[type="range"]').setValue('19.5')
 
     expect(wrapper.emitted('update:time')?.[0]).toEqual([19.5])
+  })
+
+  it('선택 지역 id가 목록에 없으면 첫 번째 지역을 시간 컨트롤에 사용해야 한다', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-27T03:15:00.000Z'))
+    const wrapper = mount(DashboardOverlay, {
+      props: {
+        ...baseProps,
+        selectedLocationId: 'missing-location',
+        'onUpdate:time': (value: number) => wrapper.setProps({ time: value }),
+      },
+    })
+
+    await wrapper.find('button[title="현재 시간으로 리셋"]').trigger('click')
+
+    expect(wrapper.emitted('update:time')?.[0]).toEqual([12.3])
+    vi.useRealTimers()
   })
 
   it('대시보드 영역의 포인터 이벤트가 배경 scene으로 전파되지 않아야 한다', async () => {

@@ -5,6 +5,8 @@ import type { SceneWeatherState } from '../model/scene.types'
 import { clampToRange, clampToUnitInterval, smoothstep } from './math'
 import { getPrecipitationMode, getSnowstormIntensity, getThunderstormIntensity } from './weather'
 
+const SCREEN_WEATHER_FRAME_INTERVAL_MS = 1000 / 30
+
 // 화면 공간의 비, 눈, 번개를 2D canvas에 그립니다.
 // Cesium scene에 입자를 넣지 않아도 UI 위에서 빠르게 날씨 효과를 바꿀 수 있습니다.
 interface ScreenWeatherParticle {
@@ -39,8 +41,11 @@ interface LightningStrike {
 }
 
 export class ScreenWeatherRenderer {
-  private animationFrame = 0
+  private frameTimer = 0
   private lastFrame = 0
+  private observedCanvas: HTMLCanvasElement | null = null
+  private resizeObserver: ResizeObserver | null = null
+  private canvasMetrics = { width: 1, height: 1, pixelRatio: 1 }
   private particles: ScreenWeatherParticle[] = []
   private lightningStrikes: LightningStrike[] = []
   private nextLightningAt = 0
@@ -62,40 +67,53 @@ export class ScreenWeatherRenderer {
   }
 
   start() {
-    if (this.animationFrame) return
+    if (this.frameTimer) return
 
     this.lastFrame = 0
-    this.animationFrame = window.requestAnimationFrame(this.renderFrame)
+    this.scheduleNextFrame(0)
   }
 
   stop() {
-    if (this.animationFrame) {
-      window.cancelAnimationFrame(this.animationFrame)
+    if (this.frameTimer) {
+      window.clearTimeout(this.frameTimer)
     }
 
-    this.animationFrame = 0
+    this.frameTimer = 0
     this.lastFrame = 0
+    this.disconnectResizeObserver()
     this.particles = []
     this.lightningStrikes = []
     this.nextLightningAt = 0
     this.clearCanvas()
   }
 
+  private scheduleNextFrame(delay = SCREEN_WEATHER_FRAME_INTERVAL_MS) {
+    this.frameTimer = window.setTimeout(() => {
+      this.renderFrame(window.performance.now())
+    }, delay)
+  }
+
   private readonly renderFrame = (timestamp: number) => {
-    const canvas = this.canvasRef.value
-    if (!canvas) {
-      this.animationFrame = 0
+    if (this.lastFrame && timestamp - this.lastFrame < SCREEN_WEATHER_FRAME_INTERVAL_MS) {
+      this.scheduleNextFrame(SCREEN_WEATHER_FRAME_INTERVAL_MS - (timestamp - this.lastFrame))
       return
     }
 
+    const canvas = this.canvasRef.value
+    if (!canvas) {
+      this.frameTimer = 0
+      return
+    }
+
+    this.observeCanvas(canvas)
     const context = canvas.getContext('2d')
     if (!context) {
-      this.animationFrame = 0
+      this.frameTimer = 0
       return
     }
 
     // CSS 크기는 레이아웃 기준, 실제 canvas 픽셀은 devicePixelRatio 기준으로 맞춰 선명도를 유지합니다.
-    const { width, height, pixelRatio } = this.resizeCanvas(canvas)
+    const { width, height, pixelRatio } = this.resizeCanvas(canvas, this.canvasMetrics)
     const state = this.getState()
     const mode = getPrecipitationMode(state)
     const dt = this.lastFrame ? Math.min(0.04, (timestamp - this.lastFrame) / 1000) : 0.016
@@ -159,14 +177,53 @@ export class ScreenWeatherRenderer {
 
     this.drawLightning(context, timestamp, width, height, state)
 
-    this.animationFrame = window.requestAnimationFrame(this.renderFrame)
+    this.scheduleNextFrame()
   }
 
-  private resizeCanvas(canvas: HTMLCanvasElement) {
-    const rect = canvas.getBoundingClientRect()
+  private observeCanvas(canvas: HTMLCanvasElement) {
+    if (this.observedCanvas === canvas) return
+
+    this.disconnectResizeObserver()
+    this.observedCanvas = canvas
+    this.canvasMetrics = this.getFallbackCanvasMetrics(canvas)
+
+    if (typeof ResizeObserver === 'undefined') return
+
+    this.resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) return
+
+      this.canvasMetrics = {
+        width: Math.max(1, Math.floor(entry.contentRect.width)),
+        height: Math.max(1, Math.floor(entry.contentRect.height)),
+        pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+      }
+    })
+    this.resizeObserver.observe(canvas)
+  }
+
+  private disconnectResizeObserver() {
+    this.resizeObserver?.disconnect()
+    this.resizeObserver = null
+    this.observedCanvas = null
+  }
+
+  private getFallbackCanvasMetrics(canvas: HTMLCanvasElement) {
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 2)
-    const width = Math.max(1, Math.floor(rect.width))
-    const height = Math.max(1, Math.floor(rect.height))
+    const widthFromCanvas = Math.floor(canvas.width / pixelRatio)
+    const heightFromCanvas = Math.floor(canvas.height / pixelRatio)
+
+    return {
+      width: Math.max(1, widthFromCanvas || window.innerWidth || 1),
+      height: Math.max(1, heightFromCanvas || window.innerHeight || 1),
+      pixelRatio,
+    }
+  }
+
+  private resizeCanvas(
+    canvas: HTMLCanvasElement,
+    { width, height, pixelRatio }: { width: number; height: number; pixelRatio: number },
+  ) {
     const targetWidth = Math.floor(width * pixelRatio)
     const targetHeight = Math.floor(height * pixelRatio)
 

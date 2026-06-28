@@ -45,7 +45,6 @@ function createCanvas(context: ReturnType<typeof createContext> | null = createC
   return {
     width: 0,
     height: 0,
-    getBoundingClientRect: () => ({ width: 320, height: 180 }),
     getContext: vi.fn(() => context),
   } as unknown as HTMLCanvasElement
 }
@@ -53,10 +52,19 @@ function createCanvas(context: ReturnType<typeof createContext> | null = createC
 describe('화면 날씨 렌더러', () => {
   beforeEach(() => {
     vi.stubGlobal(
-      'requestAnimationFrame',
+      'setTimeout',
       vi.fn(() => 7),
     )
-    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    vi.stubGlobal('clearTimeout', vi.fn())
+    vi.stubGlobal('ResizeObserver', undefined)
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 320,
+    })
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 180,
+    })
     Object.defineProperty(window, 'devicePixelRatio', {
       configurable: true,
       value: 2,
@@ -72,7 +80,30 @@ describe('화면 날씨 렌더러', () => {
     renderer.update()
     renderer.start()
 
-    expect(window.requestAnimationFrame).toHaveBeenCalledTimes(1)
+    expect(window.setTimeout).toHaveBeenCalledTimes(1)
+  })
+
+  it('예약된 타이머 callback은 다음 렌더 프레임을 실행해야 한다', () => {
+    let timerCallback: (() => void) | null = null
+    vi.stubGlobal(
+      'setTimeout',
+      vi.fn((callback: () => void) => {
+        timerCallback = callback
+        return 7
+      }),
+    )
+    const context = createContext()
+    const renderer = new ScreenWeatherRenderer(ref(createCanvas(context)), () => ({
+      ...baseState,
+      precipitation: 4,
+    }))
+    const nowSpy = vi.spyOn(window.performance, 'now').mockReturnValue(16)
+
+    renderer.start()
+    timerCallback?.()
+
+    expect(context.clearRect).toHaveBeenCalled()
+    nowSpy.mockRestore()
   })
 
   it('강수가 없으면 애니메이션과 캔버스를 정리해야 한다', () => {
@@ -82,7 +113,7 @@ describe('화면 날씨 렌더러', () => {
     renderer.start()
     renderer.update()
 
-    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(7)
+    expect(window.clearTimeout).toHaveBeenCalledWith(7)
     expect(context.clearRect).toHaveBeenCalled()
   })
 
@@ -91,7 +122,7 @@ describe('화면 날씨 렌더러', () => {
 
     renderer.stop()
 
-    expect(window.cancelAnimationFrame).not.toHaveBeenCalled()
+    expect(window.clearTimeout).not.toHaveBeenCalled()
   })
 
   it('canvas나 context가 없으면 프레임을 중단해야 한다', () => {
@@ -144,7 +175,149 @@ describe('화면 날씨 렌더러', () => {
     expect(canvas.height).toBe(360)
   })
 
+  it('같은 canvas는 ResizeObserver를 다시 연결하지 않아야 한다', () => {
+    const context = createContext()
+    const canvas = createCanvas(context)
+    const disconnect = vi.fn()
+    const observe = vi.fn()
+    const ResizeObserverMock = vi.fn(function ResizeObserverMock(this: ResizeObserver) {
+      this.observe = observe
+      this.disconnect = disconnect
+    })
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock)
+    const renderer = new ScreenWeatherRenderer(ref(canvas), () => ({
+      ...baseState,
+      precipitation: 4,
+    }))
+
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(16)
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(50)
+
+    expect(ResizeObserverMock).toHaveBeenCalledTimes(1)
+    expect(observe).toHaveBeenCalledWith(canvas)
+  })
+
+  it('ResizeObserver는 canvas 측정값을 렌더 크기에 반영해야 한다', () => {
+    const context = createContext()
+    const canvas = createCanvas(context)
+    let observerCallback!: ResizeObserverCallback
+    const disconnect = vi.fn()
+    const observe = vi.fn()
+    vi.stubGlobal(
+      'ResizeObserver',
+      vi.fn(function ResizeObserverMock(this: ResizeObserver, callback: ResizeObserverCallback) {
+        observerCallback = callback
+        this.observe = observe
+        this.disconnect = disconnect
+      }),
+    )
+    const renderer = new ScreenWeatherRenderer(ref(canvas), () => ({
+      ...baseState,
+      precipitation: 4,
+    }))
+
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(16)
+    observerCallback(
+      [{ contentRect: { width: 123.8, height: 45.2 } } as ResizeObserverEntry],
+      {} as ResizeObserver,
+    )
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(50)
+
+    expect(canvas.width).toBe(246)
+    expect(canvas.height).toBe(90)
+  })
+
+  it('ResizeObserver 측정 시 devicePixelRatio가 없으면 1배율을 사용해야 한다', () => {
+    Object.defineProperty(window, 'devicePixelRatio', {
+      configurable: true,
+      value: 0,
+    })
+    const context = createContext()
+    const canvas = createCanvas(context)
+    let observerCallback!: ResizeObserverCallback
+    vi.stubGlobal(
+      'ResizeObserver',
+      vi.fn(function ResizeObserverMock(this: ResizeObserver, callback: ResizeObserverCallback) {
+        observerCallback = callback
+        this.observe = vi.fn()
+        this.disconnect = vi.fn()
+      }),
+    )
+    const renderer = new ScreenWeatherRenderer(ref(canvas), () => ({
+      ...baseState,
+      precipitation: 4,
+    }))
+
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(16)
+    observerCallback(
+      [{ contentRect: { width: 123.8, height: 45.2 } } as ResizeObserverEntry],
+      {} as ResizeObserver,
+    )
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(50)
+
+    expect(canvas.width).toBe(123)
+    expect(canvas.height).toBe(45)
+  })
+
+  it('canvas와 창 크기가 모두 없으면 최소 1px 크기로 fallback해야 한다', () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 0,
+    })
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 0,
+    })
+    const canvas = createCanvas(createContext())
+    const renderer = new ScreenWeatherRenderer(ref(canvas), () => ({
+      ...baseState,
+      precipitation: 4,
+    }))
+
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(16)
+
+    expect(canvas.width).toBe(2)
+    expect(canvas.height).toBe(2)
+  })
+
+  it('ResizeObserver 엔트리가 없으면 기존 canvas 측정값을 유지해야 한다', () => {
+    const canvas = createCanvas(createContext())
+    let observerCallback!: ResizeObserverCallback
+    vi.stubGlobal(
+      'ResizeObserver',
+      vi.fn(function ResizeObserverMock(this: ResizeObserver, callback: ResizeObserverCallback) {
+        observerCallback = callback
+        this.observe = vi.fn()
+        this.disconnect = vi.fn()
+      }),
+    )
+    const renderer = new ScreenWeatherRenderer(ref(canvas), () => ({
+      ...baseState,
+      precipitation: 4,
+    }))
+
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(16)
+    observerCallback([], {} as ResizeObserver)
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(50)
+
+    expect(canvas.width).toBe(640)
+    expect(canvas.height).toBe(360)
+  })
+
   it('두 번째 프레임부터는 이전 timestamp로 dt를 계산해야 한다', () => {
+    const context = createContext()
+    const renderer = new ScreenWeatherRenderer(ref(createCanvas(context)), () => ({
+      ...baseState,
+      precipitation: 4,
+    }))
+
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(16)
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(50)
+
+    expect(context.clearRect).toHaveBeenCalledTimes(2)
+  })
+
+  it('너무 가까운 animation frame은 그리기를 건너뛰어야 한다', () => {
     const context = createContext()
     const renderer = new ScreenWeatherRenderer(ref(createCanvas(context)), () => ({
       ...baseState,
@@ -154,7 +327,8 @@ describe('화면 날씨 렌더러', () => {
     ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(16)
     ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(32)
 
-    expect(context.clearRect).toHaveBeenCalledTimes(2)
+    expect(context.clearRect).toHaveBeenCalledTimes(1)
+    expect(window.setTimeout).toHaveBeenCalledTimes(2)
   })
 
   it('devicePixelRatio가 없으면 1배율로 canvas를 맞춰야 한다', () => {

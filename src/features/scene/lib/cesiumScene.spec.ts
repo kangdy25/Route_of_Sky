@@ -1,12 +1,14 @@
 import { Cartesian3, Color, DynamicAtmosphereLightingType, SunLight } from 'cesium'
 import { describe, expect, it, vi } from 'vitest'
 import type { SceneWeatherState } from '../model/scene.types'
+import { WORLD_LOCATIONS } from '../model/scene.constants'
 import {
   CameraFlyToController,
   applyAtmosphereToScene,
   applySceneTime,
   configureCameraControls,
   configureViewerScene,
+  setInitialLocationView,
   setInitialTimesSquareView,
 } from './cesiumScene'
 
@@ -107,6 +109,18 @@ describe('Cesium scene 설정', () => {
         orientation: expect.objectContaining({ roll: 0 }),
       }),
     )
+  })
+
+  it('초기 뷰를 선택된 지역 좌표로 적용해야 한다', () => {
+    const viewer = createViewer()
+    const fromDegreesSpy = vi.spyOn(Cartesian3, 'fromDegrees')
+
+    setInitialLocationView(viewer as never, WORLD_LOCATIONS[2])
+
+    expect(fromDegreesSpy).toHaveBeenCalledWith(139.7454, 35.6586, 1650)
+    expect(viewer.camera.setView).toHaveBeenCalled()
+
+    fromDegreesSpy.mockRestore()
   })
 
   it('대기 상태를 scene fog, sky, light에 반영해야 한다', () => {
