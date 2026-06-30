@@ -84,18 +84,22 @@ const windDescription = computed(() => {
 
 <template>
   <div class="spec-section">
-    <div class="mb-4 flex items-center justify-between">
+    <div class="mb-4 flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
         <div
           class="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)]"
         ></div>
         <span class="text-base font-bold text-cyan-50 uppercase">풍속</span>
       </div>
-      <span class="text-base font-semibold text-emerald-400 italic">{{ windSummary }}</span>
+      <span class="text-right text-sm font-semibold text-emerald-400 italic sm:text-base">{{
+        windSummary
+      }}</span>
     </div>
-    <div class="flex items-center gap-8">
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
       <!-- Compass / Wind speed circular indicator -->
-      <div class="relative flex h-36 w-36 shrink-0 items-center justify-center">
+      <div
+        class="relative mx-auto flex h-32 w-32 shrink-0 items-center justify-center sm:mx-0 sm:h-36 sm:w-36"
+      >
         <!-- Circular Outer Ring -->
         <svg class="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
           <circle
@@ -117,13 +121,13 @@ const windDescription = computed(() => {
 
         <!-- Compass Needle (glowing rotated line/arrow inside the dial) -->
         <div
-          class="absolute h-24 w-1 origin-center rounded-full bg-gradient-to-b from-emerald-400 via-emerald-400 to-transparent shadow-[0_0_12px_rgba(52,211,153,0.6)] transition-transform duration-700"
+          class="absolute h-20 w-1 origin-center rounded-full bg-gradient-to-b from-emerald-400 via-emerald-400 to-transparent shadow-[0_0_12px_rgba(52,211,153,0.6)] transition-transform duration-700 sm:h-24"
           :style="windNeedleStyle"
         ></div>
 
         <!-- Center Value overlay -->
         <div
-          class="absolute flex h-20 w-20 flex-col items-center justify-center rounded-full border border-cyan-300/20 bg-slate-950/85 shadow-[inset_0_0_14px_rgba(34,211,238,0.12)]"
+          class="absolute flex h-[4.5rem] w-[4.5rem] flex-col items-center justify-center rounded-full border border-cyan-300/20 bg-slate-950/85 shadow-[inset_0_0_14px_rgba(34,211,238,0.12)] sm:h-20 sm:w-20"
         >
           <span class="text-2xl font-black text-white">{{ windSpeed }}</span>
           <span class="text-xs font-bold text-slate-200 uppercase">m/s</span>

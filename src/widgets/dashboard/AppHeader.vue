@@ -1,28 +1,40 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { SceneLocation } from '@/features/scene/model/scene.types'
 
-defineProps<{
-  locations: SceneLocation[]
-  selectedLocationId: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    locations: SceneLocation[]
+    selectedLocationId: string
+    isDashboardOpen?: boolean
+  }>(),
+  {
+    isDashboardOpen: true,
+  },
+)
 
 const emit = defineEmits<{
   flyToSelectedLocation: []
   openSettings: []
   selectLocation: [locationId: string]
+  toggleDashboard: []
 }>()
+
+const dashboardToggleLabel = computed(() =>
+  props.isDashboardOpen ? 'Hide dashboard' : 'Show dashboard',
+)
 </script>
 
 <template>
   <header
-    class="pointer-events-auto relative z-10 flex items-center justify-between rounded-lg border border-cyan-300/20 bg-slate-950/60 px-5 py-3 shadow-[inset_0_0_24px_rgba(34,211,238,0.12),0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
+    class="pointer-events-auto sticky top-3 z-20 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-cyan-300/20 bg-slate-950/72 px-3 py-3 shadow-[inset_0_0_24px_rgba(34,211,238,0.12),0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:px-4 lg:relative lg:top-auto lg:grid-cols-[auto_minmax(15rem,22rem)_auto] lg:px-5"
   >
     <div
-      class="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/80 to-transparent shadow-[0_0_16px_rgba(34,211,238,0.8)]"
+      class="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/80 to-transparent shadow-[0_0_16px_rgba(34,211,238,0.8)] sm:inset-x-16"
     ></div>
-    <div class="flex items-center gap-3">
+    <div class="flex min-w-0 items-center gap-2 sm:gap-3">
       <div
-        class="flex h-14 w-14 items-center justify-center rounded-xl border border-cyan-300/20 bg-slate-950/45 p-1.5 shadow-[inset_0_0_18px_rgba(34,211,238,0.10),0_0_18px_rgba(34,211,238,0.24)] backdrop-blur-md"
+        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-cyan-300/20 bg-slate-950/45 p-1.5 shadow-[inset_0_0_18px_rgba(34,211,238,0.10),0_0_18px_rgba(34,211,238,0.24)] backdrop-blur-md max-[380px]:hidden sm:h-12 sm:w-12 lg:h-14 lg:w-14 lg:rounded-xl"
       >
         <img
           src="/logo.png"
@@ -31,14 +43,14 @@ const emit = defineEmits<{
         />
       </div>
       <h1
-        class="bg-gradient-to-r from-cyan-100 via-sky-400 to-orange-300 bg-clip-text text-3xl font-black text-transparent drop-shadow-[0_0_12px_rgba(34,211,238,0.34)]"
+        class="truncate bg-gradient-to-r from-cyan-100 via-sky-400 to-orange-300 bg-clip-text text-xl font-black text-transparent drop-shadow-[0_0_12px_rgba(34,211,238,0.34)] sm:text-2xl lg:text-3xl"
       >
         Route of Sky
       </h1>
     </div>
 
     <label
-      class="flex items-center gap-3 rounded-lg border border-cyan-300/25 bg-cyan-950/20 px-4 py-3 shadow-[inset_0_0_14px_rgba(34,211,238,0.10)] backdrop-blur-md"
+      class="col-span-2 row-start-2 flex min-w-0 items-center gap-2 rounded-lg border border-cyan-300/25 bg-cyan-950/20 px-3 py-2.5 shadow-[inset_0_0_14px_rgba(34,211,238,0.10)] backdrop-blur-md sm:gap-3 sm:px-4 lg:col-span-1 lg:row-start-auto lg:py-3"
     >
       <svg class="h-5 w-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
@@ -56,13 +68,13 @@ const emit = defineEmits<{
       </svg>
       <span class="sr-only">지역 선택</span>
       <select
-        class="min-w-44 bg-transparent text-base font-black text-cyan-50 uppercase outline-none"
-        :value="selectedLocationId"
+        class="min-w-0 flex-1 bg-transparent text-sm font-black text-cyan-50 uppercase outline-none sm:text-base"
+        :value="props.selectedLocationId"
         aria-label="지역 선택"
         @change="emit('selectLocation', ($event.target as HTMLSelectElement).value)"
       >
         <option
-          v-for="location in locations"
+          v-for="location in props.locations"
           :key="location.id"
           class="bg-slate-950 text-cyan-50"
           :value="location.id"
@@ -72,15 +84,43 @@ const emit = defineEmits<{
       </select>
     </label>
 
-    <div class="flex gap-4">
+    <div
+      class="col-start-2 row-start-1 flex justify-end gap-2 sm:gap-3 lg:col-start-auto lg:row-start-auto lg:gap-4"
+    >
       <button
         type="button"
-        class="rounded-lg border border-cyan-300/25 bg-slate-950/55 p-3 text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] backdrop-blur-md transition-all hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/45 focus:outline-none"
+        class="rounded-lg border border-cyan-300/25 bg-slate-950/55 p-2.5 text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] backdrop-blur-md transition-all hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/45 focus:outline-none lg:hidden"
+        :title="dashboardToggleLabel"
+        :aria-label="dashboardToggleLabel"
+        :aria-expanded="props.isDashboardOpen"
+        aria-controls="dashboard-panels"
+        @click.stop="emit('toggleDashboard')"
+      >
+        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            v-if="props.isDashboardOpen"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 6h16M7 12h10M10 18h4"
+          ></path>
+          <path
+            v-else
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 7h16M4 12h16M4 17h16"
+          ></path>
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="rounded-lg border border-cyan-300/25 bg-slate-950/55 p-2.5 text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] backdrop-blur-md transition-all hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/45 focus:outline-none max-[380px]:hidden sm:p-3"
         title="Fly to selected location"
         aria-label="Fly to selected location"
         @click.stop="emit('flyToSelectedLocation')"
       >
-        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -103,12 +143,12 @@ const emit = defineEmits<{
       </button>
       <button
         type="button"
-        class="rounded-lg border border-cyan-300/25 bg-slate-950/55 p-3 text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] backdrop-blur-md transition-all hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/45 focus:outline-none"
+        class="rounded-lg border border-cyan-300/25 bg-slate-950/55 p-2.5 text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,0.08)] backdrop-blur-md transition-all hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/45 focus:outline-none sm:p-3"
         title="Open settings"
         aria-label="Open settings"
         @click.stop="emit('openSettings')"
       >
-        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"

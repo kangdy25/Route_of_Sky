@@ -44,15 +44,15 @@ const aqiBarClass = computed(() => {
 
 <template>
   <Panel title="대기질 정보" full-height>
-    <div class="mb-6 flex items-end justify-between">
+    <div class="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <span class="block text-base font-bold text-cyan-100/80 uppercase">대기질 지수</span>
-        <span class="mt-2 block text-4xl font-black text-white"
+        <span class="mt-2 block text-3xl font-black text-white sm:text-4xl"
           >지수: <span class="text-cyan-400">{{ aqi }}</span></span
         >
       </div>
-      <div class="flex flex-col items-end">
-        <span class="text-2xl font-black" :class="aqiAccentClass">{{ aqiLevel }}</span>
+      <div class="flex flex-col items-start sm:items-end">
+        <span class="text-xl font-black sm:text-2xl" :class="aqiAccentClass">{{ aqiLevel }}</span>
         <span class="text-sm font-bold text-cyan-100/70 uppercase">{{ aqiRange }}</span>
       </div>
     </div>

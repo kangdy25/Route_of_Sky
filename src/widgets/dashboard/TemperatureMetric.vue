@@ -47,25 +47,29 @@ const temperatureDescription = computed(() => {
 </script>
 
 <template>
-  <div class="spec-section mb-10">
-    <div class="mb-4 flex items-center justify-between">
+  <div class="spec-section mb-8 sm:mb-10">
+    <div class="mb-4 flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
         <div
           class="h-2 w-2 rounded-full bg-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.6)]"
         ></div>
         <span class="text-base font-bold text-cyan-50 uppercase">기온</span>
       </div>
-      <span class="text-base font-semibold text-orange-400 italic">{{ temperatureSummary }}</span>
+      <span class="text-right text-sm font-semibold text-orange-400 italic sm:text-base">{{
+        temperatureSummary
+      }}</span>
     </div>
 
-    <div class="flex items-center gap-8">
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
       <div
-        class="relative flex h-36 w-36 shrink-0 flex-col items-center justify-center rounded-2xl border-3 border-orange-300/30 bg-gradient-to-br from-slate-950/75 via-cyan-950/25 to-orange-950/25 shadow-[inset_0_0_24px_rgba(251,146,60,0.10),0_0_18px_rgba(251,146,60,0.08)]"
+        class="relative mx-auto flex h-32 w-32 shrink-0 flex-col items-center justify-center rounded-2xl border-3 border-orange-300/30 bg-gradient-to-br from-slate-950/75 via-cyan-950/25 to-orange-950/25 shadow-[inset_0_0_24px_rgba(251,146,60,0.10),0_0_18px_rgba(251,146,60,0.08)] sm:mx-0 sm:h-36 sm:w-36"
       >
         <div
           class="absolute top-3 right-3 h-2 w-2 rounded-full bg-orange-300 shadow-[0_0_10px_rgba(251,191,36,0.65)]"
         ></div>
-        <span class="text-4xl leading-none font-black text-white"> {{ temperature }}° </span>
+        <span class="text-3xl leading-none font-black text-white sm:text-4xl">
+          {{ temperature }}°
+        </span>
         <span
           class="mt-3 rounded-full border border-orange-300/20 bg-orange-400/10 px-3 py-1 text-sm font-bold text-orange-300"
         >

@@ -84,24 +84,24 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Panel class="relative" padding-class="p-8" full-height justify>
-    <div class="flex items-start justify-between">
+  <Panel class="relative" padding-class="p-4 sm:p-8" full-height justify>
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h2 class="text-xl font-black text-cyan-50 uppercase">시간대 탐색</h2>
-        <p class="mt-2 text-[15px] text-cyan-100/70">
+        <h2 class="text-lg font-black text-cyan-50 uppercase sm:text-xl">시간대 탐색</h2>
+        <p class="mt-2 text-sm text-cyan-100/70 sm:text-[15px]">
           재생 헤드를 드래그하여 시간대별<br />
           하늘 상태를 미리 확인하세요.
         </p>
       </div>
-      <div class="text-right">
-        <span class="block text-2xl font-black text-white">{{ timeStatus.title }}</span>
+      <div class="sm:text-right">
+        <span class="block text-xl font-black text-white sm:text-2xl">{{ timeStatus.title }}</span>
         <span class="block text-base font-bold text-cyan-300 uppercase">{{
           timeStatus.subtitle
         }}</span>
       </div>
     </div>
 
-    <div class="mt-8 flex flex-col gap-8">
+    <div class="mt-6 flex flex-col gap-6 sm:mt-8 sm:gap-8">
       <div class="relative w-full px-2">
         <input
           v-model.number="time"
@@ -121,7 +121,7 @@ onUnmounted(() => {
             :style="{ left: `${(time / 24) * 100}%` }"
           ></div>
         </div>
-        <div class="relative mt-5 h-12 font-mono text-base font-bold text-slate-300">
+        <div class="relative mt-5 h-12 font-mono text-sm font-bold text-slate-300 sm:text-base">
           <span
             class="absolute top-0 left-1 transition-opacity duration-200"
             :style="{ opacity: leftOpacity }"
@@ -144,7 +144,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div class="flex items-center justify-center gap-4 sm:gap-6">
+      <div class="flex items-center justify-center gap-3 sm:gap-6">
         <IconButton title="00:00으로 리셋" class="text-xl" @click="resetTime">↺</IconButton>
         <IconButton title="2시간 뒤로 감기" @click="skipBackward">⏮</IconButton>
         <IconButton title="재생/일시정지" @click="togglePlay">

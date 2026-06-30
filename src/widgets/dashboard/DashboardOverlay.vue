@@ -29,6 +29,7 @@ const props = defineProps<{
 
 const overlayRef = ref<HTMLElement | null>(null)
 const isSettingsOpen = ref(false)
+const isDashboardOpen = ref(true)
 const emit = defineEmits<{
   flyToSelectedLocation: []
   selectLocation: [locationId: string]
@@ -62,7 +63,7 @@ onMounted(() => {
 <template>
   <div
     ref="overlayRef"
-    class="dashboard-frame pointer-events-none relative z-10 flex min-h-screen flex-col p-4 lg:p-6"
+    class="dashboard-frame pointer-events-none relative z-10 flex min-h-dvh flex-col p-3 sm:p-4 lg:p-6"
     @click.stop
     @dblclick.stop
     @mousedown.stop
@@ -77,34 +78,36 @@ onMounted(() => {
     @wheel.stop
   >
     <div
-      class="pointer-events-none absolute inset-3 border border-cyan-300/15 shadow-[inset_0_0_32px_rgba(34,211,238,0.10)]"
+      class="pointer-events-none absolute inset-2 border border-cyan-300/15 shadow-[inset_0_0_32px_rgba(34,211,238,0.10)] sm:inset-3"
     ></div>
     <div
-      class="pointer-events-none absolute inset-x-12 top-3 h-px bg-gradient-to-r from-transparent via-cyan-200/70 to-transparent shadow-[0_0_16px_rgba(34,211,238,0.85)]"
+      class="pointer-events-none absolute inset-x-6 top-3 h-px bg-gradient-to-r from-transparent via-cyan-200/70 to-transparent shadow-[0_0_16px_rgba(34,211,238,0.85)] sm:inset-x-12"
     ></div>
     <div
-      class="pointer-events-none absolute inset-x-20 bottom-3 h-px bg-gradient-to-r from-transparent via-cyan-300/35 to-transparent"
+      class="pointer-events-none absolute inset-x-10 bottom-3 h-px bg-gradient-to-r from-transparent via-cyan-300/35 to-transparent sm:inset-x-20"
     ></div>
     <AppHeader
       :locations="locations"
       :selected-location-id="selectedLocationId"
+      :is-dashboard-open="isDashboardOpen"
       @fly-to-selected-location="emit('flyToSelectedLocation')"
       @select-location="emit('selectLocation', $event)"
       @open-settings="isSettingsOpen = true"
+      @toggle-dashboard="isDashboardOpen = !isDashboardOpen"
     />
 
     <!-- Cesium ion 토큰이 없을 때 3D Tiles 활성화 방법을 안내합니다. -->
     <div
       v-if="!hasCesiumIonAccessToken"
-      class="pointer-events-auto mt-4 rounded-xl border border-blue-500/20 bg-blue-950/45 p-4 backdrop-blur-md"
+      class="pointer-events-auto mt-4 rounded-lg border border-blue-500/20 bg-blue-950/45 p-3 backdrop-blur-md sm:p-4"
     >
       <div class="flex items-start gap-3">
-        <span class="text-lg">💡</span>
+        <span class="text-lg">i</span>
         <div>
-          <h3 class="text-base font-semibold text-blue-300">
+          <h3 class="text-sm font-semibold text-blue-300 sm:text-base">
             Google Photorealistic 3D Tiles 활성화 가능
           </h3>
-          <p class="mt-1 text-sm leading-relaxed text-slate-300">
+          <p class="mt-1 text-xs leading-relaxed text-slate-300 sm:text-sm">
             프로젝트 루트의 <code>.env</code> 파일에 Cesium ion 토큰을
             <code>VITE_CESIUM_ION_ACCESS_TOKEN</code> 변수로 등록해 주세요. 등록 시 Asset ID
             <code>2275207</code>의 실사 3D 타일이 로드됩니다.
@@ -114,9 +117,15 @@ onMounted(() => {
     </div>
 
     <div
-      class="mt-6 flex flex-1 flex-col justify-between gap-6 pb-2 lg:flex-row lg:items-start lg:pb-0"
+      id="dashboard-panels"
+      :class="[
+        'mt-4 flex-1 flex-col justify-between gap-4 pb-24 transition-all duration-300 sm:mt-5 sm:gap-5 lg:mt-6 lg:flex-row lg:items-start lg:gap-6 lg:pb-0',
+        isDashboardOpen ? 'flex' : 'hidden lg:flex',
+      ]"
     >
-      <aside class="pointer-events-auto flex w-full flex-col gap-6 lg:w-[380px] lg:shrink-0">
+      <aside
+        class="pointer-events-auto flex w-full flex-col gap-4 sm:gap-5 lg:w-[380px] lg:shrink-0 lg:gap-6"
+      >
         <EnvironmentPanel
           :temperature="temperature"
           :temperature-min="temperatureMin"
@@ -127,7 +136,9 @@ onMounted(() => {
         />
       </aside>
 
-      <aside class="pointer-events-auto flex w-full flex-col gap-6 lg:w-[390px] lg:shrink-0">
+      <aside
+        class="pointer-events-auto flex w-full flex-col gap-4 sm:gap-5 lg:w-[390px] lg:shrink-0 lg:gap-6"
+      >
         <SkyPanel
           :cloud-cover="cloudCover"
           :precipitation="precipitation"
@@ -181,5 +192,13 @@ onMounted(() => {
   bottom: 12px;
   border-right: 2px solid rgba(34, 211, 238, 0.52);
   border-bottom: 2px solid rgba(34, 211, 238, 0.52);
+}
+
+@media (max-width: 639px) {
+  .dashboard-frame::before,
+  .dashboard-frame::after {
+    width: 56px;
+    height: 56px;
+  }
 }
 </style>

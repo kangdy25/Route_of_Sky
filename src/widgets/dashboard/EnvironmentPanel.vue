@@ -18,7 +18,7 @@ defineProps<{
   <Panel
     title="환경 정보"
     accent-class="w-16"
-    header-class="mb-10"
+    header-class="mb-6 sm:mb-10"
     surface="soft"
     class="transition-all"
   >

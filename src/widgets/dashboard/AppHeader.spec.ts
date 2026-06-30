@@ -49,4 +49,14 @@ describe('앱 헤더', () => {
 
     expect(wrapper.emitted('openSettings')).toHaveLength(1)
   })
+
+  it('모바일 대시보드 토글 버튼을 클릭하면 toggleDashboard 이벤트를 발생시켜야 한다', async () => {
+    const wrapper = mount(AppHeader, {
+      props: baseProps,
+    })
+
+    await wrapper.find('button[aria-label="Hide dashboard"]').trigger('click')
+
+    expect(wrapper.emitted('toggleDashboard')).toHaveLength(1)
+  })
 })

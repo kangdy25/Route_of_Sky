@@ -15,7 +15,7 @@ const props = withDefaults(
     title: '',
     accentClass: 'w-12',
     headerClass: 'mb-6',
-    paddingClass: 'p-6',
+    paddingClass: 'p-4 sm:p-6',
     surface: 'default',
     fullHeight: false,
     justify: false,
@@ -41,7 +41,7 @@ const surfaceClass = computed(() => {
       <slot name="header">
         <div v-if="title" :class="['flex items-center justify-between', headerClass]">
           <h2
-            class="text-xl font-black text-cyan-50 uppercase drop-shadow-[0_0_8px_rgba(34,211,238,0.35)]"
+            class="text-lg font-black text-cyan-50 uppercase drop-shadow-[0_0_8px_rgba(34,211,238,0.35)] sm:text-xl"
           >
             {{ title }}
           </h2>
