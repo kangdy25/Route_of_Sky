@@ -38,12 +38,12 @@ const displayUnit = computed(() => {
 
 <template>
   <div
-    class="flex flex-col items-center justify-between rounded-lg border border-cyan-300/20 bg-slate-950/60 p-3 text-center shadow-[inset_0_0_18px_rgba(34,211,238,0.10)]"
+    class="flex min-w-0 flex-col items-center justify-between rounded-lg border border-cyan-300/20 bg-slate-950/60 p-2 text-center shadow-[inset_0_0_18px_rgba(34,211,238,0.10)] sm:p-3"
   >
-    <span class="text-base font-bold text-cyan-50 uppercase">{{ metricTitle }}</span>
+    <span class="text-sm font-bold text-cyan-50 uppercase sm:text-base">{{ metricTitle }}</span>
     <div class="my-2 flex flex-col items-center gap-1">
       <svg
-        class="h-10 w-10 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"
+        class="h-8 w-8 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)] sm:h-10 sm:w-10"
         :class="isThunderstorm ? 'text-amber-200' : 'text-cyan-300'"
         fill="none"
         viewBox="0 0 24 24"
@@ -69,13 +69,13 @@ const displayUnit = computed(() => {
           d="M13.4 10.2h4.2l-4.7 5.2h3.3L9.8 23l1.6-5.3H8.2l2.9-7.5h2.3z"
         />
       </svg>
-      <span class="mt-1 text-xl leading-none font-black text-white"
+      <span class="mt-1 text-lg leading-none font-black text-white sm:text-xl"
         >{{ displayValue }}
         <span class="text-sm font-normal text-slate-200">{{ displayUnit }}</span></span
       >
     </div>
     <span
-      class="text-base font-bold uppercase"
+      class="text-sm font-bold uppercase sm:text-base"
       :class="isThunderstorm ? 'text-amber-200' : 'text-cyan-300'"
       >{{ precipitationText }}</span
     >

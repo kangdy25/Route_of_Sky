@@ -26,17 +26,21 @@ const condensationLabel = computed(() => {
 </script>
 
 <template>
-  <div class="spec-section mb-10">
-    <div class="mb-4 flex items-center justify-between">
+  <div class="spec-section mb-8 sm:mb-10">
+    <div class="mb-4 flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
         <div class="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.6)]"></div>
         <span class="text-base font-bold text-cyan-50 uppercase">습도</span>
       </div>
-      <span class="text-base font-semibold text-cyan-400 italic">{{ condensationLabel }}</span>
+      <span class="text-right text-sm font-semibold text-cyan-400 italic sm:text-base">{{
+        condensationLabel
+      }}</span>
     </div>
-    <div class="flex items-center gap-8">
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
       <!-- Enlarged Circular Gauge -->
-      <div class="relative flex h-36 w-36 shrink-0 items-center justify-center">
+      <div
+        class="relative mx-auto flex h-32 w-32 shrink-0 items-center justify-center sm:mx-0 sm:h-36 sm:w-36"
+      >
         <svg class="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
           <circle
             cx="50"
@@ -67,8 +71,9 @@ const condensationLabel = computed(() => {
           </defs>
         </svg>
         <div class="flex flex-col items-center">
-          <span class="text-4xl leading-none font-black text-white"
-            >{{ humidity }}<span class="ml-1 text-xl font-normal text-slate-200">%</span></span
+          <span class="text-3xl leading-none font-black text-white sm:text-4xl"
+            >{{ humidity
+            }}<span class="ml-1 text-lg font-normal text-slate-200 sm:text-xl">%</span></span
           >
           <span class="mt-2 text-base font-black text-cyan-400 uppercase">{{
             humidityStatus

@@ -86,6 +86,24 @@ describe('대시보드 오버레이', () => {
     expect(wrapper.text()).toContain('Weather Lab')
   })
 
+  it('모바일 대시보드 토글 버튼으로 패널 영역을 접고 펼쳐야 한다', async () => {
+    const wrapper = mount(DashboardOverlay, {
+      props: baseProps,
+    })
+
+    const panels = wrapper.find('#dashboard-panels')
+    expect(panels.classes()).toContain('flex')
+
+    await wrapper.find('button[aria-label="Hide dashboard"]').trigger('click')
+
+    expect(wrapper.find('#dashboard-panels').classes()).toContain('hidden')
+    expect(wrapper.find('button[aria-label="Show dashboard"]').exists()).toBe(true)
+
+    await wrapper.find('button[aria-label="Show dashboard"]').trigger('click')
+
+    expect(wrapper.find('#dashboard-panels').classes()).toContain('flex')
+  })
+
   it('설정 패널의 날씨 변경과 닫기 이벤트를 처리해야 한다', async () => {
     const wrapper = mount(DashboardOverlay, {
       props: baseProps,

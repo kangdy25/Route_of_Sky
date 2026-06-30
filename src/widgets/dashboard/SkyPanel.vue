@@ -22,7 +22,7 @@ withDefaults(
 
 <template>
   <Panel title="하늘 상태" justify>
-    <div class="grid grid-cols-3 gap-3">
+    <div class="grid grid-cols-3 gap-2 sm:gap-3">
       <!-- 운량 지표입니다. -->
       <CloudCoverMetric :cloud-cover="cloudCover" />
 

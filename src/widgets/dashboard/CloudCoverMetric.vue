@@ -18,10 +18,10 @@ const cloudText = computed(() => {
 
 <template>
   <div
-    class="flex flex-col items-center justify-between rounded-lg border border-cyan-300/20 bg-slate-950/60 p-3 text-center shadow-[inset_0_0_18px_rgba(34,211,238,0.10)]"
+    class="flex min-w-0 flex-col items-center justify-between rounded-lg border border-cyan-300/20 bg-slate-950/60 p-2 text-center shadow-[inset_0_0_18px_rgba(34,211,238,0.10)] sm:p-3"
   >
-    <span class="text-base font-bold text-cyan-50 uppercase">운량</span>
-    <div class="relative my-2 flex h-24 w-24 items-center justify-center">
+    <span class="text-sm font-bold text-cyan-50 uppercase sm:text-base">운량</span>
+    <div class="relative my-2 flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24">
       <svg class="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
         <circle
           cx="50"
@@ -51,8 +51,8 @@ const cloudText = computed(() => {
           </linearGradient>
         </defs>
       </svg>
-      <span class="text-xl font-black text-white">{{ cloudCover }}%</span>
+      <span class="text-lg font-black text-white sm:text-xl">{{ cloudCover }}%</span>
     </div>
-    <span class="text-base font-bold text-cyan-300 uppercase">{{ cloudText }}</span>
+    <span class="text-sm font-bold text-cyan-300 uppercase sm:text-base">{{ cloudText }}</span>
   </div>
 </template>
