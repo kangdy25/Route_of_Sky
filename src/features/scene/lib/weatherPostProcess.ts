@@ -1,8 +1,9 @@
 import { PostProcessStage, PostProcessStageSampleMode, Viewer } from 'cesium'
 
 import { WEATHER_POST_PROCESS_STAGE_NAME } from '../model/scene.constants'
-import type { SceneWeatherState } from '../model/scene.types'
+import type { SceneQualityProfile, SceneWeatherState } from '../model/scene.types'
 import { clampToUnitInterval } from './math'
+import { SCENE_QUALITY_PROFILES } from './sceneQuality'
 import { getSkyPhase } from './sky'
 import { getPrecipitationMode } from './weather'
 
@@ -12,10 +13,15 @@ export class WeatherPostProcessController {
   private stage: PostProcessStage | null = null
   private readonly getViewer: () => Viewer | null
   private readonly getState: () => SceneWeatherState
+  private quality = SCENE_QUALITY_PROFILES.high
 
   constructor(getViewer: () => Viewer | null, getState: () => SceneWeatherState) {
     this.getViewer = getViewer
     this.getState = getState
+  }
+
+  setQuality(quality: SceneQualityProfile) {
+    this.quality = quality
   }
 
   update() {
@@ -23,7 +29,7 @@ export class WeatherPostProcessController {
     if (!viewer) return
 
     const mode = getPrecipitationMode(this.getState())
-    if (!mode) {
+    if (!mode || !this.quality.postProcessEnabled) {
       this.dispose()
       viewer.scene.requestRender()
       return

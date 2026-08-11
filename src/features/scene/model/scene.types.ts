@@ -40,3 +40,16 @@ export interface SkyPhase {
 }
 
 export type PrecipitationMode = 'rain' | 'snow' | null
+
+export type SceneQualityMode = 'auto' | 'high' | 'medium' | 'low'
+export type SceneQualityLevel = Exclude<SceneQualityMode, 'auto'>
+
+export interface SceneQualityProfile {
+  level: SceneQualityLevel
+  resolutionScale: number
+  weatherFps: number
+  particleMultiplier: number
+  maxClouds: number
+  postProcessEnabled: boolean
+  simplifiedSnow: boolean
+}

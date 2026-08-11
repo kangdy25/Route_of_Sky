@@ -9,8 +9,9 @@ import {
 } from 'cesium'
 
 import { CLOUD_LOD } from '../model/scene.constants'
-import type { SceneLocation, SceneWeatherState } from '../model/scene.types'
+import type { SceneLocation, SceneQualityProfile, SceneWeatherState } from '../model/scene.types'
 import { clampToRange, clampToUnitInterval } from './math'
+import { SCENE_QUALITY_PROFILES } from './sceneQuality'
 import { getSkyPhase } from './sky'
 import { getWeatherTint } from './weather'
 
@@ -23,6 +24,9 @@ export class CloudController {
   private readonly getViewer: () => Viewer | null
   private readonly getState: () => SceneWeatherState
   private readonly getLocation: () => SceneLocation
+  private readonly cloudColor = new Color()
+  private readonly noiseOffset = new Cartesian3()
+  private quality = SCENE_QUALITY_PROFILES.high
   private locationKey = ''
 
   constructor(
@@ -33,6 +37,10 @@ export class CloudController {
     this.getViewer = getViewer
     this.getState = getState
     this.getLocation = getLocation
+  }
+
+  setQuality(quality: SceneQualityProfile) {
+    this.quality = quality
   }
 
   update() {
@@ -57,7 +65,10 @@ export class CloudController {
     if (!this.collection) return
 
     const sky = getSkyPhase(state.time)
-    const desiredClouds = Math.round(CesiumMath.lerp(4, CLOUD_LOD.maxClouds, cover / 100))
+    const desiredClouds = Math.min(
+      this.quality.maxClouds,
+      Math.round(CesiumMath.lerp(4, CLOUD_LOD.maxClouds, cover / 100)),
+    )
     const brightness =
       CesiumMath.lerp(0.38, 0.92, sky.daylight) -
       clampToUnitInterval(state.precipitation / 14) * 0.16
@@ -70,11 +81,12 @@ export class CloudController {
 
     this.collection.show = desiredClouds > 0
     // noiseOffset을 날씨 상태와 시간에 묶어 구름이 고정된 텍스처처럼 보이지 않게 합니다.
-    this.collection.noiseOffset = new Cartesian3(
-      cover * 0.012,
-      state.time * 0.018,
-      state.aqi * 0.002,
-    )
+    Cartesian3.fromElements(cover * 0.012, state.time * 0.018, state.aqi * 0.002, this.noiseOffset)
+    this.collection.noiseOffset = this.noiseOffset
+    this.cloudColor.red = cloudRed
+    this.cloudColor.green = cloudGreen
+    this.cloudColor.blue = cloudBlue
+    this.cloudColor.alpha = alpha
 
     for (let index = 0; index < this.collection.length; index += 1) {
       const cloud: CumulusCloud = this.collection.get(index)
@@ -82,7 +94,7 @@ export class CloudController {
       const lodDistance = viewer.camera.positionCartographic.height > 5500 && index % 2 === 1
       cloud.show = index < desiredClouds && !lodDistance
       cloud.brightness = clampToRange(brightness, 0.26, 0.95)
-      cloud.color = new Color(cloudRed, cloudGreen, cloudBlue, alpha)
+      cloud.color = this.cloudColor
       cloud.slice = 0.38 + ((index * 19) % 24) / 100
     }
 

@@ -3,7 +3,11 @@ import { computed, ref, watch } from 'vue'
 import { formatTime } from '@/features/weather/lib/formatTime'
 import { getCurrentLocalTimeForLocation } from '@/features/scene/lib/sky'
 import { WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
-import type { SceneLocation } from '@/features/scene/model/scene.types'
+import type {
+  SceneLocation,
+  SceneQualityLevel,
+  SceneQualityMode,
+} from '@/features/scene/model/scene.types'
 
 const time = defineModel<number>('time', { required: true })
 const temperature = defineModel<number>('temperature', { required: true })
@@ -14,14 +18,17 @@ const aqi = defineModel<number>('aqi', { required: true })
 const cloudCover = defineModel<number>('cloudCover', { required: true })
 const precipitation = defineModel<number>('precipitation', { required: true })
 const visibility = defineModel<number>('visibility', { required: true })
+const qualityMode = defineModel<SceneQualityMode>('qualityMode', { default: 'auto' })
 
 const props = withDefaults(
   defineProps<{
     open: boolean
     location?: SceneLocation
+    effectiveQuality?: SceneQualityLevel
   }>(),
   {
     location: () => WORLD_LOCATIONS[1],
+    effectiveQuality: 'high',
   },
 )
 
@@ -226,6 +233,28 @@ watch(autoVisibility, (enabled) => {
                 Live
               </span>
             </div>
+            <label class="mt-4 block">
+              <span
+                class="flex items-center justify-between gap-3 text-xs font-bold text-slate-300"
+              >
+                <span>렌더링 품질</span>
+                <span
+                  class="rounded-full border border-cyan-300/25 bg-cyan-400/10 px-2 py-1 text-cyan-200"
+                >
+                  적용: {{ effectiveQuality.toUpperCase() }}
+                </span>
+              </span>
+              <select
+                v-model="qualityMode"
+                aria-label="렌더링 품질"
+                class="mt-2 w-full rounded-md border border-cyan-300/20 bg-slate-950/70 px-3 py-2 text-sm font-bold text-cyan-50 outline-none focus:ring-2 focus:ring-cyan-300/40"
+              >
+                <option value="auto">Auto · 프레임 기반 자동 조절</option>
+                <option value="high">High · 최고 화질</option>
+                <option value="medium">Medium · 균형</option>
+                <option value="low">Low · 성능 우선</option>
+              </select>
+            </label>
           </section>
 
           <section class="mt-4 rounded-lg border border-cyan-300/15 bg-slate-900/50 p-4">

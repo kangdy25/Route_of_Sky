@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { SceneWeatherState } from '../model/scene.types'
 import { CLOUD_LOD, WORLD_LOCATIONS } from '../model/scene.constants'
 import { CloudController } from './clouds'
+import { SCENE_QUALITY_PROFILES } from './sceneQuality'
 
 const baseState: SceneWeatherState = {
   time: 16.5,
@@ -138,6 +139,24 @@ describe('구름 컨트롤러', () => {
 
     expect(primitives.collection?.get(1).show).toBe(false)
     expect(primitives.collection?.get(2).show).toBe(true)
+  })
+
+  it('Low 품질에서는 표시 구름 수를 12개로 제한해야 한다', () => {
+    const { primitives, viewer } = createViewer()
+    const controller = new CloudController(
+      () => viewer as never,
+      () => ({ ...baseState, cloudCover: 100 }),
+      () => WORLD_LOCATIONS[1],
+    )
+
+    controller.setQuality(SCENE_QUALITY_PROFILES.low)
+    controller.update()
+
+    const visibleClouds = Array.from(
+      { length: primitives.collection?.length ?? 0 },
+      (_, index) => primitives.collection?.get(index).show,
+    ).filter(Boolean)
+    expect(visibleClouds).toHaveLength(12)
   })
 
   it('dispose는 collection을 제거하고 viewer가 없을 때도 안전해야 한다', () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { SceneWeatherState } from '../model/scene.types'
 import { WEATHER_POST_PROCESS_STAGE_NAME } from '../model/scene.constants'
+import { SCENE_QUALITY_PROFILES } from './sceneQuality'
 import { WeatherPostProcessController } from './weatherPostProcess'
 
 const baseState: SceneWeatherState = {
@@ -103,6 +104,20 @@ describe('날씨 후처리 컨트롤러', () => {
     controller.update()
 
     expect(viewer.scene.postProcessStages.add).toHaveBeenCalledTimes(1)
+  })
+
+  it('Low 품질에서는 강수가 있어도 후처리 stage를 만들지 않아야 한다', () => {
+    const { viewer } = createViewer()
+    const controller = new WeatherPostProcessController(
+      () => viewer as never,
+      () => ({ ...baseState, precipitation: 4 }),
+    )
+
+    controller.setQuality(SCENE_QUALITY_PROFILES.low)
+    controller.update()
+
+    expect(viewer.scene.postProcessStages.add).not.toHaveBeenCalled()
+    expect(viewer.scene.requestRender).toHaveBeenCalled()
   })
 
   it('dispose는 stage를 제거하고 viewer가 없거나 stage가 없을 때도 안전해야 한다', () => {

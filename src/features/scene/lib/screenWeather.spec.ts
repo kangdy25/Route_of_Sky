@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SceneWeatherState } from '../model/scene.types'
+import { SCENE_QUALITY_PROFILES } from './sceneQuality'
 import { ScreenWeatherRenderer } from './screenWeather'
 
 const baseState: SceneWeatherState = {
@@ -365,6 +366,34 @@ describe('화면 날씨 렌더러', () => {
     expect(context.createRadialGradient).toHaveBeenCalled()
     expect(context.arc).toHaveBeenCalled()
     expect(context.stroke).toHaveBeenCalled()
+  })
+
+  it('Low 품질에서는 입자를 45%로 줄이고 눈 그라데이션을 생략해야 한다', () => {
+    const context = createContext()
+    const snowState = {
+      ...baseState,
+      precipitation: 12,
+      temperature: -4,
+      humidity: 100,
+    }
+    const renderer = new ScreenWeatherRenderer(ref(createCanvas(context)), () => snowState)
+    const targetCount = (
+      renderer as never as {
+        getTargetCount: (state: SceneWeatherState) => number
+      }
+    ).getTargetCount
+
+    const highCount = targetCount.call(renderer, snowState)
+    renderer.setQuality(SCENE_QUALITY_PROFILES.low)
+    const lowCount = targetCount.call(renderer, snowState)
+    ;(renderer as never as { particles: Array<Record<string, number>> }).particles = [
+      { x: 50, y: 30, size: 4, speed: 90, drift: 12, alpha: 0.8, phase: 0 },
+    ]
+    ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(16)
+
+    expect(lowCount).toBe(Math.round(highCount * 0.45))
+    expect(context.createRadialGradient).not.toHaveBeenCalled()
+    expect(context.arc).toHaveBeenCalled()
   })
 
   it('강한 뇌우에서는 번개를 생성하고 그려야 한다', () => {

@@ -18,6 +18,8 @@ import {
 import type {
   CameraWaypoint,
   SceneLocation,
+  SceneQualityLevel,
+  SceneQualityMode,
   SceneWeatherState,
 } from '@/features/scene/model/scene.types'
 import {
@@ -36,6 +38,11 @@ import {
   getWhiteoutOverlayStyle,
 } from '@/features/scene/lib/overlayStyles'
 import { ScreenWeatherRenderer } from '@/features/scene/lib/screenWeather'
+import {
+  AdaptiveSceneQualityController,
+  getRecommendedAutoQuality,
+  SCENE_QUALITY_PROFILES,
+} from '@/features/scene/lib/sceneQuality'
 import { getSkyPhase, getSunPositionForTime } from '@/features/scene/lib/sky'
 import { WeatherPostProcessController } from '@/features/scene/lib/weatherPostProcess'
 
@@ -55,6 +62,7 @@ const props = withDefaults(
     windDirectionDegrees?: number
     humidity?: number
     location?: SceneLocation
+    qualityMode?: SceneQualityMode
   }>(),
   {
     time: 16.5,
@@ -67,19 +75,31 @@ const props = withDefaults(
     windDirectionDegrees: 225,
     humidity: 62,
     location: () => WORLD_LOCATIONS[1],
+    qualityMode: 'auto',
   },
 )
+
+const emit = defineEmits<{
+  'update:effectiveQuality': [level: SceneQualityLevel]
+}>()
 
 const cesiumContainer = ref<HTMLDivElement | null>(null)
 const precipitationCanvas = ref<HTMLCanvasElement | null>(null)
 const isTilesLoading = ref(false)
 const statusMessage = ref('')
 const sunGlowStyle = ref<Record<string, string | number>>({ opacity: 0 })
+const effectiveQuality = ref<SceneQualityLevel>(
+  props.qualityMode === 'auto' ? getRecommendedAutoQuality() : props.qualityMode,
+)
 
 let viewer: Viewer | null = null
 let removeSunGlowUpdater: (() => void) | null = null
 let stopTilesetRenderSync: (() => void) | null = null
 let destroyed = false
+let mounted = false
+let sceneUpdateFrame = 0
+let lastAppliedState: SceneWeatherState | null = null
+let lastAppliedLocationId = ''
 
 function markPerformance(name: string) {
   if (typeof performance !== 'undefined' && typeof performance.mark === 'function') {
@@ -119,6 +139,14 @@ const weatherPostProcessController = new WeatherPostProcessController(
 )
 const screenWeatherRenderer = new ScreenWeatherRenderer(precipitationCanvas, () => sceneState.value)
 const cameraController = new CameraFlyToController(() => viewer)
+const adaptiveQualityController = new AdaptiveSceneQualityController({
+  getLevel: () => effectiveQuality.value,
+  getMode: () => props.qualityMode,
+  onLevelChange: (level, frameP95Ms) => {
+    effectiveQuality.value = level
+    markPerformance(`route-of-sky:quality-${level}:p95-${frameP95Ms.toFixed(1)}`)
+  },
+})
 
 const atmosphereOverlayStyle = computed(() => getAtmosphereOverlayStyle(sceneState.value))
 const mistOverlayStyle = computed(() => getMistOverlayStyle(sceneState.value))
@@ -171,18 +199,88 @@ function updateSunGlowPosition() {
   }
 }
 
+function hasStateChanged(
+  current: SceneWeatherState,
+  previous: SceneWeatherState | null,
+  keys: Array<keyof SceneWeatherState>,
+) {
+  return !previous || keys.some((key) => current[key] !== previous[key])
+}
+
+function applyQualityProfile() {
+  const profile = SCENE_QUALITY_PROFILES[effectiveQuality.value]
+  screenWeatherRenderer.setQuality(profile)
+  cloudController.setQuality(profile)
+  weatherPostProcessController.setQuality(profile)
+  emit('update:effectiveQuality', profile.level)
+
+  if (!viewer || viewer.isDestroyed()) return
+
+  viewer.resolutionScale = profile.resolutionScale
+  cloudController.update()
+  weatherPostProcessController.update()
+  viewer.scene.requestRender()
+  markPerformance(`route-of-sky:quality-applied-${profile.level}`)
+}
+
 function applySceneState() {
-  screenWeatherRenderer.update()
+  const currentState = sceneState.value
+  const locationChanged = lastAppliedLocationId !== props.location.id
+
+  if (hasStateChanged(currentState, lastAppliedState, ['precipitation', 'temperature'])) {
+    screenWeatherRenderer.update()
+  }
 
   /* v8 ignore next -- Vue lifecycle 밖에서 호출될 때를 위한 방어 guard입니다. */
   if (!viewer) return
 
-  // 시간 변경은 태양, 대기, 구름, 후처리 uniform에 모두 영향을 주므로 한 진입점에서 동기화합니다.
-  applySceneTime(viewer, sceneState.value, props.location)
-  updateSunGlowPosition()
-  applyAtmosphereToScene(viewer, sceneState.value)
-  cloudController.update()
-  weatherPostProcessController.update()
+  if (locationChanged || hasStateChanged(currentState, lastAppliedState, ['time'])) {
+    applySceneTime(viewer, currentState, props.location)
+    updateSunGlowPosition()
+  }
+
+  if (
+    locationChanged ||
+    hasStateChanged(currentState, lastAppliedState, [
+      'time',
+      'precipitation',
+      'aqi',
+      'visibility',
+      'temperature',
+      'windSpeed',
+      'humidity',
+    ])
+  ) {
+    applyAtmosphereToScene(viewer, currentState)
+  }
+
+  if (
+    locationChanged ||
+    hasStateChanged(currentState, lastAppliedState, ['time', 'cloudCover', 'precipitation', 'aqi'])
+  ) {
+    cloudController.update()
+  }
+
+  if (hasStateChanged(currentState, lastAppliedState, ['precipitation', 'temperature'])) {
+    weatherPostProcessController.update()
+  }
+
+  lastAppliedState = { ...currentState }
+  lastAppliedLocationId = props.location.id
+}
+
+function scheduleSceneStateUpdate() {
+  if (sceneUpdateFrame) return
+
+  if (typeof requestAnimationFrame === 'undefined') {
+    applySceneState()
+    return
+  }
+
+  sceneUpdateFrame = requestAnimationFrame(() => {
+    sceneUpdateFrame = 0
+    applySceneState()
+  })
 }
 
 function initializeViewer() {
@@ -214,6 +312,7 @@ function initializeViewer() {
   configureViewerScene(viewer)
   setInitialLocationView(viewer, props.location)
   removeSunGlowUpdater = viewer.scene.postRender.addEventListener(updateSunGlowPosition)
+  applyQualityProfile()
   applySceneState()
   markPerformance('route-of-sky:viewer-ready')
 
@@ -352,17 +451,44 @@ watch(
     props.humidity,
     props.location.id,
   ],
-  applySceneState,
+  scheduleSceneStateUpdate,
+)
+
+watch(effectiveQuality, applyQualityProfile, { immediate: true })
+
+watch(
+  () => props.qualityMode,
+  (mode) => {
+    effectiveQuality.value = mode === 'auto' ? getRecommendedAutoQuality() : mode
+
+    if (!mounted) return
+    if (mode === 'auto') {
+      adaptiveQualityController.start()
+    } else {
+      adaptiveQualityController.stop()
+    }
+  },
+  { immediate: true },
 )
 
 onMounted(async () => {
+  mounted = true
   await nextTick()
   screenWeatherRenderer.update()
   initializeViewer()
+  if (props.qualityMode === 'auto') {
+    adaptiveQualityController.start()
+  }
 })
 
 onBeforeUnmount(() => {
   destroyed = true
+  mounted = false
+  adaptiveQualityController.stop()
+  if (sceneUpdateFrame && typeof cancelAnimationFrame !== 'undefined') {
+    cancelAnimationFrame(sceneUpdateFrame)
+  }
+  sceneUpdateFrame = 0
   cameraController.dispose()
   stopTilesetRenderSync?.()
   stopTilesetRenderSync = null
@@ -385,7 +511,11 @@ defineExpose({
 </script>
 
 <template>
-  <section class="relative h-full w-full overflow-hidden bg-slate-950">
+  <section
+    class="relative h-full w-full overflow-hidden bg-slate-950"
+    :data-quality-level="effectiveQuality"
+    :data-quality-mode="qualityMode"
+  >
     <div
       id="cesiumContainer"
       ref="cesiumContainer"

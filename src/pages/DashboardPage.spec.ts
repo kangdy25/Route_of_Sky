@@ -33,7 +33,8 @@ function mountDashboardPage() {
     global: {
       stubs: {
         SceneCanvas: defineComponent({
-          props: ['location'],
+          props: ['location', 'qualityMode'],
+          emits: ['update:effectiveQuality'],
           name: 'SceneCanvas',
           setup(_, { expose }) {
             expose({ flyToLocation })
@@ -55,6 +56,8 @@ function mountDashboardPage() {
             'visibility',
             'locations',
             'selectedLocationId',
+            'qualityMode',
+            'effectiveQuality',
           ],
           emits: [
             'flyToSelectedLocation',
@@ -69,6 +72,7 @@ function mountDashboardPage() {
             'update:cloudCover',
             'update:precipitation',
             'update:visibility',
+            'update:qualityMode',
           ],
           setup(props, { emit }) {
             const summary = computed(
@@ -114,6 +118,14 @@ function mountDashboardPage() {
                   'button',
                   { 'data-testid': 'set-time', onClick: () => emit('update:time', 8) },
                   'Set time',
+                ),
+                h(
+                  'button',
+                  {
+                    'data-testid': 'set-quality-low',
+                    onClick: () => emit('update:qualityMode', 'low'),
+                  },
+                  'Set quality low',
                 ),
                 h(
                   'button',
@@ -170,6 +182,19 @@ describe('대시보드 페이지', () => {
     await wrapper.find('[data-testid="set-time"]').trigger('click')
 
     expect(store.time).toBe(8)
+  })
+
+  it('렌더링 품질 선택을 저장하고 새로고침 후 복원해야 한다', async () => {
+    const { wrapper } = mountDashboardPage()
+
+    await wrapper.find('[data-testid="set-quality-low"]').trigger('click')
+
+    expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('qualityMode')).toBe('low')
+    expect(window.localStorage.getItem('route-of-sky:scene-quality-mode')).toBe('low')
+
+    wrapper.unmount()
+    const { wrapper: remounted } = mountDashboardPage()
+    expect(remounted.findComponent({ name: 'SceneCanvas' }).props('qualityMode')).toBe('low')
   })
 
   it('오버레이 날씨 업데이트를 store에 반영해야 한다', async () => {
