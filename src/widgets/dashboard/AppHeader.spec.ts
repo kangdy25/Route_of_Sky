@@ -17,7 +17,14 @@ describe('앱 헤더', () => {
     expect(wrapper.text()).toContain('Route of Sky')
     expect(wrapper.text()).toContain('미국, 뉴욕')
     expect(wrapper.text()).toContain('이스라엘, 예루살렘')
-    expect(wrapper.find('img[alt="Route of Sky"]').exists()).toBe(true)
+    const logo = wrapper.find('img[alt="Route of Sky"]')
+    expect(logo.attributes()).toMatchObject({
+      src: '/logo.webp',
+      width: '128',
+      height: '128',
+      decoding: 'async',
+      fetchpriority: 'high',
+    })
   })
 
   it('지역을 선택하면 selectLocation 이벤트를 발생시켜야 한다', async () => {

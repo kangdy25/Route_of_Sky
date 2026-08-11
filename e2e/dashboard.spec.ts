@@ -16,6 +16,11 @@ test.describe('대시보드 메인 화면 로드 테스트', () => {
     // 1. 헤더 영역 및 앱 타이틀 확인
     const title = page.locator('h1')
     await expect(title).toContainText('Route of Sky')
+    const logo = page.getByAltText('Route of Sky')
+    await expect(logo).toHaveAttribute('src', '/logo.webp')
+    await expect
+      .poll(() => logo.evaluate((image: HTMLImageElement) => image.naturalWidth))
+      .toBe(128)
 
     // 2. 환경 정보 (Environment Specs) 위젯 표시 확인
     const envSpecsHeader = page.locator('h2', { hasText: '환경 정보' })
