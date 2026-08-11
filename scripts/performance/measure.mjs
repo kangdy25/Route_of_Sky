@@ -117,7 +117,8 @@ async function captureFrameTiming(page, preset) {
     window.__routeOfSkyFrameSamples = []
     let previous = performance.now()
     const collect = (now) => {
-      window.__routeOfSkyFrameSamples.push(now - previous)
+      const frameTime = now - previous
+      if (frameTime > 0) window.__routeOfSkyFrameSamples.push(frameTime)
       previous = now
       window.__routeOfSkyFrameId = requestAnimationFrame(collect)
     }
@@ -169,6 +170,18 @@ async function measureRun(cpuSlowdownMultiplier) {
     frames[preset.toLowerCase()] = await captureFrameTiming(page, preset)
     process.stdout.write(`${preset} 프레임 측정 완료: CPU ×${cpuSlowdownMultiplier}\n`)
   }
+  const quality = await page.evaluate(() => ({
+    effectiveLevel:
+      document.querySelector('[data-quality-level]')?.getAttribute('data-quality-level') ?? null,
+    mode: document.querySelector('[data-quality-mode]')?.getAttribute('data-quality-mode') ?? null,
+    transitions: performance
+      .getEntriesByType('mark')
+      .filter((entry) => entry.name.startsWith('route-of-sky:quality-applied-'))
+      .map((entry) => ({
+        level: entry.name.replace('route-of-sky:quality-applied-', ''),
+        atMs: Number(entry.startTime.toFixed(2)),
+      })),
+  }))
 
   await page.reload({ waitUntil: 'domcontentloaded' })
   process.stdout.write(`새로고침 완료: CPU ×${cpuSlowdownMultiplier}\n`)
@@ -216,6 +229,7 @@ async function measureRun(cpuSlowdownMultiplier) {
     page: pageMetrics,
     viewerReadyMs,
     tilesStableMs,
+    quality,
     frames: Object.fromEntries(
       Object.entries(frames).map(([name, samples]) => [name, summarize(samples)]),
     ),
@@ -254,6 +268,8 @@ function aggregate(runResults) {
       rainFrameP95Ms: frameSummary('rain'),
       stormFrameP95Ms: frameSummary('storm'),
       snowFrameP95Ms: frameSummary('snow'),
+      qualityTransitionCount: summarize(runResults.map((run) => run.quality.transitions.length)),
+      finalQualityLevels: runResults.map((run) => run.quality.effectiveLevel),
     },
     api: {
       networkRequestCount: summarize(
