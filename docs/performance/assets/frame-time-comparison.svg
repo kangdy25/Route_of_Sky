@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">날씨 효과 p95 프레임 시간 전후 비교</title>
+  <desc id="desc">데스크톱과 CPU 4배 제한에서 Rain, Storm, Snow의 p95 프레임 시간 중앙값 비교</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071525" /><stop offset="1" stop-color="#0b2536" />
+    </linearGradient>
+    <linearGradient id="after" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee" /><stop offset="1" stop-color="#38bdf8" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="720" fill="url(#background)" />
+  <text x="56" y="52" fill="#e0f2fe" font-family="system-ui, sans-serif" font-size="28" font-weight="800">Weather Effects · p95 Frame Time</text>
+  <text x="56" y="78" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">낮을수록 좋음 · 헤드리스 software WebGL · 각 3회 중앙값</text>
+  <g font-family="system-ui, sans-serif">
+    <rect x="48" y="112" width="1104" height="250" rx="14" fill="#07111f" stroke="#155e75" />
+    <text x="76" y="148" fill="#e0f2fe" font-size="20" font-weight="750">Desktop</text>
+    <g font-size="13">
+      <text x="76" y="196" fill="#cbd5e1">Rain</text><rect x="160" y="178" width="425" height="15" rx="3" fill="#475569" /><rect x="160" y="200" width="300" height="15" rx="3" fill="url(#after)" /><text x="970" y="202" fill="#f8fafc" text-anchor="end">849.9 → 599.9 ms</text><text x="1100" y="202" fill="#67e8f9" text-anchor="end">29.4%</text>
+      <text x="76" y="256" fill="#cbd5e1">Storm</text><rect x="160" y="238" width="675" height="15" rx="3" fill="#475569" /><rect x="160" y="260" width="392" height="15" rx="3" fill="url(#after)" /><text x="970" y="262" fill="#f8fafc" text-anchor="end">1,349.9 → 783.3 ms</text><text x="1100" y="262" fill="#67e8f9" text-anchor="end">42.0%</text>
+      <text x="76" y="316" fill="#cbd5e1">Snow</text><rect x="160" y="298" width="667" height="15" rx="3" fill="#475569" /><rect x="160" y="320" width="517" height="15" rx="3" fill="url(#after)" /><text x="970" y="322" fill="#f8fafc" text-anchor="end">1,333.6 → 1,033.2 ms</text><text x="1100" y="322" fill="#67e8f9" text-anchor="end">22.5%</text>
+    </g>
+
+    <rect x="48" y="390" width="1104" height="250" rx="14" fill="#07111f" stroke="#155e75" />
+    <text x="76" y="426" fill="#e0f2fe" font-size="20" font-weight="750">Low-end · CPU ×4</text>
+    <g font-size="13">
+      <text x="76" y="474" fill="#cbd5e1">Rain</text><rect x="160" y="456" width="559" height="15" rx="3" fill="#475569" /><rect x="160" y="478" width="417" height="15" rx="3" fill="url(#after)" /><text x="970" y="480" fill="#f8fafc" text-anchor="end">1,117.6 → 834.3 ms</text><text x="1100" y="480" fill="#67e8f9" text-anchor="end">25.3%</text>
+      <text x="76" y="534" fill="#cbd5e1">Storm</text><rect x="160" y="516" width="717" height="15" rx="3" fill="#475569" /><rect x="160" y="538" width="542" height="15" rx="3" fill="url(#after)" /><text x="970" y="540" fill="#f8fafc" text-anchor="end">1,434.0 → 1,083.3 ms</text><text x="1100" y="540" fill="#67e8f9" text-anchor="end">24.5%</text>
+      <text x="76" y="594" fill="#cbd5e1">Snow</text><rect x="160" y="576" width="767" height="15" rx="3" fill="#475569" /><rect x="160" y="598" width="608" height="15" rx="3" fill="url(#after)" /><text x="970" y="600" fill="#f8fafc" text-anchor="end">1,533.2 → 1,216.2 ms</text><text x="1100" y="600" fill="#67e8f9" text-anchor="end">20.7%</text>
+    </g>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="12">
+    <rect x="866" y="44" width="18" height="8" rx="2" fill="#475569" /><text x="892" y="52" fill="#cbd5e1">Before</text>
+    <rect x="970" y="44" width="18" height="8" rx="2" fill="url(#after)" /><text x="996" y="52" fill="#cbd5e1">After</text>
+  </g>
+  <text x="56" y="682" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="13">모든 상대 지표는 개선됐지만 Desktop 33.3 ms / Low-end 50 ms 절대 목표는 미달</text>
+</svg>

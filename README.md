@@ -28,6 +28,24 @@
   <img src="docs/performance/assets/demo-2.webp" alt="Route of Sky Demo 2" width="90%" style="border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);" />
 </div>
 
+## Performance Optimization Case Study
+
+프로덕션 Chromium 동일 조건 3회 중앙값으로 API·렌더링·정적 자산 최적화를 검증했습니다.
+
+- 배포 산출물: **35.78 → 13.63 MiB**, 22.16 MiB·61.9% 감소
+- 데스크톱 Storm p95: **1,349.9 → 783.3 ms**, 566.6 ms·42.0% 개선
+- 저사양 Rain p95: **1,117.6 → 834.3 ms**, 283.3 ms·25.3% 개선
+- Weather API 요청: **2 → 1건**, 1건·50.0% 감소
+- 헤더 로고: **3,872,089 → 5,154 bytes**, 99.9% 감소
+
+![성능 최적화 핵심 비교](docs/performance/assets/performance-overview.svg)
+
+| Before · Rain                                                                                | After · Rain                                                                                |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| <img src="docs/performance/assets/before-rain.webp" alt="최적화 전 Rain 화면" width="560" /> | <img src="docs/performance/assets/after-rain.webp" alt="최적화 후 Rain 화면" width="560" /> |
+
+[한국어 사례 연구](docs/performance/case-study.md) · [측정 프로토콜](docs/performance/measurement-protocol.md) · [전체 비교표](docs/performance/comparison.md) · [PR #16](https://github.com/kangdy25/Route_of_Sky/pull/16) · [PR #17](https://github.com/kangdy25/Route_of_Sky/pull/17) · [PR #18](https://github.com/kangdy25/Route_of_Sky/pull/18) · [PR #19](https://github.com/kangdy25/Route_of_Sky/pull/19)
+
 ## ✨ 주요 기능
 
 - 🌆 **Cesium 기반의 실사 3D 렌더링**
