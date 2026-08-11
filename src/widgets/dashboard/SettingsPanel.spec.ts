@@ -15,6 +15,7 @@ function mountSettingsPanel(open = true, location = WORLD_LOCATIONS[1]) {
     cloudCover: 35,
     precipitation: 0,
     visibility: 15,
+    qualityMode: 'auto' as 'auto' | 'high' | 'medium' | 'low',
   })
 
   const wrapper = mount(
@@ -33,6 +34,8 @@ function mountSettingsPanel(open = true, location = WORLD_LOCATIONS[1]) {
             precipitation: state.precipitation,
             visibility: state.visibility,
             location,
+            qualityMode: state.qualityMode,
+            effectiveQuality: 'medium',
             'onUpdate:time': (value: number) => {
               state.time = value
             },
@@ -59,6 +62,9 @@ function mountSettingsPanel(open = true, location = WORLD_LOCATIONS[1]) {
             },
             'onUpdate:visibility': (value: number) => {
               state.visibility = value
+            },
+            'onUpdate:qualityMode': (value: 'auto' | 'high' | 'medium' | 'low') => {
+              state.qualityMode = value
             },
           })
       },
@@ -90,6 +96,15 @@ describe('설정 패널', () => {
     expect(wrapper.text()).toContain('Sunny')
     expect(wrapper.text()).toContain('Precipitation')
     expect(wrapper.text()).toContain('0.0 mm/h')
+    expect(wrapper.text()).toContain('적용: MEDIUM')
+  })
+
+  it('렌더링 품질을 수동 단계로 변경해야 한다', async () => {
+    const { wrapper, state } = mountSettingsPanel()
+
+    await wrapper.find('select[aria-label="렌더링 품질"]').setValue('low')
+
+    expect(state.qualityMode).toBe('low')
   })
 
   it('시간 프리셋과 슬라이더 입력을 상태에 반영해야 한다', async () => {

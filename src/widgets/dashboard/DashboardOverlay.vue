@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { hasCesiumIonAccessToken } from '@/shared/config/env'
 import type { SceneLocation } from '@/features/scene/model/scene.types'
+import type { SceneQualityLevel, SceneQualityMode } from '@/features/scene/model/scene.types'
 import AppHeader from './AppHeader.vue'
 import AtmospherePanel from './AtmospherePanel.vue'
 import EnvironmentPanel from './EnvironmentPanel.vue'
@@ -19,12 +20,14 @@ const aqi = defineModel<number>('aqi', { required: true })
 const cloudCover = defineModel<number>('cloudCover', { required: true })
 const precipitation = defineModel<number>('precipitation', { required: true })
 const visibility = defineModel<number>('visibility', { required: true })
+const qualityMode = defineModel<SceneQualityMode>('qualityMode', { required: true })
 
 const props = defineProps<{
   temperatureMin: number
   temperatureMax: number
   locations: SceneLocation[]
   selectedLocationId: string
+  effectiveQuality: SceneQualityLevel
 }>()
 
 const overlayRef = ref<HTMLElement | null>(null)
@@ -160,8 +163,10 @@ onMounted(() => {
       v-model:cloud-cover="cloudCover"
       v-model:precipitation="precipitation"
       v-model:visibility="visibility"
+      v-model:quality-mode="qualityMode"
       :open="isSettingsOpen"
       :location="selectedLocation"
+      :effective-quality="effectiveQuality"
       @close="isSettingsOpen = false"
       @render-current-weather="emit('renderCurrentWeather')"
     />

@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import SceneCanvas from '@/features/scene/components/SceneCanvas.vue'
 import { WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
+import { getRecommendedAutoQuality } from '@/features/scene/lib/sceneQuality'
+import type { SceneQualityLevel, SceneQualityMode } from '@/features/scene/model/scene.types'
 import { createWeatherLocationQuery } from '@/features/weather/api/weatherApi'
 import { useWeatherStore } from '@/features/weather/model/weather.store'
 import DashboardOverlay from '@/widgets/dashboard/DashboardOverlay.vue'
 
 const SELECTED_LOCATION_STORAGE_KEY = 'route-of-sky:selected-location-id'
+const SCENE_QUALITY_STORAGE_KEY = 'route-of-sky:scene-quality-mode'
 const defaultLocation = WORLD_LOCATIONS[1]
 
 function getStoredSelectedLocation() {
@@ -28,9 +31,30 @@ function saveSelectedLocation(locationId: string) {
   }
 }
 
+function getStoredQualityMode(): SceneQualityMode {
+  try {
+    const mode = window.localStorage.getItem(SCENE_QUALITY_STORAGE_KEY)
+    return mode === 'auto' || mode === 'high' || mode === 'medium' || mode === 'low' ? mode : 'auto'
+  } catch {
+    return 'auto'
+  }
+}
+
 const weatherStore = useWeatherStore()
 const sceneCanvasRef = ref<InstanceType<typeof SceneCanvas> | null>(null)
 const selectedLocation = ref(getStoredSelectedLocation())
+const qualityMode = ref<SceneQualityMode>(getStoredQualityMode())
+const effectiveQuality = ref<SceneQualityLevel>(
+  qualityMode.value === 'auto' ? getRecommendedAutoQuality() : qualityMode.value,
+)
+
+watch(qualityMode, (mode) => {
+  try {
+    window.localStorage.setItem(SCENE_QUALITY_STORAGE_KEY, mode)
+  } catch {
+    // 저장소를 사용할 수 없는 환경에서는 현재 세션 설정만 유지합니다.
+  }
+})
 
 // 대시보드 카드와 3D 씬이 같은 reactive 상태를 바라보도록 Pinia store를 ref로 펼칩니다.
 const {
@@ -99,6 +123,8 @@ onMounted(() => {
         :wind-direction-degrees="windDirectionDegrees"
         :humidity="humidity"
         :location="selectedLocation"
+        :quality-mode="qualityMode"
+        @update:effective-quality="effectiveQuality = $event"
       />
     </div>
 
@@ -114,8 +140,10 @@ onMounted(() => {
       v-model:cloud-cover="cloudCover"
       v-model:precipitation="precipitation"
       v-model:visibility="visibility"
+      v-model:quality-mode="qualityMode"
       :locations="WORLD_LOCATIONS"
       :selected-location-id="selectedLocation.id"
+      :effective-quality="effectiveQuality"
       @fly-to-selected-location="flyToSelectedLocation"
       @select-location="selectLocation"
       @render-current-weather="loadSelectedLocationWeather(true)"

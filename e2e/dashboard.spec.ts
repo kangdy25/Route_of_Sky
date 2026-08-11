@@ -29,4 +29,20 @@ test.describe('대시보드 메인 화면 로드 테스트', () => {
     const atmosphereHeader = page.locator('h2', { hasText: '대기질 정보' })
     await expect(atmosphereHeader).toBeVisible()
   })
+
+  test('High/Medium/Low 품질을 즉시 적용하고 새로고침 후 복원한다', async ({ page }) => {
+    await page.getByRole('button', { name: 'Open settings' }).click()
+    const qualitySelect = page.getByLabel('렌더링 품질')
+    const scene = page.locator('section[data-quality-level]')
+
+    for (const level of ['high', 'medium', 'low']) {
+      await qualitySelect.selectOption(level)
+      await expect(scene).toHaveAttribute('data-quality-level', level)
+    }
+
+    await page.reload()
+    await page.getByRole('button', { name: 'Open settings' }).click()
+    await expect(page.getByLabel('렌더링 품질')).toHaveValue('low')
+    await expect(scene).toHaveAttribute('data-quality-level', 'low')
+  })
 })

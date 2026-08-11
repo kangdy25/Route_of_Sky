@@ -25,6 +25,8 @@ const baseProps = {
   cloudCover: 35,
   precipitation: 0,
   visibility: 15,
+  qualityMode: 'auto' as const,
+  effectiveQuality: 'high' as const,
   locations: WORLD_LOCATIONS,
   selectedLocationId: 'us-new-york',
 }
