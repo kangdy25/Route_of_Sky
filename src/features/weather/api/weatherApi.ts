@@ -153,8 +153,12 @@ export async function fetchCurrentWeather(
   apiKey: string,
   locationQuery = DEFAULT_WEATHER_LOCATION_QUERY,
   fetcher: WeatherApiFetcher = fetch,
+  signal?: AbortSignal,
 ) {
-  const response = await fetcher(createWeatherApiUrl(apiKey, locationQuery))
+  const response = await fetcher(
+    createWeatherApiUrl(apiKey, locationQuery),
+    signal ? { signal } : undefined,
+  )
   const payload = (await response.json()) as WeatherApiCurrentResponse & WeatherApiErrorResponse
 
   if (!response.ok) {

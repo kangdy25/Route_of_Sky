@@ -23,6 +23,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       ...process.env,
+      VITE_CESIUM_ION_ACCESS_TOKEN: '',
       VITE_WEATHER_API_KEY: process.env.VITE_WEATHER_API_KEY || 'e2e-weather-api-key',
     },
   },

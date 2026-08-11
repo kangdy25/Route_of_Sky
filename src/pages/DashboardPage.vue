@@ -59,10 +59,12 @@ function flyToSelectedLocation() {
   })
 }
 
-function loadSelectedLocationWeather() {
+function loadSelectedLocationWeather(force = false) {
   const location = selectedLocation.value
 
-  return weatherStore.loadCurrentWeather(createWeatherLocationQuery(location.lat, location.lng))
+  return weatherStore.loadCurrentWeather(createWeatherLocationQuery(location.lat, location.lng), {
+    force,
+  })
 }
 
 function selectLocation(locationId: string) {
@@ -116,7 +118,7 @@ onMounted(() => {
       :selected-location-id="selectedLocation.id"
       @fly-to-selected-location="flyToSelectedLocation"
       @select-location="selectLocation"
-      @render-current-weather="loadSelectedLocationWeather"
+      @render-current-weather="loadSelectedLocationWeather(true)"
     />
   </main>
 </template>

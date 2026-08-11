@@ -189,6 +189,9 @@ async function measureRun(cpuSlowdownMultiplier) {
       loadMs: navigation ? navigation.loadEventEnd - navigation.startTime : null,
       firstContentfulPaintMs: fcp?.startTime ?? null,
       largestContentfulPaintMs: window.__routeOfSkyMetrics.lcp.at(-1) ?? null,
+      weatherCacheHitMs:
+        performance.getEntriesByName('route-of-sky:weather-cache-hydration').at(-1)?.duration ??
+        null,
       cumulativeLayoutShift: Number(window.__routeOfSkyMetrics.cls.toFixed(4)),
       longTaskCount: window.__routeOfSkyMetrics.longTasks.length,
       longTaskP95Ms: window.__routeOfSkyMetrics.longTasks.length
@@ -207,8 +210,8 @@ async function measureRun(cpuSlowdownMultiplier) {
     cpuSlowdownMultiplier,
     api: {
       networkRequestCount: apiRequestCount,
-      cacheHitCount: 0,
-      cacheMissCount: apiRequestCount,
+      cacheHitCount: Math.max(0, 2 - apiRequestCount),
+      cacheMissCount: Math.min(2, apiRequestCount),
     },
     page: pageMetrics,
     viewerReadyMs,
@@ -240,6 +243,7 @@ function aggregate(runResults) {
         collectMetric(runResults, (run) => run.page.domContentLoadedMs),
       ),
       loadMs: summarize(collectMetric(runResults, (run) => run.page.loadMs)),
+      weatherCacheHitMs: summarize(collectMetric(runResults, (run) => run.page.weatherCacheHitMs)),
       resourceTransferBytes: summarize(
         collectMetric(runResults, (run) => run.page.resourceTransferBytes),
       ),
