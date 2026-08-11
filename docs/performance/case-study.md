@@ -134,5 +134,6 @@ High·Medium·Low의 즉시 적용과 새로고침 복원은 E2E로 검증했습
 2. [PR #17 · Weather API 캐시](https://github.com/kangdy25/Route_of_Sky/pull/17) — [d91cf78](https://github.com/kangdy25/Route_of_Sky/commit/d91cf78), [211c9e7](https://github.com/kangdy25/Route_of_Sky/commit/211c9e7)
 3. [PR #18 · 적응형 씬 품질](https://github.com/kangdy25/Route_of_Sky/pull/18) — [5aa37b0](https://github.com/kangdy25/Route_of_Sky/commit/5aa37b0), [0d09d87](https://github.com/kangdy25/Route_of_Sky/commit/0d09d87), [4cd1aa0](https://github.com/kangdy25/Route_of_Sky/commit/4cd1aa0)
 4. [PR #19 · 정적 자산 최적화](https://github.com/kangdy25/Route_of_Sky/pull/19) — [1e45a64](https://github.com/kangdy25/Route_of_Sky/commit/1e45a64), [ac3a098](https://github.com/kangdy25/Route_of_Sky/commit/ac3a098), [08757f0](https://github.com/kangdy25/Route_of_Sky/commit/08757f0)
+5. [PR #20 · 최종 비교와 사례 연구](https://github.com/kangdy25/Route_of_Sky/pull/20) — [b3f58ec](https://github.com/kangdy25/Route_of_Sky/commit/b3f58ec), [b061443](https://github.com/kangdy25/Route_of_Sky/commit/b061443), [d2e5245](https://github.com/kangdy25/Route_of_Sky/commit/d2e5245)
 
 각 PR에는 테스트 결과와 정량 Before→After, 위험, 롤백 조건을 남겼습니다. 세부 의사결정의 시간순 기록은 [최적화 로그](optimization-log.md)에 있습니다.

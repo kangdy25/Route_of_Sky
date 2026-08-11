@@ -44,7 +44,7 @@
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | <img src="docs/performance/assets/before-rain.webp" alt="최적화 전 Rain 화면" width="560" /> | <img src="docs/performance/assets/after-rain.webp" alt="최적화 후 Rain 화면" width="560" /> |
 
-[한국어 사례 연구](docs/performance/case-study.md) · [측정 프로토콜](docs/performance/measurement-protocol.md) · [전체 비교표](docs/performance/comparison.md) · [PR #16](https://github.com/kangdy25/Route_of_Sky/pull/16) · [PR #17](https://github.com/kangdy25/Route_of_Sky/pull/17) · [PR #18](https://github.com/kangdy25/Route_of_Sky/pull/18) · [PR #19](https://github.com/kangdy25/Route_of_Sky/pull/19)
+[한국어 사례 연구](docs/performance/case-study.md) · [측정 프로토콜](docs/performance/measurement-protocol.md) · [전체 비교표](docs/performance/comparison.md) · [PR #16](https://github.com/kangdy25/Route_of_Sky/pull/16) · [PR #17](https://github.com/kangdy25/Route_of_Sky/pull/17) · [PR #18](https://github.com/kangdy25/Route_of_Sky/pull/18) · [PR #19](https://github.com/kangdy25/Route_of_Sky/pull/19) · [PR #20](https://github.com/kangdy25/Route_of_Sky/pull/20)
 
 ## ✨ 주요 기능
 
