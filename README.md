@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/logo.png" alt="Route of Sky Logo" width="280px" />
+  <img src="public/logo.webp" alt="Route of Sky Logo" width="128px" />
   <h1>Route of Sky</h1>
   <p><strong>여러 국가들의 3D 도시 경관과 실시간 날씨 데이터를 시각화하는 시뮬레이터</strong></p>
 
@@ -23,9 +23,9 @@
 ## 📸 미리보기 (Demo)
 
 <div align="center">
-  <img src="public/demo-1.gif" alt="Route of Sky Demo 1" width="90%" style="border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); margin-bottom: 20px;" />
+  <img src="docs/performance/assets/demo-1.webp" alt="Route of Sky Demo 1" width="90%" style="border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); margin-bottom: 20px;" />
   <br />
-  <img src="public/demo-2.gif" alt="Route of Sky Demo 2" width="90%" style="border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);" />
+  <img src="docs/performance/assets/demo-2.webp" alt="Route of Sky Demo 2" width="90%" style="border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);" />
 </div>
 
 ## ✨ 주요 기능
