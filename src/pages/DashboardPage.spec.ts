@@ -161,7 +161,7 @@ describe('대시보드 페이지', () => {
 
     expect(wrapper.find('[data-testid="scene-canvas"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="dashboard-overlay"]').text()).toContain('24.5/0/15')
-    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855')
+    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855', { force: false })
   })
 
   it('오버레이 시간 업데이트를 store에 반영해야 한다', async () => {
@@ -228,7 +228,7 @@ describe('대시보드 페이지', () => {
       city: '예루살렘',
       landmark: '통곡의 벽',
     })
-    expect(loadCurrentWeather).toHaveBeenLastCalledWith('31.7767,35.2345')
+    expect(loadCurrentWeather).toHaveBeenLastCalledWith('31.7767,35.2345', { force: false })
     expect(window.localStorage.getItem('route-of-sky:selected-location-id')).toBe('il-jerusalem')
   })
 
@@ -242,7 +242,7 @@ describe('대시보드 페이지', () => {
       label: '일본',
       city: '도쿄',
     })
-    expect(loadCurrentWeather).toHaveBeenCalledWith('35.6586,139.7454')
+    expect(loadCurrentWeather).toHaveBeenCalledWith('35.6586,139.7454', { force: false })
   })
 
   it('저장된 지역이 유효하지 않으면 기본 뉴욕 지역으로 초기화해야 한다', () => {
@@ -253,7 +253,7 @@ describe('대시보드 페이지', () => {
     expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
       id: 'us-new-york',
     })
-    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855')
+    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855', { force: false })
   })
 
   it('저장소를 읽을 수 없으면 기본 뉴욕 지역으로 초기화해야 한다', () => {
@@ -266,7 +266,7 @@ describe('대시보드 페이지', () => {
     expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
       id: 'us-new-york',
     })
-    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855')
+    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855', { force: false })
 
     getItemSpy.mockRestore()
   })
@@ -282,7 +282,7 @@ describe('대시보드 페이지', () => {
     expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
       id: 'il-jerusalem',
     })
-    expect(loadCurrentWeather).toHaveBeenLastCalledWith('31.7767,35.2345')
+    expect(loadCurrentWeather).toHaveBeenLastCalledWith('31.7767,35.2345', { force: false })
 
     setItemSpy.mockRestore()
   })
@@ -310,7 +310,7 @@ describe('대시보드 페이지', () => {
 
     await wrapper.find('[data-testid="render-current-weather"]').trigger('click')
 
-    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855')
+    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855', { force: true })
   })
 
   it('알 수 없는 지역 선택 이벤트는 무시해야 한다', async () => {

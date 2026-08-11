@@ -18,6 +18,7 @@ const metrics = [
   ['Storm p95 프레임 시간', 'desktop.summary.scene.stormFrameP95Ms.median', 'ms', 33.3],
   ['Snow p95 프레임 시간', 'desktop.summary.scene.snowFrameP95Ms.median', 'ms', 33.3],
   ['API 네트워크 요청 수', 'desktop.summary.api.networkRequestCount.median', 'count', 1],
+  ['날씨 캐시 반영', 'desktop.summary.page.weatherCacheHitMs.median', 'ms', 100],
 ]
 
 function getValue(object, path) {

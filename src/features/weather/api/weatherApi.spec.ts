@@ -136,6 +136,30 @@ describe('WeatherAPI 클라이언트', () => {
     expect(requestUrl.searchParams.get('aqi')).toBe('yes')
   })
 
+  it('요청 취소 signal을 fetch에 전달해야 한다', async () => {
+    const controller = new AbortController()
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          location: {},
+          current: {
+            temp_c: 20,
+            humidity: 50,
+            wind_kph: 0,
+            wind_degree: 0,
+            cloud: 0,
+            precip_mm: 0,
+            vis_km: 20,
+          },
+        }),
+    })
+
+    await fetchCurrentWeather('test-key', 'Seoul', fetcher, controller.signal)
+
+    expect(fetcher).toHaveBeenCalledWith(expect.any(URL), { signal: controller.signal })
+  })
+
   it('WeatherAPI 오류 응답이면 메시지를 포함해 실패해야 한다', async () => {
     const fetcher = vi.fn().mockResolvedValue({
       ok: false,

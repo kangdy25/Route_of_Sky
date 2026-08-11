@@ -149,7 +149,7 @@ test.describe('WeatherAPI 통합 흐름', () => {
     await expectMetricText(page, '강수량', '4.6 mm/h')
   })
 
-  test('새로고침 후에도 마지막 선택 지역을 유지하고 해당 지역 날씨를 호출해야 한다', async ({
+  test('새로고침 후에는 마지막 지역의 5분 캐시를 사용해 API 재호출을 생략해야 한다', async ({
     page,
   }) => {
     const queries = await mockWeatherApi(page)
@@ -160,13 +160,28 @@ test.describe('WeatherAPI 통합 흐름', () => {
     const locationSelect = page.getByRole('combobox', { name: '지역 선택' })
     await locationSelect.selectOption('jp-tokyo', { force: true })
     await expectWeatherRequest(queries, '35.6586,139.7454')
+    await expectPageText(page, '21:45')
 
     queries.length = 0
     await page.reload({ waitUntil: 'domcontentloaded' })
 
     await expect(page.getByRole('combobox', { name: '지역 선택' })).toHaveValue('jp-tokyo')
-    await expectWeatherRequest(queries, '35.6586,139.7454')
     await expectPageText(page, '21:45')
     await expectMetricText(page, '가시 거리', '6.4 km')
+    await page.waitForTimeout(500)
+    expect(queries).toEqual([])
+  })
+
+  test('현재 날씨 강제 렌더링은 유효 캐시를 우회해 API를 다시 호출해야 한다', async ({ page }) => {
+    const queries = await mockWeatherApi(page)
+
+    await page.goto('/')
+    await expectWeatherRequest(queries, '40.758,-73.9855')
+    queries.length = 0
+
+    await page.getByRole('button', { name: 'Open settings' }).click()
+    await page.getByRole('button', { name: 'Render Current Weather' }).click({ force: true })
+
+    await expectWeatherRequest(queries, '40.758,-73.9855')
   })
 })

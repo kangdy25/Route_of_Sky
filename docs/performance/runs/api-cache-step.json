@@ -1,0 +1,290 @@
+{
+  "label": "api-cache-step",
+  "generatedAt": "2026-08-11T04:57:44.789Z",
+  "conditions": {
+    "runs": 1,
+    "sampleMs": 500,
+    "viewport": "1365x768",
+    "cacheDisabled": true,
+    "lowEndCpuSlowdownMultiplier": 4
+  },
+  "build": {
+    "distBytes": 37525304
+  },
+  "desktop": {
+    "runs": [
+      {
+        "cpuSlowdownMultiplier": 1,
+        "api": {
+          "networkRequestCount": 1,
+          "cacheHitCount": 1,
+          "cacheMissCount": 1
+        },
+        "page": {
+          "domContentLoadedMs": 856.2000000029802,
+          "loadMs": 3070.1000000089407,
+          "firstContentfulPaintMs": 2448,
+          "largestContentfulPaintMs": 2448,
+          "weatherCacheHitMs": 0.09999999403953552,
+          "cumulativeLayoutShift": 0.0004,
+          "longTaskCount": 3,
+          "longTaskP95Ms": 1489,
+          "resourceTransferBytes": 5845802,
+          "resourceDecodedBytes": 10526788
+        },
+        "viewerReadyMs": 586.9000000059605,
+        "tilesStableMs": null,
+        "frames": {
+          "rain": {
+            "samples": [-104.3000000059601],
+            "median": -104.3,
+            "p50": -104.3,
+            "p95": -104.3
+          },
+          "storm": {
+            "samples": [-7.699999997021223],
+            "median": -7.7,
+            "p50": -7.7,
+            "p95": -7.7
+          },
+          "snow": {
+            "samples": [-153.6000000059612],
+            "median": -153.6,
+            "p50": -153.6,
+            "p95": -153.6
+          }
+        }
+      }
+    ],
+    "summary": {
+      "page": {
+        "firstContentfulPaintMs": {
+          "samples": [2448],
+          "median": 2448,
+          "p50": 2448,
+          "p95": 2448
+        },
+        "largestContentfulPaintMs": {
+          "samples": [2448],
+          "median": 2448,
+          "p50": 2448,
+          "p95": 2448
+        },
+        "domContentLoadedMs": {
+          "samples": [856.2000000029802],
+          "median": 856.2,
+          "p50": 856.2,
+          "p95": 856.2
+        },
+        "loadMs": {
+          "samples": [3070.1000000089407],
+          "median": 3070.1,
+          "p50": 3070.1,
+          "p95": 3070.1
+        },
+        "weatherCacheHitMs": {
+          "samples": [0.09999999403953552],
+          "median": 0.1,
+          "p50": 0.1,
+          "p95": 0.1
+        },
+        "resourceTransferBytes": {
+          "samples": [5845802],
+          "median": 5845802,
+          "p50": 5845802,
+          "p95": 5845802
+        }
+      },
+      "scene": {
+        "viewerReadyMs": {
+          "samples": [586.9000000059605],
+          "median": 586.9,
+          "p50": 586.9,
+          "p95": 586.9
+        },
+        "tilesStableMs": {
+          "samples": [],
+          "median": null,
+          "p50": null,
+          "p95": null
+        },
+        "rainFrameP95Ms": {
+          "samples": [-104.3],
+          "median": -104.3,
+          "p50": -104.3,
+          "p95": -104.3
+        },
+        "stormFrameP95Ms": {
+          "samples": [-7.7],
+          "median": -7.7,
+          "p50": -7.7,
+          "p95": -7.7
+        },
+        "snowFrameP95Ms": {
+          "samples": [-153.6],
+          "median": -153.6,
+          "p50": -153.6,
+          "p95": -153.6
+        }
+      },
+      "api": {
+        "networkRequestCount": {
+          "samples": [1],
+          "median": 1,
+          "p50": 1,
+          "p95": 1
+        },
+        "cacheHitCount": {
+          "samples": [1],
+          "median": 1,
+          "p50": 1,
+          "p95": 1
+        },
+        "cacheMissCount": {
+          "samples": [1],
+          "median": 1,
+          "p50": 1,
+          "p95": 1
+        }
+      }
+    }
+  },
+  "lowEnd": {
+    "runs": [
+      {
+        "cpuSlowdownMultiplier": 4,
+        "api": {
+          "networkRequestCount": 1,
+          "cacheHitCount": 1,
+          "cacheMissCount": 1
+        },
+        "page": {
+          "domContentLoadedMs": 475.79999999701977,
+          "loadMs": 3039.7000000029802,
+          "firstContentfulPaintMs": 2440,
+          "largestContentfulPaintMs": 2440,
+          "weatherCacheHitMs": 0.5,
+          "cumulativeLayoutShift": 0.0004,
+          "longTaskCount": 5,
+          "longTaskP95Ms": 1863,
+          "resourceTransferBytes": 5845802,
+          "resourceDecodedBytes": 10526788
+        },
+        "viewerReadyMs": 1278.7999999970198,
+        "tilesStableMs": 4392.5999999940395,
+        "frames": {
+          "rain": {
+            "samples": [-87.30000000297878, 733.8999999999978],
+            "median": -87.3,
+            "p50": -87.3,
+            "p95": 733.9
+          },
+          "storm": {
+            "samples": [-8.19999999403808, 833.1999999999971],
+            "median": -8.2,
+            "p50": -8.2,
+            "p95": 833.2
+          },
+          "snow": {
+            "samples": [-69.59999999403954, 1015.9000000000015],
+            "median": -69.6,
+            "p50": -69.6,
+            "p95": 1015.9
+          }
+        }
+      }
+    ],
+    "summary": {
+      "page": {
+        "firstContentfulPaintMs": {
+          "samples": [2440],
+          "median": 2440,
+          "p50": 2440,
+          "p95": 2440
+        },
+        "largestContentfulPaintMs": {
+          "samples": [2440],
+          "median": 2440,
+          "p50": 2440,
+          "p95": 2440
+        },
+        "domContentLoadedMs": {
+          "samples": [475.79999999701977],
+          "median": 475.8,
+          "p50": 475.8,
+          "p95": 475.8
+        },
+        "loadMs": {
+          "samples": [3039.7000000029802],
+          "median": 3039.7,
+          "p50": 3039.7,
+          "p95": 3039.7
+        },
+        "weatherCacheHitMs": {
+          "samples": [0.5],
+          "median": 0.5,
+          "p50": 0.5,
+          "p95": 0.5
+        },
+        "resourceTransferBytes": {
+          "samples": [5845802],
+          "median": 5845802,
+          "p50": 5845802,
+          "p95": 5845802
+        }
+      },
+      "scene": {
+        "viewerReadyMs": {
+          "samples": [1278.7999999970198],
+          "median": 1278.8,
+          "p50": 1278.8,
+          "p95": 1278.8
+        },
+        "tilesStableMs": {
+          "samples": [4392.5999999940395],
+          "median": 4392.6,
+          "p50": 4392.6,
+          "p95": 4392.6
+        },
+        "rainFrameP95Ms": {
+          "samples": [733.9],
+          "median": 733.9,
+          "p50": 733.9,
+          "p95": 733.9
+        },
+        "stormFrameP95Ms": {
+          "samples": [833.2],
+          "median": 833.2,
+          "p50": 833.2,
+          "p95": 833.2
+        },
+        "snowFrameP95Ms": {
+          "samples": [1015.9],
+          "median": 1015.9,
+          "p50": 1015.9,
+          "p95": 1015.9
+        }
+      },
+      "api": {
+        "networkRequestCount": {
+          "samples": [1],
+          "median": 1,
+          "p50": 1,
+          "p95": 1
+        },
+        "cacheHitCount": {
+          "samples": [1],
+          "median": 1,
+          "p50": 1,
+          "p95": 1
+        },
+        "cacheMissCount": {
+          "samples": [1],
+          "median": 1,
+          "p50": 1,
+          "p95": 1
+        }
+      }
+    }
+  }
+}

@@ -7,6 +7,7 @@ vi.mock('@/shared/config/env', () => ({
 }))
 
 vi.mock('@/features/weather/api/weatherApi', () => ({
+  DEFAULT_WEATHER_LOCATION_QUERY: '40.758,-73.9855',
   fetchCurrentWeather: vi.fn(),
 }))
 
