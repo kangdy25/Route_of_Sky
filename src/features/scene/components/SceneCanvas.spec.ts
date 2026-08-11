@@ -59,13 +59,20 @@ const mocks = vi.hoisted(() => {
     cloudInstances: [] as Array<{
       update: ReturnType<typeof vi.fn>
       dispose: ReturnType<typeof vi.fn>
+      setQuality: ReturnType<typeof vi.fn>
     }>,
     postProcessInstances: [] as Array<{
       update: ReturnType<typeof vi.fn>
       dispose: ReturnType<typeof vi.fn>
+      setQuality: ReturnType<typeof vi.fn>
     }>,
     screenWeatherInstances: [] as Array<{
       update: ReturnType<typeof vi.fn>
+      stop: ReturnType<typeof vi.fn>
+      setQuality: ReturnType<typeof vi.fn>
+    }>,
+    qualityInstances: [] as Array<{
+      start: ReturnType<typeof vi.fn>
       stop: ReturnType<typeof vi.fn>
     }>,
     makeViewer,
@@ -141,6 +148,7 @@ vi.mock('@/features/scene/lib/clouds', () => ({
   CloudController: class {
     update = vi.fn()
     dispose = vi.fn()
+    setQuality = vi.fn()
 
     constructor(getViewer: () => unknown, getState: () => unknown, getLocation: () => unknown) {
       getViewer()
@@ -155,6 +163,7 @@ vi.mock('@/features/scene/lib/weatherPostProcess', () => ({
   WeatherPostProcessController: class {
     update = vi.fn()
     dispose = vi.fn()
+    setQuality = vi.fn()
 
     constructor(getViewer: () => unknown, getState: () => unknown) {
       getViewer()
@@ -168,10 +177,52 @@ vi.mock('@/features/scene/lib/screenWeather', () => ({
   ScreenWeatherRenderer: class {
     update = vi.fn()
     stop = vi.fn()
+    setQuality = vi.fn()
 
     constructor(_canvasRef: unknown, getState: () => unknown) {
       getState()
       mocks.screenWeatherInstances.push(this)
+    }
+  },
+}))
+
+vi.mock('@/features/scene/lib/sceneQuality', () => ({
+  SCENE_QUALITY_PROFILES: {
+    high: {
+      level: 'high',
+      resolutionScale: 1,
+      weatherFps: 30,
+      particleMultiplier: 1,
+      maxClouds: 34,
+      postProcessEnabled: true,
+      simplifiedSnow: false,
+    },
+    medium: {
+      level: 'medium',
+      resolutionScale: 0.85,
+      weatherFps: 24,
+      particleMultiplier: 0.7,
+      maxClouds: 22,
+      postProcessEnabled: true,
+      simplifiedSnow: false,
+    },
+    low: {
+      level: 'low',
+      resolutionScale: 0.7,
+      weatherFps: 20,
+      particleMultiplier: 0.45,
+      maxClouds: 12,
+      postProcessEnabled: false,
+      simplifiedSnow: true,
+    },
+  },
+  getRecommendedAutoQuality: vi.fn(() => 'high'),
+  AdaptiveSceneQualityController: class {
+    start = vi.fn()
+    stop = vi.fn()
+
+    constructor() {
+      mocks.qualityInstances.push(this)
     }
   },
 }))
@@ -211,11 +262,20 @@ describe('SceneCanvas', () => {
     mocks.cloudInstances.length = 0
     mocks.postProcessInstances.length = 0
     mocks.screenWeatherInstances.length = 0
+    mocks.qualityInstances.length = 0
     vi.stubGlobal(
       'setTimeout',
       vi.fn(() => 42),
     )
     vi.stubGlobal('clearTimeout', vi.fn())
+    vi.stubGlobal(
+      'requestAnimationFrame',
+      vi.fn((callback: FrameRequestCallback) => {
+        queueMicrotask(() => callback(performance.now()))
+        return 7
+      }),
+    )
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
   })
 
   it('Viewer를 초기화하고 Google 3D Tiles를 로드해야 한다', async () => {
@@ -501,9 +561,13 @@ describe('SceneCanvas', () => {
     await flushAsyncWork()
 
     mocks.applySceneTime.mockClear()
+    mocks.applyAtmosphereToScene.mockClear()
+    mocks.cloudInstances[0].update.mockClear()
+    mocks.postProcessInstances[0].update.mockClear()
     await wrapper.setProps({ precipitation: 4, cloudCover: 90 })
+    await nextTick()
 
-    expect(mocks.applySceneTime).toHaveBeenCalled()
+    expect(mocks.applySceneTime).not.toHaveBeenCalled()
     expect(mocks.applyAtmosphereToScene).toHaveBeenCalled()
     expect(mocks.cloudInstances[0].update).toHaveBeenCalled()
     expect(mocks.postProcessInstances[0].update).toHaveBeenCalled()
@@ -527,6 +591,7 @@ describe('SceneCanvas', () => {
 
     expect(window.clearTimeout).toHaveBeenCalledWith(42)
     expect(mocks.cameraInstances[0].dispose).toHaveBeenCalled()
+    expect(mocks.qualityInstances[0].stop).toHaveBeenCalled()
     expect(mocks.cloudInstances[0].dispose).toHaveBeenCalled()
     expect(mocks.postProcessInstances[0].dispose).toHaveBeenCalled()
     expect(mocks.screenWeatherInstances[0].stop).toHaveBeenCalled()

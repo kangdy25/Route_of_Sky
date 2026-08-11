@@ -1,11 +1,10 @@
 import { Math as CesiumMath } from 'cesium'
 import type { Ref } from 'vue'
 
-import type { SceneWeatherState } from '../model/scene.types'
+import type { SceneQualityProfile, SceneWeatherState } from '../model/scene.types'
 import { clampToRange, clampToUnitInterval, smoothstep } from './math'
+import { SCENE_QUALITY_PROFILES } from './sceneQuality'
 import { getPrecipitationMode, getSnowstormIntensity, getThunderstormIntensity } from './weather'
-
-const SCREEN_WEATHER_FRAME_INTERVAL_MS = 1000 / 30
 
 // 화면 공간의 비, 눈, 번개를 2D canvas에 그립니다.
 // Cesium scene에 입자를 넣지 않아도 UI 위에서 빠르게 날씨 효과를 바꿀 수 있습니다.
@@ -49,6 +48,7 @@ export class ScreenWeatherRenderer {
   private particles: ScreenWeatherParticle[] = []
   private lightningStrikes: LightningStrike[] = []
   private nextLightningAt = 0
+  private quality = SCENE_QUALITY_PROFILES.high
   private readonly canvasRef: Ref<HTMLCanvasElement | null>
   private readonly getState: () => SceneWeatherState
 
@@ -64,6 +64,10 @@ export class ScreenWeatherRenderer {
     }
 
     this.stop()
+  }
+
+  setQuality(quality: SceneQualityProfile) {
+    this.quality = quality
   }
 
   start() {
@@ -87,15 +91,19 @@ export class ScreenWeatherRenderer {
     this.clearCanvas()
   }
 
-  private scheduleNextFrame(delay = SCREEN_WEATHER_FRAME_INTERVAL_MS) {
+  private get frameIntervalMs() {
+    return 1000 / this.quality.weatherFps
+  }
+
+  private scheduleNextFrame(delay = this.frameIntervalMs) {
     this.frameTimer = window.setTimeout(() => {
       this.renderFrame(window.performance.now())
     }, delay)
   }
 
   private readonly renderFrame = (timestamp: number) => {
-    if (this.lastFrame && timestamp - this.lastFrame < SCREEN_WEATHER_FRAME_INTERVAL_MS) {
-      this.scheduleNextFrame(SCREEN_WEATHER_FRAME_INTERVAL_MS - (timestamp - this.lastFrame))
+    if (this.lastFrame && timestamp - this.lastFrame < this.frameIntervalMs) {
+      this.scheduleNextFrame(this.frameIntervalMs - (timestamp - this.lastFrame))
       return
     }
 
@@ -262,7 +270,11 @@ export class ScreenWeatherRenderer {
     const peakCount = mode === 'snow' ? 1550 : 1100
 
     return Math.round(
-      CesiumMath.lerp(baseCount, peakCount, intensity) * humidityBoost * windBoost * snowstormBoost,
+      CesiumMath.lerp(baseCount, peakCount, intensity) *
+        humidityBoost *
+        windBoost *
+        snowstormBoost *
+        this.quality.particleMultiplier,
     )
   }
 
@@ -358,6 +370,15 @@ export class ScreenWeatherRenderer {
   ) {
     const snowstormIntensity = getSnowstormIntensity(state)
     const radius = particle.size
+    if (this.quality.simplifiedSnow) {
+      context.globalAlpha = particle.alpha
+      context.fillStyle = 'rgba(248, 250, 252, 0.82)'
+      context.beginPath()
+      context.arc(particle.x, particle.y, radius * 0.72, 0, Math.PI * 2)
+      context.fill()
+      return
+    }
+
     const gradient = context.createRadialGradient(
       particle.x,
       particle.y,

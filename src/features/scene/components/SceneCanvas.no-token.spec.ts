@@ -64,6 +64,7 @@ vi.mock('@/features/scene/lib/cesiumScene', () => ({
 
 vi.mock('@/features/scene/lib/clouds', () => ({
   CloudController: class {
+    setQuality = vi.fn()
     update = vi.fn()
     dispose = vi.fn()
   },
@@ -71,6 +72,7 @@ vi.mock('@/features/scene/lib/clouds', () => ({
 
 vi.mock('@/features/scene/lib/weatherPostProcess', () => ({
   WeatherPostProcessController: class {
+    setQuality = vi.fn()
     update = vi.fn()
     dispose = vi.fn()
   },
@@ -78,6 +80,7 @@ vi.mock('@/features/scene/lib/weatherPostProcess', () => ({
 
 vi.mock('@/features/scene/lib/screenWeather', () => ({
   ScreenWeatherRenderer: class {
+    setQuality = vi.fn()
     update = vi.fn()
     stop = vi.fn()
   },
