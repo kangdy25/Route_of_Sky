@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Route of Sky 성능 최적화 핵심 결과</title>
+  <desc id="desc">배포 크기, FCP와 LCP, 리소스 전송량, API 호출 수의 최적화 전후 비교</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071525" />
+      <stop offset="1" stop-color="#0b2536" />
+    </linearGradient>
+    <linearGradient id="after" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee" />
+      <stop offset="1" stop-color="#38bdf8" />
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="glowBlur" />
+      <feMerge><feMergeNode in="glowBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+    </filter>
+  </defs>
+  <rect width="1200" height="720" fill="url(#background)" />
+  <path d="M0 92H1200" stroke="#164e63" />
+  <text x="56" y="52" fill="#e0f2fe" font-family="system-ui, sans-serif" font-size="28" font-weight="800">Route of Sky · Performance Optimization</text>
+  <text x="56" y="78" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">Chromium 1365×768 · 캐시 비활성화 · 각 3회 중앙값</text>
+  <g font-family="system-ui, sans-serif">
+    <rect x="48" y="122" width="532" height="238" rx="14" fill="#07111f" stroke="#155e75" />
+    <text x="76" y="158" fill="#e0f2fe" font-size="20" font-weight="750">배포 산출물</text>
+    <text x="76" y="186" fill="#67e8f9" font-size="15">22.16 MiB 감소 · 61.9% 개선</text>
+    <text x="76" y="228" fill="#94a3b8" font-size="13">Before</text>
+    <rect x="150" y="210" width="374" height="24" rx="5" fill="#475569" />
+    <text x="512" y="228" fill="#f8fafc" font-size="13" text-anchor="end">35.78 MiB</text>
+    <text x="76" y="278" fill="#94a3b8" font-size="13">After</text>
+    <rect x="150" y="260" width="142" height="24" rx="5" fill="url(#after)" filter="url(#glow)" />
+    <text x="304" y="278" fill="#f8fafc" font-size="13">13.63 MiB</text>
+    <text x="76" y="324" fill="#fbbf24" font-size="13">10 MiB 목표 미달 · Cesium 런타임 자산 12.96 MB 유지</text>
+
+    <rect x="620" y="122" width="532" height="238" rx="14" fill="#07111f" stroke="#155e75" />
+    <text x="648" y="158" fill="#e0f2fe" font-size="20" font-weight="750">로드 시간</text>
+    <text x="648" y="186" fill="#67e8f9" font-size="15">FCP와 LCP는 같은 시점에 관측</text>
+    <text x="648" y="224" fill="#94a3b8" font-size="13">Desktop</text>
+    <rect x="736" y="208" width="353" height="14" rx="3" fill="#475569" />
+    <rect x="736" y="228" width="326" height="14" rx="3" fill="url(#after)" />
+    <text x="1120" y="252" fill="#f8fafc" font-size="12" text-anchor="end">3,528 → 3,264 ms · 7.5%</text>
+    <text x="648" y="278" fill="#94a3b8" font-size="13">CPU ×4</text>
+    <rect x="736" y="262" width="398" height="14" rx="3" fill="#475569" />
+    <rect x="736" y="282" width="309" height="14" rx="3" fill="url(#after)" />
+    <text x="1120" y="306" fill="#f8fafc" font-size="12" text-anchor="end">3,976 → 3,092 ms · 22.2%</text>
+    <text x="648" y="324" fill="#fbbf24" font-size="13">Desktop FCP/LCP 및 저사양 FCP 목표 미달</text>
+
+    <rect x="48" y="398" width="532" height="246" rx="14" fill="#07111f" stroke="#155e75" />
+    <text x="76" y="434" fill="#e0f2fe" font-size="20" font-weight="750">리소스 전송량</text>
+    <text x="76" y="462" fill="#67e8f9" font-size="15">2.86 MiB 감소 · 51.2% 개선</text>
+    <text x="76" y="512" fill="#94a3b8" font-size="13">Before</text>
+    <rect x="150" y="494" width="374" height="24" rx="5" fill="#475569" />
+    <text x="512" y="512" fill="#f8fafc" font-size="13" text-anchor="end">5.57 MiB</text>
+    <text x="76" y="562" fill="#94a3b8" font-size="13">After</text>
+    <rect x="150" y="544" width="183" height="24" rx="5" fill="url(#after)" filter="url(#glow)" />
+    <text x="345" y="562" fill="#f8fafc" font-size="13">2.72 MiB</text>
+    <text x="76" y="608" fill="#94a3b8" font-size="13">헤더 로고: 3,872,089 → 5,154 bytes · 99.9%</text>
+
+    <rect x="620" y="398" width="532" height="246" rx="14" fill="#07111f" stroke="#155e75" />
+    <text x="648" y="434" fill="#e0f2fe" font-size="20" font-weight="750">Weather API</text>
+    <text x="648" y="462" fill="#67e8f9" font-size="15">5분 캐시 · 새로고침 추가 요청 0건</text>
+    <text x="648" y="520" fill="#94a3b8" font-size="13">Before</text>
+    <circle cx="750" cy="512" r="20" fill="#475569" /><circle cx="800" cy="512" r="20" fill="#475569" />
+    <text x="840" y="518" fill="#f8fafc" font-size="14">2 requests</text>
+    <text x="648" y="580" fill="#94a3b8" font-size="13">After</text>
+    <circle cx="750" cy="572" r="20" fill="url(#after)" filter="url(#glow)" />
+    <text x="790" y="578" fill="#f8fafc" font-size="14">1 request · 50.0% 감소</text>
+    <text x="648" y="616" fill="#94a3b8" font-size="13">캐시 hydration p95 중앙값 0.30 ms · 목표 100 ms 통과</text>
+  </g>
+  <text x="1148" y="690" fill="#64748b" font-family="system-ui, sans-serif" font-size="12" text-anchor="end">2026-08-11 · Before/After 3-run median</text>
+</svg>

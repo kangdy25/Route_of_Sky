@@ -16,7 +16,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
     "perf:measure": "node scripts/performance/measure.mjs",
-    "perf:compare": "node scripts/performance/compare.mjs"
+    "perf:compare": "node scripts/performance/compare.mjs",
+    "perf:capture": "node scripts/performance/capture.mjs"
   },
   "dependencies": {
     "cesium": "^1.142.0",

@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
-import { mkdir, readdir, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { gzipSync } from 'node:zlib'
 import { chromium } from '@playwright/test'
 
 const root = process.cwd()
@@ -45,6 +46,40 @@ async function directorySize(directory) {
   }
 
   return total
+}
+
+async function getBuildMetrics() {
+  const distDirectory = resolve(root, 'dist')
+  const assetDirectory = resolve(distDirectory, 'assets')
+  const assetNames = await readdir(assetDirectory)
+
+  async function getAssetMetric(extension) {
+    const name = assetNames.find((assetName) => assetName.endsWith(extension))
+    if (!name) return null
+
+    const assetBuffer = await readFile(resolve(assetDirectory, name))
+    return {
+      name,
+      rawBytes: assetBuffer.length,
+      gzipBytes: gzipSync(assetBuffer, { level: 9 }).length,
+    }
+  }
+
+  const logoPath = resolve(root, 'public/logo.webp')
+  let headerLogo = null
+  try {
+    const logo = await stat(logoPath)
+    headerLogo = { name: 'logo.webp', bytes: logo.size, width: 128, height: 128 }
+  } catch {
+    // 이전 커밋처럼 WebP 로고가 없는 실행도 측정할 수 있도록 선택 지표로 둡니다.
+  }
+
+  return {
+    distBytes: await directorySize(distDirectory),
+    appJavaScript: await getAssetMetric('.js'),
+    appCss: await getAssetMetric('.css'),
+    headerLogo,
+  }
 }
 
 function run(command, args, options = {}) {
@@ -310,7 +345,7 @@ try {
       cacheDisabled: true,
       lowEndCpuSlowdownMultiplier: 4,
     },
-    build: { distBytes: await directorySize(resolve(root, 'dist')) },
+    build: await getBuildMetrics(),
     desktop: { runs: desktopRuns, summary: aggregate(desktopRuns) },
     lowEnd: { runs: lowEndRuns, summary: aggregate(lowEndRuns) },
   }

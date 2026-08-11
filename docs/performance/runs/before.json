@@ -9,7 +9,23 @@
     "lowEndCpuSlowdownMultiplier": 4
   },
   "build": {
-    "distBytes": 37522860
+    "distBytes": 37522860,
+    "appJavaScript": {
+      "name": "index-wDzFeWFQ.js",
+      "rawBytes": 224987,
+      "gzipBytes": 79657
+    },
+    "appCss": {
+      "name": "index-CS7Csz4P.css",
+      "rawBytes": 88518,
+      "gzipBytes": 15039
+    },
+    "headerLogo": {
+      "name": "logo.png",
+      "bytes": 3872089,
+      "width": 3174,
+      "height": 3174
+    }
   },
   "desktop": {
     "runs": [
