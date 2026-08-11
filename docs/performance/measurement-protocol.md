@@ -16,9 +16,18 @@
 pnpm perf:measure --label before
 pnpm perf:measure --label after
 pnpm perf:compare
+pnpm perf:capture -- --url http://127.0.0.1:4173 --output /tmp/after.png --preset Rain
 ```
 
 `PERF_SAMPLE_MS`를 지정하면 날씨 프리셋별 프레임 측정 시간을 조절할 수 있습니다. 기본값은 20초입니다.
+
+품질 단계별 시각 검증은 preview 서버를 실행한 뒤 다음 명령으로 High/Medium/Low × Rain/Storm/Snow 9개 조합을 캡처합니다.
+
+```bash
+pnpm perf:capture -- --url http://127.0.0.1:4173 --matrix-output-directory /tmp/quality-matrix
+```
+
+JS·CSS gzip byte는 Node zlib level 9로 계산해 원본 JSON에 기록합니다. Vite 콘솔의 반올림된 kB 표시와 구분하기 위해 비교표는 KiB를 사용합니다.
 
 ## 개선율
 
