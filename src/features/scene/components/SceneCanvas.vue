@@ -81,6 +81,12 @@ let removeSunGlowUpdater: (() => void) | null = null
 let stopTilesetRenderSync: (() => void) | null = null
 let destroyed = false
 
+function markPerformance(name: string) {
+  if (typeof performance !== 'undefined' && typeof performance.mark === 'function') {
+    performance.mark(name)
+  }
+}
+
 const sunPositionScratch = new Cartesian3()
 const sunWindowScratch = new Cartesian2()
 const sunToCameraScratch = new Cartesian3()
@@ -209,6 +215,7 @@ function initializeViewer() {
   setInitialLocationView(viewer, props.location)
   removeSunGlowUpdater = viewer.scene.postRender.addEventListener(updateSunGlowPosition)
   applySceneState()
+  markPerformance('route-of-sky:viewer-ready')
 
   if (hasCesiumIonAccessToken) {
     void loadGooglePhotorealisticTiles()
@@ -299,6 +306,7 @@ function keepRenderingUntilInitialTilesLoaded(
     initialTilesSettled = true
     tileset.maximumScreenSpaceError = 2
     onInitialTilesLoaded()
+    markPerformance('route-of-sky:tiles-stable')
     requestRender()
   }
 
