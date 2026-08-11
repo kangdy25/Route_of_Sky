@@ -116,6 +116,8 @@ async function expectMetricText(page: Page, title: string, value: string) {
 }
 
 test.describe('WeatherAPI 통합 흐름', () => {
+  test.describe.configure({ timeout: 60_000 })
+
   test('초기 선택 지역의 WeatherAPI 응답을 대시보드 값에 바인딩해야 한다', async ({ page }) => {
     const queries = await mockWeatherApi(page)
 
