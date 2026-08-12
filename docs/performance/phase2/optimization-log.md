@@ -18,3 +18,9 @@
 - 검증: `VERCEL_ENV=development vercel dev`의 허용 이벤트는 204와 구조화 로그를 반환했고, 위치 필드는 400으로 거절했다. Preview·Production 404 정책은 단위 테스트로 검증했다. 단위 테스트 256개와 E2E 7개를 통과했다.
 - 판단: 개발 계측은 프로덕션 산출물과 원격 사용자 데이터 수집에 영향을 주지 않는다. 후속 렌더링·초기 로딩 작업은 `real-gpu-before.json`을 기준으로 수치화한다.
 - 롤백 조건: 프로덕션 번들에 `/api/performance`이 포함되거나 개발 외 환경에서 2xx가 반환되면 이 변경을 우선 롤백한다.
+
+## 2026-08-13 · 초기 로딩 분리 기준선
+
+- 가설: Cesium과 `SceneCanvas`가 초기 앱 번들에 포함돼 대시보드 셸의 FCP/LCP와 경쟁한다.
+- Before: 실제 GPU 중앙값은 데스크톱 FCP/LCP 692ms, CLS 0, Viewer 준비 651.9ms, CPU ×4 FCP/LCP 1,000ms, Viewer 준비 1,927.6ms였다.
+- 유지 조건: FCP 또는 LCP 10% 이상 개선, Viewer 준비 악화 15% 이하, CLS 0.02 이하, Viewer 준비 전 마지막 위치 선택 보존.
