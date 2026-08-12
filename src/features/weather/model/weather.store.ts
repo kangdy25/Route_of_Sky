@@ -4,7 +4,6 @@ import {
   DEFAULT_WEATHER_LOCATION_QUERY,
   fetchCurrentWeather,
 } from '@/features/weather/api/weatherApi'
-import { hasWeatherApiKey, weatherApiKey } from '@/shared/config/env'
 import { readWeatherCache, writeWeatherCache } from './weather.cache'
 import { defaultWeatherState } from './weather.constants'
 import type { WeatherState } from './weather.types'
@@ -72,28 +71,33 @@ export const useWeatherStore = defineStore('weather', () => {
     }
   }
 
-  function getOrCreateRequest(locationQuery: string, fetcher: typeof fetch) {
-    const existing = pendingRequests.get(locationQuery)
+  function getOrCreateRequest(locationQuery: string, fetcher: typeof fetch, force: boolean) {
+    const requestKey = `${locationQuery}:${force ? 'fresh' : 'cached'}`
+    const existing = pendingRequests.get(requestKey)
     if (existing) return existing
 
-    for (const [pendingLocation, pending] of pendingRequests) {
-      if (pendingLocation !== locationQuery) {
+    for (const [pendingKey, pending] of pendingRequests) {
+      if (pendingKey !== requestKey) {
         pending.controller.abort()
-        pendingRequests.delete(pendingLocation)
+        pendingRequests.delete(pendingKey)
       }
     }
 
     const controller = new AbortController()
     const request: PendingWeatherRequest = {
       controller,
-      promise: fetchCurrentWeather(weatherApiKey, locationQuery, fetcher, controller.signal),
+      promise: fetchCurrentWeather(locationQuery, {
+        fetcher,
+        force,
+        signal: controller.signal,
+      }),
     }
-    pendingRequests.set(locationQuery, request)
+    pendingRequests.set(requestKey, request)
     networkRequestCount.value += 1
 
     const removePendingRequest = () => {
-      if (pendingRequests.get(locationQuery) === request) {
-        pendingRequests.delete(locationQuery)
+      if (pendingRequests.get(requestKey) === request) {
+        pendingRequests.delete(requestKey)
       }
     }
     void request.promise.then(removePendingRequest, removePendingRequest)
@@ -122,10 +126,6 @@ export const useWeatherStore = defineStore('weather', () => {
       return true
     }
 
-    if (!hasWeatherApiKey) {
-      return false
-    }
-
     if (options.force) {
       forcedRefreshCount.value += 1
     } else {
@@ -133,7 +133,11 @@ export const useWeatherStore = defineStore('weather', () => {
     }
     isLoading.value = true
     errorMessage.value = ''
-    const request = getOrCreateRequest(locationQuery, options.fetcher ?? fetch)
+    const request = getOrCreateRequest(
+      locationQuery,
+      options.fetcher ?? fetch,
+      Boolean(options.force),
+    )
 
     try {
       const weather = await request.promise
