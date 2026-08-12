@@ -1,0 +1,16 @@
+{
+  "measurement": "Phase 2 final comparison baseline pointer",
+  "source": "real-gpu-before.json",
+  "sourceCommit": "83de063",
+  "conditions": {
+    "browser": "Google Chrome",
+    "headless": false,
+    "hardwareAcceleration": true,
+    "viewport": "1365x768",
+    "cacheDisabled": true,
+    "runs": 3,
+    "lowEndCpuSlowdownMultiplier": 4
+  },
+  "rawRuns": "The complete desktop and CPU x4 three-run samples are preserved without duplication in runs/real-gpu-before.json.",
+  "purpose": "This pointer makes the final branch comparison source explicit while retaining the original immutable raw baseline."
+}
