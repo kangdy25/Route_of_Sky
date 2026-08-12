@@ -27,6 +27,15 @@ interface PendingWeatherRequest {
   promise: Promise<WeatherState>
 }
 
+function reportPerformanceInDevelopment(
+  event: 'weather-cache-hit' | 'weather-network',
+  valueMs: number,
+) {
+  void import('@/shared/lib/performanceTelemetry').then(({ reportDevelopmentPerformance }) => {
+    reportDevelopmentPerformance({ event, valueMs })
+  })
+}
+
 const WEATHER_TRANSITION_DURATION = 0.9
 const TIME_TRANSITION_DURATION = 0.7
 const weatherTransitionKeys = [
@@ -286,6 +295,12 @@ export const useWeatherStore = defineStore('weather', () => {
       isLoading.value = false
       markWeatherPerformance('route-of-sky:weather-cache-hit')
       measureWeatherPerformance('route-of-sky:weather-cache-hydration', cacheLookupStartedAt)
+      if (import.meta.env.DEV) {
+        reportPerformanceInDevelopment(
+          'weather-cache-hit',
+          performance.now() - cacheLookupStartedAt,
+        )
+      }
       return true
     }
 
@@ -313,6 +328,9 @@ export const useWeatherStore = defineStore('weather', () => {
       cacheAgeMs.value = 0
       lastUpdatedAt.value = fetchedAt
       markWeatherPerformance('route-of-sky:weather-network')
+      if (import.meta.env.DEV) {
+        reportPerformanceInDevelopment('weather-network', performance.now() - cacheLookupStartedAt)
+      }
 
       return true
     } catch (error) {

@@ -39,7 +39,9 @@ function summarize(samples) {
 }
 
 function numericSamples(runResults, selector) {
-  return runResults.map(selector).filter((value) => typeof value === 'number' && Number.isFinite(value))
+  return runResults
+    .map(selector)
+    .filter((value) => typeof value === 'number' && Number.isFinite(value))
 }
 
 async function directorySize(directory) {
@@ -137,7 +139,9 @@ async function installObservers(page) {
       }
     }
 
-    observe('largest-contentful-paint', (entry) => window.__routeOfSkyGpuMetrics.lcp.push(entry.startTime))
+    observe('largest-contentful-paint', (entry) =>
+      window.__routeOfSkyGpuMetrics.lcp.push(entry.startTime),
+    )
     observe('layout-shift', (entry) => {
       if (!entry.hadRecentInput) window.__routeOfSkyGpuMetrics.cls += entry.value
     })
@@ -158,7 +162,9 @@ async function getHardwareAcceleration(browser) {
   const usesSoftwareRenderer = softwareRendererPatterns.some((pattern) => pattern.test(gpuText))
 
   if (usesSoftwareRenderer) {
-    throw new Error('Software WebGL renderer detected. Official GPU measurements require hardware acceleration.')
+    throw new Error(
+      'Software WebGL renderer detected. Official GPU measurements require hardware acceleration.',
+    )
   }
 
   return true
@@ -200,7 +206,10 @@ function summarizePageMetrics(metrics) {
     longTaskP95Ms: percentile(metrics.longTasks, 0.95) ?? 0,
     eventTimingP95Ms: metrics.eventTimingSupported ? percentile(metrics.events, 0.95) : null,
     eventTimingSupport: metrics.eventTimingSupported ? 'supported' : 'unsupported',
-    resourceTransferBytes: metrics.resources.reduce((sum, resource) => sum + resource.transferSize, 0),
+    resourceTransferBytes: metrics.resources.reduce(
+      (sum, resource) => sum + resource.transferSize,
+      0,
+    ),
     resourceDecodedBytes: metrics.resources.reduce(
       (sum, resource) => sum + resource.decodedBodySize,
       0,
@@ -241,11 +250,17 @@ async function measureRun(cpuSlowdownMultiplier) {
     await installObservers(page)
     await page.route('**/api/weather?**', async (route) => {
       apiRequestCount += 1
-      await route.fulfill({ contentType: 'application/json', body: JSON.stringify(weatherPayload()) })
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify(weatherPayload()),
+      })
     })
 
     await page.goto(previewUrl, { waitUntil: 'domcontentloaded' })
-    await page.locator('#cesiumContainer canvas').first().waitFor({ state: 'visible', timeout: 20_000 })
+    await page
+      .locator('#cesiumContainer canvas')
+      .first()
+      .waitFor({ state: 'visible', timeout: 20_000 })
     const viewerReadyMs = await page.evaluate(
       () => performance.getEntriesByName('route-of-sky:viewer-ready').at(-1)?.startTime ?? null,
     )
@@ -267,25 +282,36 @@ async function measureRun(cpuSlowdownMultiplier) {
     }
 
     const quality = await page.evaluate(() => ({
-      effectiveLevel: document.querySelector('[data-quality-level]')?.getAttribute('data-quality-level') ?? null,
-      mode: document.querySelector('[data-quality-mode]')?.getAttribute('data-quality-mode') ?? null,
+      effectiveLevel:
+        document.querySelector('[data-quality-level]')?.getAttribute('data-quality-level') ?? null,
+      mode:
+        document.querySelector('[data-quality-mode]')?.getAttribute('data-quality-mode') ?? null,
       transitions: performance
         .getEntriesByType('mark')
         .filter((entry) => entry.name.startsWith('route-of-sky:quality-applied-'))
-        .map((entry) => ({ level: entry.name.replace('route-of-sky:quality-applied-', ''), atMs: entry.startTime })),
+        .map((entry) => ({
+          level: entry.name.replace('route-of-sky:quality-applied-', ''),
+          atMs: entry.startTime,
+        })),
     }))
 
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.locator('#cesiumContainer canvas').first().waitFor({ state: 'visible', timeout: 20_000 })
+    await page
+      .locator('#cesiumContainer canvas')
+      .first()
+      .waitFor({ state: 'visible', timeout: 20_000 })
     await page.waitForTimeout(300)
     const metrics = await page.evaluate(() => {
-      const fcp = performance.getEntriesByType('paint').find((entry) => entry.name === 'first-contentful-paint')
+      const fcp = performance
+        .getEntriesByType('paint')
+        .find((entry) => entry.name === 'first-contentful-paint')
       return {
         ...window.__routeOfSkyGpuMetrics,
         fcp: fcp?.startTime ?? null,
         resources: performance.getEntriesByType('resource'),
         weatherCacheHitMs:
-          performance.getEntriesByName('route-of-sky:weather-cache-hydration').at(-1)?.duration ?? null,
+          performance.getEntriesByName('route-of-sky:weather-cache-hydration').at(-1)?.duration ??
+          null,
       }
     })
 
@@ -316,8 +342,7 @@ async function measureRun(cpuSlowdownMultiplier) {
 
 function aggregate(runResults) {
   const metric = (selector) => summarize(numericSamples(runResults, selector))
-  const frameMetric = (preset) =>
-    metric((run) => run.frames[preset]?.p95)
+  const frameMetric = (preset) => metric((run) => run.frames[preset]?.p95)
 
   return {
     page: {
@@ -353,10 +378,14 @@ if (!Number.isInteger(runs) || runs < 1) {
 
 await mkdir(outputDir, { recursive: true })
 if (!skipBuild) await run('pnpm', ['build'])
-const preview = spawn('pnpm', ['exec', 'vite', 'preview', '--host', '127.0.0.1', '--port', '4173'], {
-  cwd: root,
-  stdio: 'ignore',
-})
+const preview = spawn(
+  'pnpm',
+  ['exec', 'vite', 'preview', '--host', '127.0.0.1', '--port', '4173'],
+  {
+    cwd: root,
+    stdio: 'ignore',
+  },
+)
 
 try {
   await waitForServer()

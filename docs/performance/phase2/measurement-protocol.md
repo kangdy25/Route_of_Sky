@@ -32,4 +32,4 @@ Event Timing을 지원하지 않는 브라우저는 값 `null`과 `unsupported` 
 
 ## 개발 전용 계측
 
-`?perf=1`와 개발 빌드가 동시에 충족될 때만 익명 이벤트를 `POST /api/performance`로 보냅니다. 이 엔드포인트는 `vercel dev`의 `VERCEL_ENV=development`에서만 구조화 로그를 출력하며 Preview·Production에서는 404입니다. 위치, 원시 URL, API 키, 식별자, GPU 모델은 수집하지 않습니다.
+`?perf=1`와 개발 빌드가 동시에 충족될 때만 익명 이벤트를 `POST /api/performance`로 보냅니다. 이 엔드포인트는 `VERCEL_ENV=development vercel dev`에서만 구조화 로그를 출력하며 Preview·Production에서는 404입니다. 위치, 원시 URL, API 키, 식별자, GPU 모델은 수집하지 않습니다.

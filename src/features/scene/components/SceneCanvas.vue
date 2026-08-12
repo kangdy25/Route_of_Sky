@@ -103,9 +103,32 @@ let sceneUpdateFrame = 0
 let lastAppliedState: SceneWeatherState | null = null
 let lastAppliedLocationId = ''
 
+function reportPerformanceInDevelopment(
+  event: 'viewer-ready' | 'tiles-stable' | 'quality-applied',
+  valueMs: number,
+) {
+  void import('@/shared/lib/performanceTelemetry').then(({ reportDevelopmentPerformance }) => {
+    reportDevelopmentPerformance({ event, valueMs })
+  })
+}
+
 function markPerformance(name: string) {
   if (typeof performance !== 'undefined' && typeof performance.mark === 'function') {
     performance.mark(name)
+  }
+
+  if (import.meta.env.DEV) {
+    const event =
+      name === 'route-of-sky:viewer-ready'
+        ? 'viewer-ready'
+        : name === 'route-of-sky:tiles-stable'
+          ? 'tiles-stable'
+          : name.startsWith('route-of-sky:quality-applied-')
+            ? 'quality-applied'
+            : null
+    if (event) {
+      reportPerformanceInDevelopment(event, performance.now())
+    }
   }
 }
 
