@@ -45,5 +45,5 @@
 - 가설: 공유 이미지 977,995 bytes와 버전 고정 Cesium 자산의 불명확한 재방문 캐시가 정적 전송량을 늘린다.
 - 변경: 썸네일을 1,376×768·977,995 → 1,200×669·213,019 bytes로 재인코딩하고 OG 치수를 맞췄다. `/cesium/*`, `/thumbnail.jpg`에 1년 immutable Cache-Control을 설정했다.
 - Before → After: 썸네일은 764,976 bytes·78.2% 감소해 250KiB 목표(256,000 bytes)보다 42,981 bytes 작다. 앱 JS/CSS는 87.67/15.16KiB로 예산을 유지했다.
-- 검증: 최적화 후 이미지를 시각 확인하고 빌드와 대시보드 E2E를 실행했다. Vercel Preview에서 헤더를 별도 확인한다.
+- 검증: 최적화 후 이미지를 시각 확인하고 빌드와 대시보드 E2E를 실행했다. Vercel Preview 헤더 확인은 SSO 302 리디렉션으로 차단돼 Production 공개 URL에서 후속 확인한다.
 - 롤백 조건: Preview의 헤더가 누락되거나 Worker·WASM·타일 요청 오류가 발생하면 `vercel.json` 헤더와 썸네일을 되돌린다.

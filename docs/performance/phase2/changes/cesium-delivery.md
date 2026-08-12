@@ -15,3 +15,7 @@
 - 썸네일 250KiB 이하
 - Preview 응답에서 Cache-Control이 `public, max-age=31536000, immutable`
 - Cesium Worker·WASM·타일 경로 E2E 및 시각 확인에 오류 없음
+
+## Preview 헤더 검증 제한
+
+2026-08-13 Preview URL의 `thumbnail.jpg`, Cesium Worker 요청은 프로젝트 SSO 보호 때문에 모두 302 `vercel.com/sso-api`로 리디렉션됐다. 따라서 이 PR에서는 실제 배포 Cache-Control 응답을 확정하지 못했고, `vercel.json` 구성과 빌드·시각 검증만 완료했다. 병합 뒤 공개 Production URL에서 두 경로가 200 및 설정한 immutable 헤더를 반환하는지 확인해야 한다.
