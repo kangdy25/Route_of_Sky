@@ -58,7 +58,7 @@ const aqiBarClass = computed(() => {
     </div>
     <div class="relative h-2 w-full rounded-full border border-cyan-300/10 bg-cyan-950/50">
       <div
-        class="absolute top-0 left-0 h-full rounded-full transition-all duration-700"
+        class="absolute top-0 left-0 h-full rounded-full"
         :class="aqiBarClass"
         :style="{ width: aqiPercent }"
       ></div>

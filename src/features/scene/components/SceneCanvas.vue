@@ -81,6 +81,8 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'update:effectiveQuality': [level: SceneQualityLevel]
+  cameraFlightStart: []
+  cameraFlightEnd: []
 }>()
 
 const cesiumContainer = ref<HTMLDivElement | null>(null)
@@ -435,7 +437,10 @@ function keepRenderingUntilInitialTilesLoaded(
 }
 
 function flyToLocation(target: CameraWaypoint) {
-  cameraController.flyToLocation(target)
+  cameraController.flyToLocation(target, {
+    onStart: () => emit('cameraFlightStart'),
+    onFinish: () => emit('cameraFlightEnd'),
+  })
 }
 
 watch(

@@ -42,7 +42,7 @@ const cloudText = computed(() => {
           stroke-dasharray="263.89"
           :stroke-dashoffset="263.89 - (263.89 * cloudCover) / 100"
           stroke-linecap="round"
-          class="drop-shadow-[0_0_8px_rgba(34,211,238,0.45)] transition-all duration-1000 ease-out"
+          class="drop-shadow-[0_0_8px_rgba(34,211,238,0.45)]"
         />
         <defs>
           <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="100%" y2="100%">

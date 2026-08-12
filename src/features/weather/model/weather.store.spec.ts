@@ -1,9 +1,19 @@
 import { setActivePinia, createPinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createWeatherCacheKey, WEATHER_CACHE_TTL_MS, writeWeatherCache } from './weather.cache'
 import { defaultWeatherState } from './weather.constants'
 import { useWeatherStore } from './weather.store'
 import type { WeatherState } from './weather.types'
+
+const { gsapTo } = vi.hoisted(() => ({
+  gsapTo: vi.fn(),
+}))
+
+vi.mock('gsap', () => ({
+  gsap: {
+    to: gsapTo,
+  },
+}))
 
 vi.mock('@/features/weather/api/weatherApi', () => ({
   DEFAULT_WEATHER_LOCATION_QUERY: '40.758,-73.9855',
@@ -37,6 +47,21 @@ describe('날씨 store', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     window.localStorage.clear()
+    gsapTo.mockImplementation((target, options) => {
+      Object.assign(
+        target,
+        Object.fromEntries(
+          Object.entries(options).filter(([, value]) => typeof value === 'number'),
+        ),
+      )
+      options.onUpdate?.()
+      options.onComplete?.()
+      return { kill: vi.fn() }
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it('기본 날씨 상태로 초기화되어야 한다', () => {
@@ -237,5 +262,62 @@ describe('날씨 store', () => {
     expect(store.dataSource).toBe('stale-cache')
     expect(store.errorMessage).toContain('저장된 날씨')
     expect(store.cacheAgeMs).toBeGreaterThan(WEATHER_CACHE_TTL_MS)
+  })
+
+  it('프리셋 날씨 상태는 GSAP으로 보간해 최종 상태를 반영해야 한다', () => {
+    const store = useWeatherStore()
+
+    store.applyWeatherPatch(
+      { temperature: 15, humidity: 86, precipitation: 7.2, cloudCover: 88, visibility: 17.2 },
+      { animate: true },
+    )
+
+    expect(gsapTo).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({ duration: 0.9, ease: 'power2.out' }),
+    )
+    expect(store.temperature).toBe(15)
+    expect(store.humidity).toBe(86)
+    expect(store.precipitation).toBe(7.2)
+    expect(store.visibility).toBe(17.2)
+  })
+
+  it('수동 입력 또는 새 전환은 진행 중인 날씨 tween을 취소해야 한다', () => {
+    const kill = vi.fn()
+    gsapTo.mockImplementationOnce(() => ({ kill }))
+    const store = useWeatherStore()
+
+    store.applyWeatherPatch({ temperature: 15 }, { animate: true })
+    store.cancelTransitions()
+
+    expect(kill).toHaveBeenCalledTimes(1)
+  })
+
+  it('시간 버튼 전환은 독립적인 GSAP tween을 사용해야 한다', () => {
+    const store = useWeatherStore()
+
+    store.setSceneTime(6.2, { animate: true })
+
+    expect(gsapTo).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({ value: 6.2, duration: 0.7, ease: 'power2.inOut' }),
+    )
+    expect(store.time).toBe(6.2)
+  })
+
+  it('reduced-motion 환경에서는 전환 없이 최종 상태를 즉시 적용해야 한다', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({ matches: true })),
+    )
+    const store = useWeatherStore()
+
+    store.applyWeatherPatch({ temperature: -7, precipitation: 4.8 }, { animate: true })
+    store.setSceneTime(22.5, { animate: true })
+
+    expect(gsapTo).not.toHaveBeenCalled()
+    expect(store.temperature).toBe(-7)
+    expect(store.precipitation).toBe(4.8)
+    expect(store.time).toBe(22.5)
   })
 })

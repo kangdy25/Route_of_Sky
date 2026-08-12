@@ -121,7 +121,7 @@ const windDescription = computed(() => {
 
         <!-- Compass Needle (glowing rotated line/arrow inside the dial) -->
         <div
-          class="absolute h-20 w-1 origin-center rounded-full bg-gradient-to-b from-emerald-400 via-emerald-400 to-transparent shadow-[0_0_12px_rgba(52,211,153,0.6)] transition-transform duration-700 sm:h-24"
+          class="absolute h-20 w-1 origin-center rounded-full bg-gradient-to-b from-emerald-400 via-emerald-400 to-transparent shadow-[0_0_12px_rgba(52,211,153,0.6)] sm:h-24"
           :style="windNeedleStyle"
         ></div>
 
@@ -151,7 +151,7 @@ const windDescription = computed(() => {
         <div class="h-6 w-full rounded-lg border border-cyan-300/10 bg-cyan-950/40 p-1.5">
           <!-- A small wind progress bar based on windSpeed (e.g. max 15 m/s) -->
           <div
-            class="h-full rounded-md bg-gradient-to-r from-emerald-500/60 to-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)] transition-all duration-1000"
+            class="h-full rounded-md bg-gradient-to-r from-emerald-500/60 to-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)]"
             :style="{ width: windSpeedPercent }"
           ></div>
         </div>

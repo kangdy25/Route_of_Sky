@@ -9,6 +9,10 @@ import IconButton from '@/shared/ui/IconButton.vue'
 import Panel from '@/shared/ui/Panel.vue'
 
 const time = defineModel<number>({ default: 16.5 })
+const emit = defineEmits<{
+  setTime: [time: number]
+  manualTimeInput: []
+}>()
 const props = withDefaults(
   defineProps<{
     location?: SceneLocation
@@ -38,6 +42,7 @@ const togglePlay = () => {
 }
 
 const startPlay = () => {
+  emit('manualTimeInput')
   isPlaying.value = true
   playInterval = setInterval(() => {
     time.value = Math.round(((time.value + 0.1) % 24) * 10) / 10
@@ -53,19 +58,19 @@ const stopPlay = () => {
 }
 
 const skipForward = () => {
-  time.value = Math.round(((time.value + 2) % 24) * 10) / 10
+  emit('setTime', Math.round(((time.value + 2) % 24) * 10) / 10)
 }
 
 const skipBackward = () => {
-  time.value = Math.round(((time.value - 2 + 24) % 24) * 10) / 10
+  emit('setTime', Math.round(((time.value - 2 + 24) % 24) * 10) / 10)
 }
 
 const resetTime = () => {
-  time.value = 0
+  emit('setTime', 0)
 }
 
 const resetToCurrentTime = () => {
-  time.value = getCurrentLocalTimeForLocation(props.location)
+  emit('setTime', getCurrentLocalTimeForLocation(props.location))
 }
 
 const leftOpacity = computed(() => {
@@ -105,6 +110,7 @@ onUnmounted(() => {
       <div class="relative w-full px-2">
         <input
           v-model.number="time"
+          @input="emit('manualTimeInput')"
           type="range"
           min="0"
           max="24"

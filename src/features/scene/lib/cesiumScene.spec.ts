@@ -228,6 +228,22 @@ describe('카메라 flyTo 컨트롤러', () => {
     expect(viewer.camera.setView).toHaveBeenCalled()
   })
 
+  it('카메라 비행의 시작과 종료 콜백을 호출해야 한다', () => {
+    const viewer = createViewer()
+    const onStart = vi.fn()
+    const onFinish = vi.fn()
+    gsapTo.mockImplementation((_progress, options) => {
+      options.onComplete()
+      return { kill: vi.fn() }
+    })
+    const controller = new CameraFlyToController(() => viewer as never)
+
+    controller.flyToLocation({ longitude: -73.98, latitude: 40.76 }, { onStart, onFinish })
+
+    expect(onStart).toHaveBeenCalledTimes(1)
+    expect(onFinish).toHaveBeenCalledTimes(1)
+  })
+
   it('새 이동이 시작되면 기존 tween을 중단해야 한다', () => {
     const viewer = createViewer()
     const kill = vi.fn()

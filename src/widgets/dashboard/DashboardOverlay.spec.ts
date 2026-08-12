@@ -3,13 +3,20 @@ import { describe, expect, it, vi } from 'vitest'
 import { WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
 import DashboardOverlay from './DashboardOverlay.vue'
 
-const { fromTo } = vi.hoisted(() => ({
+const { fromTo, to, killTweensOf } = vi.hoisted(() => ({
   fromTo: vi.fn(),
+  to: vi.fn((_target, options) => {
+    options.onComplete?.()
+    return { kill: vi.fn() }
+  }),
+  killTweensOf: vi.fn(),
 }))
 
 vi.mock('gsap', () => ({
   gsap: {
     fromTo,
+    to,
+    killTweensOf,
   },
 }))
 
@@ -98,7 +105,7 @@ describe('대시보드 오버레이', () => {
 
     await wrapper.find('button[aria-label="Hide dashboard"]').trigger('click')
 
-    expect(wrapper.find('#dashboard-panels').classes()).toContain('hidden')
+    expect(wrapper.find('#dashboard-panels').exists()).toBe(false)
     expect(wrapper.find('button[aria-label="Show dashboard"]').exists()).toBe(true)
 
     await wrapper.find('button[aria-label="Show dashboard"]').trigger('click')
@@ -126,18 +133,19 @@ describe('대시보드 오버레이', () => {
       .find((button) => button.text() === 'Rain')
       ?.trigger('click')
 
-    expect(wrapper.emitted('update:time')?.[0]).toEqual([6.2])
-    expect(wrapper.emitted('update:temperature')?.[0]).toEqual([15])
-    expect(wrapper.emitted('update:humidity')?.[0]).toEqual([86])
-    expect(wrapper.emitted('update:windSpeed')?.[0]).toEqual([6.5])
-    expect(
-      wrapper.emitted('update:windDirectionDegrees')?.[0] ??
-        wrapper.emitted('update:wind-direction-degrees')?.[0],
-    ).toEqual([160])
-    expect(wrapper.emitted('update:aqi')?.[0]).toEqual([25])
-    expect(wrapper.emitted('update:cloudCover')?.[0]).toEqual([88])
-    expect(wrapper.emitted('update:precipitation')?.[0]).toEqual([7.2])
-    expect(wrapper.emitted('update:visibility')).toContainEqual([17.2])
+    expect(wrapper.emitted('setTime')?.[0]).toEqual([6.2])
+    expect(wrapper.emitted('previewWeather')?.[0]).toEqual([
+      expect.objectContaining({
+        temperature: 15,
+        humidity: 86,
+        windSpeed: 6.5,
+        windDirectionDegrees: 160,
+        aqi: 25,
+        cloudCover: 88,
+        precipitation: 7.2,
+        visibility: 17.2,
+      }),
+    ])
 
     await wrapper.findAll('button[aria-label="Close settings"]')[1].trigger('click')
 
@@ -189,7 +197,7 @@ describe('대시보드 오버레이', () => {
 
     await wrapper.find('button[title="현재 시간으로 리셋"]').trigger('click')
 
-    expect(wrapper.emitted('update:time')?.[0]).toEqual([12.3])
+    expect(wrapper.emitted('setTime')?.[0]).toEqual([12.3])
     vi.useRealTimers()
   })
 

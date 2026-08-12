@@ -43,6 +43,7 @@ function getStoredQualityMode(): SceneQualityMode {
 const weatherStore = useWeatherStore()
 const sceneCanvasRef = ref<InstanceType<typeof SceneCanvas> | null>(null)
 const selectedLocation = ref(getStoredSelectedLocation())
+const isSceneTransitioning = ref(false)
 const qualityMode = ref<SceneQualityMode>(getStoredQualityMode())
 const effectiveQuality = ref<SceneQualityLevel>(
   qualityMode.value === 'auto' ? getRecommendedAutoQuality() : qualityMode.value,
@@ -83,12 +84,14 @@ function flyToSelectedLocation() {
   })
 }
 
-function loadSelectedLocationWeather(force = false) {
+function loadSelectedLocationWeather(force = false, animate = false) {
   const location = selectedLocation.value
+  const options = animate ? { force, animate: true } : { force }
 
-  return weatherStore.loadCurrentWeather(createWeatherLocationQuery(location.lat, location.lng), {
-    force,
-  })
+  return weatherStore.loadCurrentWeather(
+    createWeatherLocationQuery(location.lat, location.lng),
+    options,
+  )
 }
 
 function selectLocation(locationId: string) {
@@ -98,7 +101,7 @@ function selectLocation(locationId: string) {
   selectedLocation.value = nextLocation
   saveSelectedLocation(nextLocation.id)
   flyToSelectedLocation()
-  void loadSelectedLocationWeather()
+  void loadSelectedLocationWeather(false, true)
 }
 
 onMounted(() => {
@@ -125,6 +128,8 @@ onMounted(() => {
         :location="selectedLocation"
         :quality-mode="qualityMode"
         @update:effective-quality="effectiveQuality = $event"
+        @camera-flight-start="isSceneTransitioning = true"
+        @camera-flight-end="isSceneTransitioning = false"
       />
     </div>
 
@@ -144,9 +149,14 @@ onMounted(() => {
       :locations="WORLD_LOCATIONS"
       :selected-location-id="selectedLocation.id"
       :effective-quality="effectiveQuality"
+      :is-scene-transitioning="isSceneTransitioning"
       @fly-to-selected-location="flyToSelectedLocation"
       @select-location="selectLocation"
-      @render-current-weather="loadSelectedLocationWeather(true)"
+      @render-current-weather="loadSelectedLocationWeather(true, true)"
+      @preview-weather="weatherStore.applyWeatherPatch($event, { animate: true })"
+      @set-time="weatherStore.setSceneTime($event, { animate: true })"
+      @manual-weather-input="weatherStore.cancelTransitions()"
+      @manual-time-input="weatherStore.cancelTransitions()"
     />
   </main>
 </template>

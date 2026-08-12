@@ -60,7 +60,7 @@ describe('시간대 탐색 카드', () => {
     expect(resetButton.exists()).toBe(true)
     await resetButton.trigger('click')
 
-    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([0])
+    expect(wrapper.emitted('setTime')?.[0]).toEqual([0])
   })
 
   it('현재 시간 버튼을 클릭하면 선택 도시의 현재 현지 시간으로 되돌려야 한다', async () => {
@@ -78,7 +78,7 @@ describe('시간대 탐색 카드', () => {
     expect(currentTimeButton.exists()).toBe(true)
     await currentTimeButton.trigger('click')
 
-    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([12.3])
+    expect(wrapper.emitted('setTime')?.[0]).toEqual([12.3])
   })
 
   it('뒤로 감기 버튼을 클릭하면 시간을 2시간 되돌려야 한다', async () => {
@@ -93,7 +93,7 @@ describe('시간대 탐색 카드', () => {
     expect(backwardButton.exists()).toBe(true)
     await backwardButton.trigger('click')
 
-    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([10.0])
+    expect(wrapper.emitted('setTime')?.[0]).toEqual([10.0])
   })
 
   it('앞으로 감기 버튼을 클릭하면 시간을 2시간 앞으로 보내야 한다', async () => {
@@ -108,7 +108,7 @@ describe('시간대 탐색 카드', () => {
     expect(forwardButton.exists()).toBe(true)
     await forwardButton.trigger('click')
 
-    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([1.0])
+    expect(wrapper.emitted('setTime')?.[0]).toEqual([1.0])
   })
 
   it('시간 슬라이더를 조작하면 숫자 시간 값을 전달해야 한다', async () => {

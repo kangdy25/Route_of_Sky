@@ -98,7 +98,7 @@ const temperatureDescription = computed(() => {
             class="relative h-7 w-full rounded-lg border border-cyan-300/10 bg-cyan-950/40 p-1.5"
           >
             <div
-              class="h-full rounded-md bg-gradient-to-r from-cyan-400/75 via-amber-300/90 to-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.34)] transition-all duration-700"
+              class="h-full rounded-md bg-gradient-to-r from-cyan-400/75 via-amber-300/90 to-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.34)]"
               :style="{ width: `${temperaturePercent}%` }"
             ></div>
           </div>

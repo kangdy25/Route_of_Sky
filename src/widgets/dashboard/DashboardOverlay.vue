@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { gsap } from 'gsap'
 import { hasCesiumIonAccessToken } from '@/shared/config/env'
 import type { SceneLocation } from '@/features/scene/model/scene.types'
 import type { SceneQualityLevel, SceneQualityMode } from '@/features/scene/model/scene.types'
+import type { WeatherStatePatch } from '@/features/weather/model/weather.types'
+import { prefersReducedMotion } from '@/shared/lib/motion'
 import AppHeader from './AppHeader.vue'
 import AtmospherePanel from './AtmospherePanel.vue'
 import EnvironmentPanel from './EnvironmentPanel.vue'
@@ -28,15 +30,24 @@ const props = defineProps<{
   locations: SceneLocation[]
   selectedLocationId: string
   effectiveQuality: SceneQualityLevel
+  isSceneTransitioning?: boolean
 }>()
 
 const overlayRef = ref<HTMLElement | null>(null)
+const panelGroupRef = ref<HTMLElement | null>(null)
+const panelRefs = ref<HTMLElement[]>([])
 const isSettingsOpen = ref(false)
 const isDashboardOpen = ref(true)
+const isPanelGroupRendered = ref(true)
+let activePanelTween: gsap.core.Tween | null = null
 const emit = defineEmits<{
   flyToSelectedLocation: []
   selectLocation: [locationId: string]
   renderCurrentWeather: []
+  previewWeather: [patch: WeatherStatePatch]
+  setTime: [time: number]
+  manualWeatherInput: []
+  manualTimeInput: []
 }>()
 
 const selectedLocation = computed(
@@ -44,6 +55,67 @@ const selectedLocation = computed(
     props.locations.find((location) => location.id === props.selectedLocationId) ??
     props.locations[0],
 )
+
+function registerPanel(el: unknown) {
+  if (el instanceof HTMLElement && !panelRefs.value.includes(el)) {
+    panelRefs.value.push(el)
+  }
+}
+
+function animatePanelEntrance() {
+  activePanelTween?.kill()
+  if (prefersReducedMotion() || panelRefs.value.length === 0) return
+
+  activePanelTween = gsap.fromTo(
+    panelRefs.value,
+    { autoAlpha: 0, y: 16 },
+    { autoAlpha: 1, y: 0, duration: 0.42, ease: 'power3.out', stagger: 0.09 },
+  )
+}
+
+async function toggleDashboard() {
+  activePanelTween?.kill()
+
+  if (!isDashboardOpen.value) {
+    isPanelGroupRendered.value = true
+    isDashboardOpen.value = true
+    await nextTick()
+    animatePanelEntrance()
+    return
+  }
+
+  if (prefersReducedMotion() || !panelGroupRef.value) {
+    isDashboardOpen.value = false
+    isPanelGroupRendered.value = false
+    return
+  }
+
+  activePanelTween = gsap.to(panelGroupRef.value, {
+    autoAlpha: 0,
+    y: 10,
+    duration: 0.2,
+    ease: 'power2.in',
+    onComplete: () => {
+      isDashboardOpen.value = false
+      isPanelGroupRendered.value = false
+      activePanelTween = null
+    },
+  })
+}
+
+function animateSceneTransition(isTransitioning: boolean) {
+  if (!panelGroupRef.value || prefersReducedMotion()) return
+
+  gsap.killTweensOf(panelGroupRef.value)
+  gsap.to(panelGroupRef.value, {
+    autoAlpha: isTransitioning ? 0.45 : 1,
+    scale: isTransitioning ? 0.985 : 1,
+    y: isTransitioning ? 6 : 0,
+    duration: isTransitioning ? 0.25 : 0.45,
+    ease: isTransitioning ? 'power2.out' : 'power3.out',
+    overwrite: 'auto',
+  })
+}
 
 onMounted(() => {
   /* v8 ignore next -- 템플릿 ref가 비어 있는 비정상 마운트 방어 guard입니다. */
@@ -60,7 +132,15 @@ onMounted(() => {
       ease: 'power3.out',
     },
   )
+  animatePanelEntrance()
 })
+
+onBeforeUnmount(() => {
+  activePanelTween?.kill()
+  if (panelGroupRef.value) gsap.killTweensOf(panelGroupRef.value)
+})
+
+watch(() => props.isSceneTransitioning ?? false, animateSceneTransition, { immediate: true })
 </script>
 
 <template>
@@ -96,7 +176,7 @@ onMounted(() => {
       @fly-to-selected-location="emit('flyToSelectedLocation')"
       @select-location="emit('selectLocation', $event)"
       @open-settings="isSettingsOpen = true"
-      @toggle-dashboard="isDashboardOpen = !isDashboardOpen"
+      @toggle-dashboard="toggleDashboard"
     />
 
     <!-- Cesium ion 토큰이 없을 때 3D Tiles 활성화 방법을 안내합니다. -->
@@ -120,13 +200,15 @@ onMounted(() => {
     </div>
 
     <div
+      v-if="isPanelGroupRendered"
       id="dashboard-panels"
+      ref="panelGroupRef"
       :class="[
-        'mt-4 flex-1 flex-col justify-between gap-4 pb-24 transition-all duration-300 sm:mt-5 sm:gap-5 lg:mt-6 lg:flex-row lg:items-start lg:gap-6 lg:pb-0',
-        isDashboardOpen ? 'flex' : 'hidden lg:flex',
+        'mt-4 flex flex-1 flex-col justify-between gap-4 pb-24 sm:mt-5 sm:gap-5 lg:mt-6 lg:flex-row lg:items-start lg:gap-6 lg:pb-0',
       ]"
     >
       <aside
+        :ref="registerPanel"
         class="pointer-events-auto flex w-full flex-col gap-4 sm:gap-5 lg:w-[380px] lg:shrink-0 lg:gap-6"
       >
         <EnvironmentPanel
@@ -140,6 +222,7 @@ onMounted(() => {
       </aside>
 
       <aside
+        :ref="registerPanel"
         class="pointer-events-auto flex w-full flex-col gap-4 sm:gap-5 lg:w-[390px] lg:shrink-0 lg:gap-6"
       >
         <SkyPanel
@@ -149,7 +232,12 @@ onMounted(() => {
           :temperature="temperature"
         />
         <AtmospherePanel :aqi="aqi" />
-        <TimePanel v-model="time" :location="selectedLocation" />
+        <TimePanel
+          v-model="time"
+          :location="selectedLocation"
+          @set-time="emit('setTime', $event)"
+          @manual-time-input="emit('manualTimeInput')"
+        />
       </aside>
     </div>
 
@@ -169,6 +257,10 @@ onMounted(() => {
       :effective-quality="effectiveQuality"
       @close="isSettingsOpen = false"
       @render-current-weather="emit('renderCurrentWeather')"
+      @preview-weather="emit('previewWeather', $event)"
+      @set-time="emit('setTime', $event)"
+      @manual-weather-input="emit('manualWeatherInput')"
+      @manual-time-input="emit('manualTimeInput')"
     />
   </div>
 </template>

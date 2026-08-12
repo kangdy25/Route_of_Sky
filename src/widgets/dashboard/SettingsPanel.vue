@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { gsap } from 'gsap'
 import { computed, ref, watch } from 'vue'
 import { formatTime } from '@/features/weather/lib/formatTime'
+import type { WeatherStatePatch } from '@/features/weather/model/weather.types'
 import { getCurrentLocalTimeForLocation } from '@/features/scene/lib/sky'
 import { WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
+import { prefersReducedMotion } from '@/shared/lib/motion'
 import type {
   SceneLocation,
   SceneQualityLevel,
@@ -35,6 +38,10 @@ const props = withDefaults(
 const emit = defineEmits<{
   close: []
   renderCurrentWeather: []
+  previewWeather: [patch: WeatherStatePatch]
+  setTime: [time: number]
+  manualWeatherInput: []
+  manualTimeInput: []
 }>()
 
 const autoVisibility = ref(true)
@@ -48,7 +55,21 @@ const precipitationTestUnit = computed(() => {
 })
 const formattedTime = computed(() => formatTime(time.value))
 
-type WeatherPreset = {
+type WeatherPreset = Omit<WeatherStatePatch, 'visibility'>
+
+function getPresetVisibility(preset: WeatherPreset) {
+  const normalizedAqi = Math.min(300, Math.max(0, preset.aqi ?? aqi.value))
+  const airQualityVisibility = 22 - normalizedAqi ** 1.15 * 0.027
+  const precipitationPenalty = Math.min(8, (preset.precipitation ?? precipitation.value) * 0.45)
+  const cloudPenalty = Math.max(0, ((preset.cloudCover ?? cloudCover.value) - 70) * 0.025)
+
+  return Math.max(
+    1,
+    Math.min(22, Number((airQualityVisibility - precipitationPenalty - cloudPenalty).toFixed(1))),
+  )
+}
+
+type WeatherPresetValues = {
   temperature: number
   cloudCover: number
   precipitation: number
@@ -82,15 +103,11 @@ function setAqiFromInput(event: Event) {
   syncVisibilityFromAirQuality()
 }
 
-function applyWeatherPreset(preset: WeatherPreset) {
-  temperature.value = preset.temperature
-  cloudCover.value = preset.cloudCover
-  precipitation.value = preset.precipitation
-  windSpeed.value = preset.windSpeed
-  windDirectionDegrees.value = preset.windDirectionDegrees
-  humidity.value = preset.humidity
-  aqi.value = preset.aqi
-  visibility.value = estimateVisibilityFromAirQuality(preset.aqi)
+function applyWeatherPreset(preset: WeatherPresetValues) {
+  emit('previewWeather', {
+    ...preset,
+    visibility: getPresetVisibility(preset),
+  })
 }
 
 function previewSunny() {
@@ -154,11 +171,47 @@ function previewHaze() {
 }
 
 function setTimePreset(nextTime: number) {
-  time.value = nextTime
+  emit('setTime', nextTime)
 }
 
 function resetToCurrentTime() {
-  time.value = getCurrentLocalTimeForLocation(props.location)
+  emit('setTime', getCurrentLocalTimeForLocation(props.location))
+}
+
+function enter(el: Element, done: () => void) {
+  const backdrop = el.querySelector<HTMLElement>('[data-settings-backdrop]')
+  const panel = el.querySelector<HTMLElement>('[data-settings-panel]')
+
+  if (!backdrop || !panel || prefersReducedMotion()) {
+    gsap.set([backdrop, panel].filter(Boolean), { clearProps: 'all' })
+    done()
+    return
+  }
+
+  gsap
+    .timeline({ onComplete: done })
+    .fromTo(backdrop, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2, ease: 'power1.out' })
+    .fromTo(
+      panel,
+      { autoAlpha: 0, x: 32 },
+      { autoAlpha: 1, x: 0, duration: 0.28, ease: 'power3.out' },
+      0,
+    )
+}
+
+function leave(el: Element, done: () => void) {
+  const backdrop = el.querySelector<HTMLElement>('[data-settings-backdrop]')
+  const panel = el.querySelector<HTMLElement>('[data-settings-panel]')
+
+  if (!backdrop || !panel || prefersReducedMotion()) {
+    done()
+    return
+  }
+
+  gsap
+    .timeline({ onComplete: done })
+    .to(panel, { autoAlpha: 0, x: 32, duration: 0.22, ease: 'power2.in' })
+    .to(backdrop, { autoAlpha: 0, duration: 0.18, ease: 'power1.in' }, 0)
 }
 
 function setManualVisibility(event: Event) {
@@ -179,356 +232,379 @@ watch(autoVisibility, (enabled) => {
 
 <template>
   <Teleport to="body">
-    <div v-if="open" class="fixed inset-0 z-40">
-      <button
-        type="button"
-        class="absolute inset-0 h-full w-full bg-slate-950/46 backdrop-blur-[2px]"
-        aria-label="Close settings"
-        @click="emit('close')"
-      ></button>
+    <Transition :css="false" @enter="enter" @leave="leave">
+      <div v-if="open" class="fixed inset-0 z-40">
+        <button
+          type="button"
+          data-settings-backdrop
+          class="absolute inset-0 h-full w-full bg-slate-950/46 backdrop-blur-[2px]"
+          aria-label="Close settings"
+          @click="emit('close')"
+        ></button>
 
-      <aside
-        class="absolute top-0 right-0 flex h-full w-[min(27rem,100vw)] flex-col border-l border-cyan-300/20 bg-slate-950/92 text-slate-100 shadow-[-24px_0_72px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="settings-title"
-        @click.stop
-      >
-        <header
-          class="flex items-center justify-between border-b border-cyan-300/15 px-5 py-4 shadow-[inset_0_-1px_0_rgba(34,211,238,0.08)]"
+        <aside
+          data-settings-panel
+          class="absolute top-0 right-0 flex h-full w-[min(27rem,100vw)] flex-col border-l border-cyan-300/20 bg-slate-950/92 text-slate-100 shadow-[-24px_0_72px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="settings-title"
+          @click.stop
         >
-          <div>
-            <p class="text-xs font-black tracking-[0.18em] text-cyan-300 uppercase">Controls</p>
-            <h2 id="settings-title" class="mt-1 text-xl font-black text-cyan-50">Settings</h2>
-          </div>
-          <button
-            type="button"
-            class="rounded-md border border-cyan-300/25 bg-slate-900/70 p-2 text-cyan-100 transition hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/45 focus:outline-none"
-            aria-label="Close settings"
-            @click="emit('close')"
+          <header
+            class="flex items-center justify-between border-b border-cyan-300/15 px-5 py-4 shadow-[inset_0_-1px_0_rgba(34,211,238,0.08)]"
           >
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 6l12 12M18 6 6 18"
-              ></path>
-            </svg>
-          </button>
-        </header>
-
-        <div class="flex-1 overflow-y-auto px-5 py-5">
-          <section class="rounded-lg border border-cyan-300/15 bg-slate-900/50 p-4">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <h3 class="text-sm font-black tracking-wide text-cyan-100 uppercase">Scene</h3>
-                <p class="mt-1 text-xs leading-relaxed text-slate-400">
-                  Times Square tiles, atmospheric overlays, and camera tools are active.
-                </p>
-              </div>
-              <span
-                class="rounded-full border border-emerald-300/25 bg-emerald-400/10 px-3 py-1 text-xs font-black text-emerald-200"
-              >
-                Live
-              </span>
+            <div>
+              <p class="text-xs font-black tracking-[0.18em] text-cyan-300 uppercase">Controls</p>
+              <h2 id="settings-title" class="mt-1 text-xl font-black text-cyan-50">Settings</h2>
             </div>
-            <label class="mt-4 block">
-              <span
-                class="flex items-center justify-between gap-3 text-xs font-bold text-slate-300"
-              >
-                <span>렌더링 품질</span>
+            <button
+              type="button"
+              class="rounded-md border border-cyan-300/25 bg-slate-900/70 p-2 text-cyan-100 transition hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/45 focus:outline-none"
+              aria-label="Close settings"
+              @click="emit('close')"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 6l12 12M18 6 6 18"
+                ></path>
+              </svg>
+            </button>
+          </header>
+
+          <div class="flex-1 overflow-y-auto px-5 py-5">
+            <section class="rounded-lg border border-cyan-300/15 bg-slate-900/50 p-4">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h3 class="text-sm font-black tracking-wide text-cyan-100 uppercase">Scene</h3>
+                  <p class="mt-1 text-xs leading-relaxed text-slate-400">
+                    Times Square tiles, atmospheric overlays, and camera tools are active.
+                  </p>
+                </div>
                 <span
-                  class="rounded-full border border-cyan-300/25 bg-cyan-400/10 px-2 py-1 text-cyan-200"
+                  class="rounded-full border border-emerald-300/25 bg-emerald-400/10 px-3 py-1 text-xs font-black text-emerald-200"
                 >
-                  적용: {{ effectiveQuality.toUpperCase() }}
+                  Live
                 </span>
-              </span>
-              <select
-                v-model="qualityMode"
-                aria-label="렌더링 품질"
-                class="mt-2 w-full rounded-md border border-cyan-300/20 bg-slate-950/70 px-3 py-2 text-sm font-bold text-cyan-50 outline-none focus:ring-2 focus:ring-cyan-300/40"
-              >
-                <option value="auto">Auto · 프레임 기반 자동 조절</option>
-                <option value="high">High · 최고 화질</option>
-                <option value="medium">Medium · 균형</option>
-                <option value="low">Low · 성능 우선</option>
-              </select>
-            </label>
-          </section>
-
-          <section class="mt-4 rounded-lg border border-cyan-300/15 bg-slate-900/50 p-4">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <h3 class="text-sm font-black tracking-wide text-cyan-100 uppercase">Scene Time</h3>
-                <p class="mt-1 text-xs leading-relaxed text-slate-400">
-                  Tune sunlight, sky color, and building shadows together.
-                </p>
               </div>
-              <span class="text-sm font-black text-cyan-200">{{ formattedTime }}</span>
-            </div>
+              <label class="mt-4 block">
+                <span
+                  class="flex items-center justify-between gap-3 text-xs font-bold text-slate-300"
+                >
+                  <span>렌더링 품질</span>
+                  <span
+                    class="rounded-full border border-cyan-300/25 bg-cyan-400/10 px-2 py-1 text-cyan-200"
+                  >
+                    적용: {{ effectiveQuality.toUpperCase() }}
+                  </span>
+                </span>
+                <select
+                  v-model="qualityMode"
+                  aria-label="렌더링 품질"
+                  class="mt-2 w-full rounded-md border border-cyan-300/20 bg-slate-950/70 px-3 py-2 text-sm font-bold text-cyan-50 outline-none focus:ring-2 focus:ring-cyan-300/40"
+                >
+                  <option value="auto">Auto · 프레임 기반 자동 조절</option>
+                  <option value="high">High · 최고 화질</option>
+                  <option value="medium">Medium · 균형</option>
+                  <option value="low">Low · 성능 우선</option>
+                </select>
+              </label>
+            </section>
 
-            <div class="mt-4 grid grid-cols-4 gap-2">
-              <button
-                type="button"
-                class="rounded-md border border-cyan-300/20 bg-slate-950/55 px-2 py-2 text-xs font-black text-slate-200 transition hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/40 focus:outline-none"
-                @click="setTimePreset(6.2)"
-              >
-                Dawn
-              </button>
-              <button
-                type="button"
-                class="rounded-md border border-cyan-300/20 bg-slate-950/55 px-2 py-2 text-xs font-black text-slate-200 transition hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/40 focus:outline-none"
-                @click="setTimePreset(12)"
-              >
-                Noon
-              </button>
-              <button
-                type="button"
-                class="rounded-md border border-cyan-300/20 bg-slate-950/55 px-2 py-2 text-xs font-black text-slate-200 transition hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/40 focus:outline-none"
-                @click="setTimePreset(18.6)"
-              >
-                Sunset
-              </button>
-              <button
-                type="button"
-                class="rounded-md border border-cyan-300/20 bg-slate-950/55 px-2 py-2 text-xs font-black text-slate-200 transition hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/40 focus:outline-none"
-                @click="setTimePreset(22.5)"
-              >
-                Night
-              </button>
-            </div>
-
-            <div class="mt-3 flex justify-end">
-              <button
-                type="button"
-                class="rounded-md border border-cyan-200/45 bg-cyan-300/15 px-3 py-2 text-xs font-black text-cyan-50 transition hover:border-cyan-100/80 hover:bg-cyan-300/25 focus:ring-2 focus:ring-cyan-200/45 focus:outline-none"
-                @click="resetToCurrentTime"
-              >
-                Current Time
-              </button>
-            </div>
-
-            <label class="mt-4 block">
-              <span class="flex justify-between gap-3 text-xs font-bold text-slate-300">
-                <span>Time scrubber</span>
-                <span>{{ time.toFixed(1) }} h</span>
-              </span>
-              <input
-                v-model.number="time"
-                class="mt-2 h-2 w-full accent-cyan-300"
-                type="range"
-                min="0"
-                max="23.9"
-                step="0.1"
-              />
-            </label>
-          </section>
-
-          <section class="mt-4 rounded-lg border border-cyan-300/15 bg-slate-900/50 p-4">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <h3 class="text-sm font-black tracking-wide text-cyan-100 uppercase">
-                  Weather Lab
-                </h3>
-                <p class="mt-1 text-xs leading-relaxed text-slate-400">
-                  Preview weather states before live API data is connected.
-                </p>
+            <section class="mt-4 rounded-lg border border-cyan-300/15 bg-slate-900/50 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-sm font-black tracking-wide text-cyan-100 uppercase">
+                    Scene Time
+                  </h3>
+                  <p class="mt-1 text-xs leading-relaxed text-slate-400">
+                    Tune sunlight, sky color, and building shadows together.
+                  </p>
+                </div>
+                <span class="text-sm font-black text-cyan-200">{{ formattedTime }}</span>
               </div>
-            </div>
 
-            <div class="mt-4 grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                class="col-span-3 rounded-md border border-cyan-200/55 bg-cyan-300/22 px-3 py-3 text-sm font-black text-cyan-50 shadow-[0_0_16px_rgba(103,232,249,0.18)] transition hover:border-cyan-100/80 hover:bg-cyan-300/30 focus:ring-2 focus:ring-cyan-100/55 focus:outline-none"
-                @click="emit('renderCurrentWeather')"
-              >
-                Render Current Weather
-              </button>
-              <button
-                type="button"
-                class="rounded-md border border-emerald-300/35 bg-emerald-400/10 px-3 py-2 text-sm font-black text-emerald-100 transition hover:border-emerald-200/70 hover:bg-emerald-400/20 focus:ring-2 focus:ring-emerald-300/40 focus:outline-none"
-                @click="previewSunny"
-              >
-                Sunny
-              </button>
-              <button
-                type="button"
-                class="rounded-md border border-sky-300/35 bg-sky-500/15 px-3 py-2 text-sm font-black text-sky-100 transition hover:border-sky-200/70 hover:bg-sky-500/25 focus:ring-2 focus:ring-sky-300/40 focus:outline-none"
-                @click="previewRain"
-              >
-                Rain
-              </button>
-              <button
-                type="button"
-                class="rounded-md border border-violet-300/35 bg-violet-500/15 px-3 py-2 text-sm font-black text-violet-100 transition hover:border-violet-200/70 hover:bg-violet-500/25 focus:ring-2 focus:ring-violet-300/40 focus:outline-none"
-                @click="previewStorm"
-              >
-                Storm
-              </button>
-              <button
-                type="button"
-                class="rounded-md border border-cyan-100/35 bg-cyan-100/10 px-3 py-2 text-sm font-black text-cyan-50 transition hover:border-cyan-100/70 hover:bg-cyan-100/20 focus:ring-2 focus:ring-cyan-100/40 focus:outline-none"
-                @click="previewSnow"
-              >
-                Snow
-              </button>
-              <button
-                type="button"
-                class="rounded-md border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-sm font-black text-amber-100 transition hover:border-amber-200/70 hover:bg-amber-400/20 focus:ring-2 focus:ring-amber-300/40 focus:outline-none"
-                @click="previewHaze"
-              >
-                Haze
-              </button>
-            </div>
+              <div class="mt-4 grid grid-cols-4 gap-2">
+                <button
+                  type="button"
+                  class="rounded-md border border-cyan-300/20 bg-slate-950/55 px-2 py-2 text-xs font-black text-slate-200 transition hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/40 focus:outline-none"
+                  @click="setTimePreset(6.2)"
+                >
+                  Dawn
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md border border-cyan-300/20 bg-slate-950/55 px-2 py-2 text-xs font-black text-slate-200 transition hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/40 focus:outline-none"
+                  @click="setTimePreset(12)"
+                >
+                  Noon
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md border border-cyan-300/20 bg-slate-950/55 px-2 py-2 text-xs font-black text-slate-200 transition hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/40 focus:outline-none"
+                  @click="setTimePreset(18.6)"
+                >
+                  Sunset
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md border border-cyan-300/20 bg-slate-950/55 px-2 py-2 text-xs font-black text-slate-200 transition hover:border-cyan-200/70 hover:bg-cyan-400/15 focus:ring-2 focus:ring-cyan-300/40 focus:outline-none"
+                  @click="setTimePreset(22.5)"
+                >
+                  Night
+                </button>
+              </div>
 
-            <div class="mt-4 space-y-4">
-              <label class="block">
+              <div class="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  class="rounded-md border border-cyan-200/45 bg-cyan-300/15 px-3 py-2 text-xs font-black text-cyan-50 transition hover:border-cyan-100/80 hover:bg-cyan-300/25 focus:ring-2 focus:ring-cyan-200/45 focus:outline-none"
+                  @click="resetToCurrentTime"
+                >
+                  Current Time
+                </button>
+              </div>
+
+              <label class="mt-4 block">
                 <span class="flex justify-between gap-3 text-xs font-bold text-slate-300">
-                  <span>{{ precipitationTestLabel }}</span>
-                  <span>{{ precipitation.toFixed(1) }} {{ precipitationTestUnit }}</span>
+                  <span>Time scrubber</span>
+                  <span>{{ time.toFixed(1) }} h</span>
                 </span>
                 <input
-                  v-model.number="precipitation"
+                  v-model.number="time"
+                  @input="emit('manualTimeInput')"
                   class="mt-2 h-2 w-full accent-cyan-300"
                   type="range"
                   min="0"
-                  max="16"
+                  max="23.9"
                   step="0.1"
                 />
               </label>
+            </section>
 
-              <label class="block">
-                <span class="flex justify-between gap-3 text-xs font-bold text-slate-300">
-                  <span>Temperature</span>
-                  <span>{{ temperature.toFixed(1) }} C</span>
-                </span>
-                <input
-                  v-model.number="temperature"
-                  class="mt-2 h-2 w-full accent-cyan-300"
-                  type="range"
-                  min="-20"
-                  max="40"
-                  step="0.5"
-                />
-              </label>
+            <section class="mt-4 rounded-lg border border-cyan-300/15 bg-slate-900/50 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-sm font-black tracking-wide text-cyan-100 uppercase">
+                    Weather Lab
+                  </h3>
+                  <p class="mt-1 text-xs leading-relaxed text-slate-400">
+                    Preview weather states before live API data is connected.
+                  </p>
+                </div>
+              </div>
 
-              <div class="grid grid-cols-2 gap-3">
+              <div class="mt-4 grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  class="col-span-3 rounded-md border border-cyan-200/55 bg-cyan-300/22 px-3 py-3 text-sm font-black text-cyan-50 shadow-[0_0_16px_rgba(103,232,249,0.18)] transition hover:border-cyan-100/80 hover:bg-cyan-300/30 focus:ring-2 focus:ring-cyan-100/55 focus:outline-none"
+                  @click="emit('renderCurrentWeather')"
+                >
+                  Render Current Weather
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md border border-emerald-300/35 bg-emerald-400/10 px-3 py-2 text-sm font-black text-emerald-100 transition hover:border-emerald-200/70 hover:bg-emerald-400/20 focus:ring-2 focus:ring-emerald-300/40 focus:outline-none"
+                  @click="previewSunny"
+                >
+                  Sunny
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md border border-sky-300/35 bg-sky-500/15 px-3 py-2 text-sm font-black text-sky-100 transition hover:border-sky-200/70 hover:bg-sky-500/25 focus:ring-2 focus:ring-sky-300/40 focus:outline-none"
+                  @click="previewRain"
+                >
+                  Rain
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md border border-violet-300/35 bg-violet-500/15 px-3 py-2 text-sm font-black text-violet-100 transition hover:border-violet-200/70 hover:bg-violet-500/25 focus:ring-2 focus:ring-violet-300/40 focus:outline-none"
+                  @click="previewStorm"
+                >
+                  Storm
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md border border-cyan-100/35 bg-cyan-100/10 px-3 py-2 text-sm font-black text-cyan-50 transition hover:border-cyan-100/70 hover:bg-cyan-100/20 focus:ring-2 focus:ring-cyan-100/40 focus:outline-none"
+                  @click="previewSnow"
+                >
+                  Snow
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-sm font-black text-amber-100 transition hover:border-amber-200/70 hover:bg-amber-400/20 focus:ring-2 focus:ring-amber-300/40 focus:outline-none"
+                  @click="previewHaze"
+                >
+                  Haze
+                </button>
+              </div>
+
+              <div class="mt-4 space-y-4">
                 <label class="block">
-                  <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
-                    <span>Cloud</span>
-                    <span>{{ cloudCover }}%</span>
+                  <span class="flex justify-between gap-3 text-xs font-bold text-slate-300">
+                    <span>{{ precipitationTestLabel }}</span>
+                    <span>{{ precipitation.toFixed(1) }} {{ precipitationTestUnit }}</span>
                   </span>
                   <input
-                    v-model.number="cloudCover"
+                    v-model.number="precipitation"
+                    @input="emit('manualWeatherInput')"
                     class="mt-2 h-2 w-full accent-cyan-300"
                     type="range"
                     min="0"
-                    max="100"
-                    step="1"
+                    max="16"
+                    step="0.1"
                   />
                 </label>
 
                 <label class="block">
-                  <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
-                    <span>Wind</span>
-                    <span>{{ windSpeed.toFixed(1) }} m/s</span>
+                  <span class="flex justify-between gap-3 text-xs font-bold text-slate-300">
+                    <span>Temperature</span>
+                    <span>{{ temperature.toFixed(1) }} C</span>
                   </span>
                   <input
-                    v-model.number="windSpeed"
+                    v-model.number="temperature"
+                    @input="emit('manualWeatherInput')"
                     class="mt-2 h-2 w-full accent-cyan-300"
                     type="range"
-                    min="0"
-                    max="18"
+                    min="-20"
+                    max="40"
                     step="0.5"
                   />
                 </label>
 
-                <label class="block">
-                  <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
-                    <span>Wind angle</span>
-                    <span>{{ Math.round(windDirectionDegrees) }} deg</span>
-                  </span>
-                  <input
-                    v-model.number="windDirectionDegrees"
-                    class="mt-2 h-2 w-full accent-cyan-300"
-                    type="range"
-                    min="0"
-                    max="359"
-                    step="1"
-                  />
-                </label>
+                <div class="grid grid-cols-2 gap-3">
+                  <label class="block">
+                    <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
+                      <span>Cloud</span>
+                      <span>{{ cloudCover }}%</span>
+                    </span>
+                    <input
+                      v-model.number="cloudCover"
+                      @input="emit('manualWeatherInput')"
+                      class="mt-2 h-2 w-full accent-cyan-300"
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                    />
+                  </label>
 
-                <label class="block">
-                  <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
-                    <span>Humidity</span>
-                    <span>{{ humidity }}%</span>
-                  </span>
-                  <input
-                    v-model.number="humidity"
-                    class="mt-2 h-2 w-full accent-cyan-300"
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="1"
-                  />
-                </label>
+                  <label class="block">
+                    <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
+                      <span>Wind</span>
+                      <span>{{ windSpeed.toFixed(1) }} m/s</span>
+                    </span>
+                    <input
+                      v-model.number="windSpeed"
+                      @input="emit('manualWeatherInput')"
+                      class="mt-2 h-2 w-full accent-cyan-300"
+                      type="range"
+                      min="0"
+                      max="18"
+                      step="0.5"
+                    />
+                  </label>
 
-                <label class="block">
-                  <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
-                    <span>AQI</span>
-                    <span>{{ aqi }}</span>
-                  </span>
-                  <input
-                    :value="aqi"
-                    class="mt-2 h-2 w-full accent-cyan-300"
-                    type="range"
-                    min="0"
-                    max="300"
-                    step="1"
-                    @input="setAqiFromInput"
-                  />
-                </label>
+                  <label class="block">
+                    <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
+                      <span>Wind angle</span>
+                      <span>{{ Math.round(windDirectionDegrees) }} deg</span>
+                    </span>
+                    <input
+                      v-model.number="windDirectionDegrees"
+                      @input="emit('manualWeatherInput')"
+                      class="mt-2 h-2 w-full accent-cyan-300"
+                      type="range"
+                      min="0"
+                      max="359"
+                      step="1"
+                    />
+                  </label>
 
-                <label class="block">
-                  <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
-                    <span>Visibility</span>
-                    <span>{{ visibility.toFixed(1) }} km</span>
+                  <label class="block">
+                    <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
+                      <span>Humidity</span>
+                      <span>{{ humidity }}%</span>
+                    </span>
+                    <input
+                      v-model.number="humidity"
+                      @input="emit('manualWeatherInput')"
+                      class="mt-2 h-2 w-full accent-cyan-300"
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                    />
+                  </label>
+
+                  <label class="block">
+                    <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
+                      <span>AQI</span>
+                      <span>{{ aqi }}</span>
+                    </span>
+                    <input
+                      :value="aqi"
+                      class="mt-2 h-2 w-full accent-cyan-300"
+                      type="range"
+                      min="0"
+                      max="300"
+                      step="1"
+                      @input="
+                        (event) => {
+                          emit('manualWeatherInput')
+                          setAqiFromInput(event)
+                        }
+                      "
+                    />
+                  </label>
+
+                  <label class="block">
+                    <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
+                      <span>Visibility</span>
+                      <span>{{ visibility.toFixed(1) }} km</span>
+                    </span>
+                    <input
+                      v-if="!autoVisibility"
+                      :value="visibility"
+                      class="mt-2 h-2 w-full accent-cyan-300"
+                      type="range"
+                      min="1"
+                      max="22"
+                      step="0.1"
+                      @input="
+                        (event) => {
+                          emit('manualWeatherInput')
+                          setManualVisibility(event)
+                        }
+                      "
+                    />
+                    <div v-else class="mt-2 h-2 w-full rounded-full bg-cyan-950/70">
+                      <div
+                        class="h-full rounded-full bg-cyan-300"
+                        :style="{ width: `${Math.min(100, (visibility / 22) * 100)}%` }"
+                      ></div>
+                    </div>
+                  </label>
+                </div>
+
+                <label
+                  class="flex items-center justify-between gap-3 rounded-lg border border-cyan-300/10 bg-slate-950/45 px-3 py-3"
+                >
+                  <span>
+                    <span class="block text-xs font-black text-slate-200">Auto visibility</span>
+                    <span class="mt-0.5 block text-xs leading-relaxed text-slate-500">
+                      Derive visibility from AQI, clouds, and precipitation.
+                    </span>
                   </span>
-                  <input
-                    v-if="!autoVisibility"
-                    :value="visibility"
-                    class="mt-2 h-2 w-full accent-cyan-300"
-                    type="range"
-                    min="1"
-                    max="22"
-                    step="0.1"
-                    @input="setManualVisibility"
-                  />
-                  <div v-else class="mt-2 h-2 w-full rounded-full bg-cyan-950/70">
-                    <div
-                      class="h-full rounded-full bg-cyan-300 transition-all duration-700"
-                      :style="{ width: `${Math.min(100, (visibility / 22) * 100)}%` }"
-                    ></div>
-                  </div>
+                  <input v-model="autoVisibility" class="h-5 w-5 accent-cyan-300" type="checkbox" />
                 </label>
               </div>
-
-              <label
-                class="flex items-center justify-between gap-3 rounded-lg border border-cyan-300/10 bg-slate-950/45 px-3 py-3"
-              >
-                <span>
-                  <span class="block text-xs font-black text-slate-200">Auto visibility</span>
-                  <span class="mt-0.5 block text-xs leading-relaxed text-slate-500">
-                    Derive visibility from AQI, clouds, and precipitation.
-                  </span>
-                </span>
-                <input v-model="autoVisibility" class="h-5 w-5 accent-cyan-300" type="checkbox" />
-              </label>
-            </div>
-          </section>
-        </div>
-      </aside>
-    </div>
+            </section>
+          </div>
+        </aside>
+      </div>
+    </Transition>
   </Teleport>
 </template>

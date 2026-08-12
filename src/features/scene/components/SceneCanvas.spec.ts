@@ -580,7 +580,17 @@ describe('SceneCanvas', () => {
 
     wrapper.vm.flyToLocation(waypoint)
 
-    expect(mocks.cameraInstances[0].flyToLocation).toHaveBeenCalledWith(waypoint)
+    expect(mocks.cameraInstances[0].flyToLocation).toHaveBeenCalledWith(
+      waypoint,
+      expect.objectContaining({ onStart: expect.any(Function), onFinish: expect.any(Function) }),
+    )
+
+    const [, callbacks] = mocks.cameraInstances[0].flyToLocation.mock.calls[0]
+    callbacks.onStart()
+    callbacks.onFinish()
+
+    expect(wrapper.emitted('cameraFlightStart')).toHaveLength(1)
+    expect(wrapper.emitted('cameraFlightEnd')).toHaveLength(1)
   })
 
   it('언마운트 시 렌더 루프와 scene 리소스를 정리해야 한다', async () => {

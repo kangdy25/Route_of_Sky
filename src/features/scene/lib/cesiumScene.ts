@@ -173,19 +173,29 @@ export function applySceneTime(
   viewer.scene.requestRender()
 }
 
+export interface CameraFlightCallbacks {
+  onStart?: () => void
+  onFinish?: () => void
+}
+
 export class CameraFlyToController {
   private activeTween: gsap.core.Tween | null = null
+  private activeFlightId = 0
+  private activeOnFinish: (() => void) | null = null
   private readonly getViewer: () => Viewer | null
 
   constructor(getViewer: () => Viewer | null) {
     this.getViewer = getViewer
   }
 
-  flyToLocation(target: CameraWaypoint) {
+  flyToLocation(target: CameraWaypoint, callbacks: CameraFlightCallbacks = {}) {
     const viewer = this.getViewer()
     if (!viewer) return
 
-    this.activeTween?.kill()
+    this.finishActiveFlight()
+    const flightId = ++this.activeFlightId
+    this.activeOnFinish = callbacks.onFinish ?? null
+    callbacks.onStart?.()
 
     const camera = viewer.camera
     const startPosition = Cartesian3.clone(camera.positionWC)
@@ -206,9 +216,10 @@ export class CameraFlyToController {
     const endRoll = CesiumMath.toRadians(target.rollDegrees ?? 0)
     const progress = { value: 0 }
     const currentPosition = new Cartesian3()
+    let completed = false
 
     // Cesium flyTo 대신 GSAP으로 보간해 기존 카메라 제어감과 easing을 유지합니다.
-    this.activeTween = gsap.to(progress, {
+    const tween = gsap.to(progress, {
       value: 1,
       duration: target.duration ?? 3.2,
       ease: 'power3.inOut',
@@ -227,13 +238,32 @@ export class CameraFlyToController {
         })
       },
       onComplete: () => {
-        this.activeTween = null
+        completed = true
+        if (this.activeFlightId === flightId) {
+          this.activeTween = null
+          this.activeOnFinish?.()
+          this.activeOnFinish = null
+        }
       },
     })
+    if (!completed && this.activeFlightId === flightId) {
+      this.activeTween = tween
+    }
   }
 
   dispose() {
+    this.finishActiveFlight()
+  }
+
+  private finishActiveFlight() {
+    const hadActiveFlight = this.activeTween !== null || this.activeOnFinish !== null
     this.activeTween?.kill()
     this.activeTween = null
+    this.activeFlightId += 1
+
+    if (hadActiveFlight) {
+      this.activeOnFinish?.()
+    }
+    this.activeOnFinish = null
   }
 }

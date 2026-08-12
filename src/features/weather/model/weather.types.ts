@@ -22,3 +22,5 @@ export interface WeatherState {
   /** 가시거리입니다. 단위는 km입니다. */
   visibility: number
 }
+
+export type WeatherStatePatch = Partial<WeatherState>

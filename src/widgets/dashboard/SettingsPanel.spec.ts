@@ -66,6 +66,12 @@ function mountSettingsPanel(open = true, location = WORLD_LOCATIONS[1]) {
             'onUpdate:qualityMode': (value: 'auto' | 'high' | 'medium' | 'low') => {
               state.qualityMode = value
             },
+            onPreviewWeather: (patch: Partial<typeof state>) => {
+              Object.assign(state, patch)
+            },
+            onSetTime: (value: number) => {
+              state.time = value
+            },
           })
       },
     }),
