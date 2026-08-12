@@ -1,0 +1,18 @@
+{
+  "measurement": "production build with deterministic performance-budget gate",
+  "command": "pnpm run build && pnpm run perf:budget",
+  "metrics": {
+    "appJavaScriptGzipBytes": 86752,
+    "appCssGzipBytes": 14947,
+    "distBytes": 13534839,
+    "thumbnailBytes": 213019
+  },
+  "limits": {
+    "appJavaScriptGzipBytes": 92160,
+    "appCssGzipBytes": 18432,
+    "distBytes": 14292091,
+    "thumbnailBytes": 256000
+  },
+  "budgetGate": true,
+  "result": "pass"
+}
