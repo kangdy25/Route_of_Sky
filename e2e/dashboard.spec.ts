@@ -45,7 +45,10 @@ test.describe('대시보드 메인 화면 로드 테스트', () => {
       await expect(scene).toHaveAttribute('data-quality-level', level)
     }
 
-    await page.reload()
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('button', { name: 'Open settings' })).toBeVisible({
+      timeout: 15_000,
+    })
     await page.getByRole('button', { name: 'Open settings' }).click()
     await expect(page.getByLabel('렌더링 품질')).toHaveValue('low')
     await expect(scene).toHaveAttribute('data-quality-level', 'low')
