@@ -58,7 +58,7 @@
 
 ![Phase 2 정적 전송량 비교](docs/performance/phase2/assets/phase2-static-delivery.svg)
 
-[Phase 2 사례 연구](docs/performance/phase2/case-study.md) · [측정 프로토콜](docs/performance/phase2/measurement-protocol.md) · [최종 실제 GPU 비교](docs/performance/phase2/final-comparison.md) · [PR #22](https://github.com/kangdy25/Route_of_Sky/pull/22) · [PR #23](https://github.com/kangdy25/Route_of_Sky/pull/23) · [PR #24](https://github.com/kangdy25/Route_of_Sky/pull/24) · [PR #25](https://github.com/kangdy25/Route_of_Sky/pull/25) · [PR #26](https://github.com/kangdy25/Route_of_Sky/pull/26)
+[Phase 2 사례 연구](docs/performance/phase2/case-study.md) · [측정 프로토콜](docs/performance/phase2/measurement-protocol.md) · [최종 실제 GPU 비교](docs/performance/phase2/final-comparison.md) · [PR #22](https://github.com/kangdy25/Route_of_Sky/pull/22) · [PR #23](https://github.com/kangdy25/Route_of_Sky/pull/23) · [PR #24](https://github.com/kangdy25/Route_of_Sky/pull/24) · [PR #25](https://github.com/kangdy25/Route_of_Sky/pull/25) · [PR #26](https://github.com/kangdy25/Route_of_Sky/pull/26) · [PR #27](https://github.com/kangdy25/Route_of_Sky/pull/27)
 
 ## ✨ 주요 기능
 
