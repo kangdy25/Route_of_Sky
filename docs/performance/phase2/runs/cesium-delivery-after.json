@@ -1,0 +1,8 @@
+{
+  "thumbnail": { "bytes": 213019, "width": 1200, "height": 669, "format": "jpeg" },
+  "cacheControl": {
+    "cesium": "public, max-age=31536000, immutable",
+    "thumbnail": "public, max-age=31536000, immutable"
+  },
+  "measurement": "local repository asset inventory and deployed-header configuration"
+}
