@@ -65,17 +65,15 @@ describe('Vercel 날씨 API 프록시', () => {
     expect(upstreamUrl.searchParams.get('aqi')).toBe('yes')
   })
 
-  it('공개 쿼리로 CDN 캐시를 우회할 수 없어야 한다', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ current: {} }) }),
-    )
+  it('공개 쿼리로 CDN 캐시 키를 분리하거나 외부 호출을 만들 수 없어야 한다', async () => {
+    const fetcher = vi.fn()
+    vi.stubGlobal('fetch', fetcher)
     const response = createResponse()
 
     await handler(createRequest({ query: { q: '40.758,-73.9855', fresh: '1' } }), response)
 
-    expect(response.statusCode).toBe(200)
-    expect(response.headers.get('CDN-Cache-Control')).toBe('max-age=300, stale-while-revalidate=60')
+    expect(response.statusCode).toBe(400)
+    expect(fetcher).not.toHaveBeenCalled()
   })
 
   it('앱에서 사용하지 않는 좌표를 외부 API로 전달하지 않아야 한다', async () => {

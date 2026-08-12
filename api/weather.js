@@ -35,6 +35,11 @@ export default async function handler(request, response) {
     return sendJson(response, 405, { error: { message: 'GET 요청만 지원합니다.' } })
   }
 
+  const queryKeys = Object.keys(request.query ?? {})
+  if (queryKeys.some((key) => key !== 'q')) {
+    return sendJson(response, 400, { error: { message: '지원하지 않는 쿼리입니다.' } })
+  }
+
   const locationQuery = getSingleQueryValue(request.query?.q)
   if (!ALLOWED_LOCATION_QUERIES.has(locationQuery)) {
     return sendJson(response, 400, { error: { message: '지원하지 않는 지역 좌표입니다.' } })
