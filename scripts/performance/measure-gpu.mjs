@@ -61,7 +61,10 @@ async function getBuildMetrics() {
   const assetDirectory = resolve(distDirectory, 'assets')
   const assetNames = await readdir(assetDirectory)
   const getAssetMetric = async (extension) => {
-    const name = assetNames.find((assetName) => assetName.endsWith(extension))
+    const name =
+      assetNames.find(
+        (assetName) => assetName.startsWith('index-') && assetName.endsWith(extension),
+      ) ?? assetNames.find((assetName) => assetName.endsWith(extension))
     if (!name) return null
 
     const content = await readFile(resolve(assetDirectory, name))
