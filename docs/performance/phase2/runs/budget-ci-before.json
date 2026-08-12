@@ -1,0 +1,11 @@
+{
+  "measurement": "production build before adding a CI performance-budget gate",
+  "command": "pnpm run build",
+  "metrics": {
+    "appJavaScriptGzipBytes": 86752,
+    "appCssGzipBytes": 14947,
+    "distBytes": 13534839,
+    "thumbnailBytes": 213019
+  },
+  "budgetGate": false
+}

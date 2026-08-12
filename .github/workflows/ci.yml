@@ -31,6 +31,9 @@ jobs:
       - name: Lint Check
         run: pnpm run lint
 
+      - name: Performance Budget
+        run: pnpm run build && pnpm run perf:budget
+
       - name: Unit Tests (Vitest)
         run: pnpm run test:unit --run
 

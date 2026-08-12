@@ -83,6 +83,14 @@ function createWeatherPayload(weather: WeatherMock) {
 async function mockWeatherApi(page: Page) {
   const queries: string[] = []
 
+  await page.addInitScript(() => {
+    const initializedKey = 'route-of-sky:e2e-storage-initialized'
+    if (window.sessionStorage.getItem(initializedKey)) return
+
+    window.localStorage.clear()
+    window.sessionStorage.setItem(initializedKey, 'true')
+  })
+
   await page.route(WEATHER_API_PATTERN, async (route) => {
     const url = new URL(route.request().url())
     const query = url.searchParams.get('q') ?? ''
