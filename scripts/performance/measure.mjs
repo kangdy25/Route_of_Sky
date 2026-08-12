@@ -181,7 +181,7 @@ async function measureRun(cpuSlowdownMultiplier) {
   await cdp.send('Network.setCacheDisabled', { cacheDisabled: true })
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: cpuSlowdownMultiplier })
   await installObservers(page)
-  await page.route('**/v1/forecast.json**', async (route) => {
+  await page.route('**/api/weather?**', async (route) => {
     apiRequestCount += 1
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify(weatherPayload()) })
   })

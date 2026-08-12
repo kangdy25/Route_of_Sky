@@ -1,7 +1,6 @@
 import type { WeatherState } from '@/features/weather/model/weather.types'
 
-export const WEATHER_API_CURRENT_ENDPOINT = 'https://api.weatherapi.com/v1/current.json'
-export const WEATHER_API_FORECAST_ENDPOINT = 'https://api.weatherapi.com/v1/forecast.json'
+export const WEATHER_API_PROXY_ENDPOINT = '/api/weather'
 export const DEFAULT_WEATHER_LOCATION_QUERY = '40.758,-73.9855'
 
 type WeatherApiFetcher = typeof fetch
@@ -112,15 +111,15 @@ function convertUsEpaIndexToAqi(usEpaIndex?: number) {
   return US_EPA_INDEX_TO_AQI[clamp(Math.round(usEpaIndex), 1, 6) - 1]
 }
 
-function createWeatherApiUrl(apiKey: string, locationQuery: string) {
-  const url = new URL(WEATHER_API_FORECAST_ENDPOINT)
+function createWeatherApiUrl(locationQuery: string) {
+  const searchParams = new URLSearchParams({ q: locationQuery })
 
-  url.searchParams.set('key', apiKey)
-  url.searchParams.set('q', locationQuery)
-  url.searchParams.set('days', '1')
-  url.searchParams.set('aqi', 'yes')
+  return `${WEATHER_API_PROXY_ENDPOINT}?${searchParams.toString()}`
+}
 
-  return url
+export interface FetchCurrentWeatherOptions {
+  fetcher?: WeatherApiFetcher
+  signal?: AbortSignal
 }
 
 export function createWeatherLocationQuery(latitude: number, longitude: number) {
@@ -150,14 +149,12 @@ export function mapWeatherApiCurrentResponse(response: WeatherApiCurrentResponse
 }
 
 export async function fetchCurrentWeather(
-  apiKey: string,
   locationQuery = DEFAULT_WEATHER_LOCATION_QUERY,
-  fetcher: WeatherApiFetcher = fetch,
-  signal?: AbortSignal,
+  options: FetchCurrentWeatherOptions = {},
 ) {
-  const response = await fetcher(
-    createWeatherApiUrl(apiKey, locationQuery),
-    signal ? { signal } : undefined,
+  const response = await (options.fetcher ?? fetch)(
+    createWeatherApiUrl(locationQuery),
+    options.signal ? { signal: options.signal } : undefined,
   )
   const payload = (await response.json()) as WeatherApiCurrentResponse & WeatherApiErrorResponse
 
@@ -165,7 +162,5 @@ export async function fetchCurrentWeather(
     throw new Error(payload.error?.message || 'WeatherAPI 요청에 실패했습니다.')
   }
 
-  const weather = mapWeatherApiCurrentResponse(payload)
-
-  return weather
+  return mapWeatherApiCurrentResponse(payload)
 }

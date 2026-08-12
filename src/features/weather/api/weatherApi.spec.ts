@@ -104,7 +104,7 @@ describe('WeatherAPI 클라이언트', () => {
     expect(createWeatherLocationQuery(37.5512, 126.9882)).toBe('37.5512,126.9882')
   })
 
-  it('현재 날씨 API를 aqi=yes 옵션으로 호출해야 한다', async () => {
+  it('현재 날씨를 동일 출처 프록시로 호출해야 한다', async () => {
     const fetcher = vi.fn().mockResolvedValue({
       ok: true,
       json: () =>
@@ -126,14 +126,14 @@ describe('WeatherAPI 클라이언트', () => {
         }),
     })
 
-    await fetchCurrentWeather('test-key', 'Seoul', fetcher)
+    await fetchCurrentWeather('Seoul', { fetcher })
 
-    const requestUrl = fetcher.mock.calls[0][0] as URL
+    const requestUrl = new URL(fetcher.mock.calls[0][0] as string, 'https://routeofsky.test')
 
-    expect(requestUrl.searchParams.get('key')).toBe('test-key')
+    expect(requestUrl.origin).toBe('https://routeofsky.test')
+    expect(requestUrl.pathname).toBe('/api/weather')
     expect(requestUrl.searchParams.get('q')).toBe('Seoul')
-    expect(requestUrl.searchParams.get('days')).toBe('1')
-    expect(requestUrl.searchParams.get('aqi')).toBe('yes')
+    expect(requestUrl.searchParams.has('key')).toBe(false)
   })
 
   it('요청 취소 signal을 fetch에 전달해야 한다', async () => {
@@ -155,9 +155,32 @@ describe('WeatherAPI 클라이언트', () => {
         }),
     })
 
-    await fetchCurrentWeather('test-key', 'Seoul', fetcher, controller.signal)
+    await fetchCurrentWeather('Seoul', { fetcher, signal: controller.signal })
 
-    expect(fetcher).toHaveBeenCalledWith(expect.any(URL), { signal: controller.signal })
+    expect(fetcher).toHaveBeenCalledWith('/api/weather?q=Seoul', { signal: controller.signal })
+  })
+
+  it('강제 갱신도 공개 CDN 우회 파라미터를 전송하지 않아야 한다', async () => {
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          location: {},
+          current: {
+            temp_c: 20,
+            humidity: 50,
+            wind_kph: 0,
+            wind_degree: 0,
+            cloud: 0,
+            precip_mm: 0,
+            vis_km: 20,
+          },
+        }),
+    })
+
+    await fetchCurrentWeather('Seoul', { fetcher })
+
+    expect(fetcher).toHaveBeenCalledWith('/api/weather?q=Seoul', undefined)
   })
 
   it('WeatherAPI 오류 응답이면 메시지를 포함해 실패해야 한다', async () => {
@@ -166,9 +189,7 @@ describe('WeatherAPI 클라이언트', () => {
       json: () => Promise.resolve({ error: { message: 'API key is invalid.' } }),
     })
 
-    await expect(fetchCurrentWeather('bad-key', 'Seoul', fetcher)).rejects.toThrow(
-      'API key is invalid.',
-    )
+    await expect(fetchCurrentWeather('Seoul', { fetcher })).rejects.toThrow('API key is invalid.')
   })
 
   it('WeatherAPI 오류 메시지가 없으면 기본 실패 메시지를 사용해야 한다', async () => {
@@ -177,7 +198,7 @@ describe('WeatherAPI 클라이언트', () => {
       json: () => Promise.resolve({}),
     })
 
-    await expect(fetchCurrentWeather('bad-key', 'Seoul', fetcher)).rejects.toThrow(
+    await expect(fetchCurrentWeather('Seoul', { fetcher })).rejects.toThrow(
       'WeatherAPI 요청에 실패했습니다.',
     )
   })

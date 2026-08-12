@@ -5,11 +5,6 @@ import { defaultWeatherState } from './weather.constants'
 import { useWeatherStore } from './weather.store'
 import type { WeatherState } from './weather.types'
 
-vi.mock('@/shared/config/env', () => ({
-  weatherApiKey: 'test-key',
-  hasWeatherApiKey: true,
-}))
-
 vi.mock('@/features/weather/api/weatherApi', () => ({
   DEFAULT_WEATHER_LOCATION_QUERY: '40.758,-73.9855',
   fetchCurrentWeather: vi.fn(),
@@ -91,10 +86,11 @@ describe('날씨 store', () => {
     await expect(store.loadCurrentWeather('37.5512,126.9882')).resolves.toBe(true)
 
     expect(mockedFetchCurrentWeather).toHaveBeenCalledWith(
-      'test-key',
       '37.5512,126.9882',
-      expect.any(Function),
-      expect.any(AbortSignal),
+      expect.objectContaining({
+        fetcher: expect.any(Function),
+        signal: expect.any(AbortSignal),
+      }),
     )
     expect(store.temperature).toBe(21)
     expect(store.temperatureMin).toBe(16)
@@ -210,7 +206,7 @@ describe('날씨 store', () => {
   it('늦게 도착한 이전 지역 응답은 현재 지역을 덮어쓰지 않아야 한다', async () => {
     const seoul = createDeferred<WeatherState>()
     const tokyo = createDeferred<WeatherState>()
-    mockedFetchCurrentWeather.mockImplementation((_key, query) =>
+    mockedFetchCurrentWeather.mockImplementation((query) =>
       query === '37.5512,126.9882' ? seoul.promise : tokyo.promise,
     )
     const store = useWeatherStore()

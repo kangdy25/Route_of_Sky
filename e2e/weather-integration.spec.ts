@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-const WEATHER_API_PATTERN = '**/v1/forecast.json**'
+const WEATHER_API_PATTERN = '**/api/weather?**'
 
 type WeatherMock = {
   name: string

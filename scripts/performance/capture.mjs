@@ -54,7 +54,7 @@ async function captureState(selectedQuality, selectedPreset, destination) {
 }
 
 try {
-  await page.route('**/v1/forecast.json**', (route) =>
+  await page.route('**/api/weather?**', (route) =>
     route.fulfill({ contentType: 'application/json', body: JSON.stringify(weatherPayload()) }),
   )
   await page.goto(targetUrl, { waitUntil: 'domcontentloaded' })

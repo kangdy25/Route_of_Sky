@@ -98,14 +98,15 @@ pnpm install
 ### 3. 환경 변수 설정
 
 Google Photorealistic 3D Tiles를 사용하려면 **Cesium ion Access Token**, **Google Maps API key**가 필요합니다.
-또한 날씨 데이터를 정확히 받기 위해서는 **Weather API** 키가 필요합니다.
+또한 날씨 데이터를 정확히 받기 위해서는 **Weather API** 키가 필요합니다. 날씨 키는
+브라우저 번들에 포함되지 않도록 `VITE_` 접두사 없이 서버 전용 변수로 설정합니다.
 프로젝트 루트 폴더에 `.env` 파일을 생성하고 발급받은 액세스 토큰과 API 키들을 입력해 주세요.
 
 ```env
 # .env
 VITE_GOOGLE_MAPS_API_KEY=your_api_key
 VITE_CESIUM_ION_ACCESS_TOKEN=your_cesium_ion_access_token_here
-VITE_WEATHER_API_KEY=your_api_key
+WEATHER_API_KEY=your_api_key
 ```
 
 ### 4. 개발 서버 실행
