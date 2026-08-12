@@ -9,7 +9,7 @@ const rootDirectory = fileURLToPath(new URL('./', import.meta.url))
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, rootDirectory, '')
-  const weatherApiKey = env.WEATHER_API_KEY || env.VITE_WEATHER_API_KEY || ''
+  const weatherApiKey = env.WEATHER_API_KEY || ''
 
   return {
     plugins: [vue(), tailwindcss(), cesium()],

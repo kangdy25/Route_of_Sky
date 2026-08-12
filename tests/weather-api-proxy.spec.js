@@ -65,7 +65,7 @@ describe('Vercel 날씨 API 프록시', () => {
     expect(upstreamUrl.searchParams.get('aqi')).toBe('yes')
   })
 
-  it('강제 갱신 요청은 Vercel CDN 캐시도 우회해야 한다', async () => {
+  it('공개 쿼리로 CDN 캐시를 우회할 수 없어야 한다', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ current: {} }) }),
@@ -75,7 +75,7 @@ describe('Vercel 날씨 API 프록시', () => {
     await handler(createRequest({ query: { q: '40.758,-73.9855', fresh: '1' } }), response)
 
     expect(response.statusCode).toBe(200)
-    expect(response.headers.get('CDN-Cache-Control')).toBe('no-store')
+    expect(response.headers.get('CDN-Cache-Control')).toBe('max-age=300, stale-while-revalidate=60')
   })
 
   it('앱에서 사용하지 않는 좌표를 외부 API로 전달하지 않아야 한다', async () => {
@@ -100,7 +100,6 @@ describe('Vercel 날씨 API 프록시', () => {
 
   it('서버 API 키가 없으면 외부 요청 없이 503을 반환해야 한다', async () => {
     vi.stubEnv('WEATHER_API_KEY', '')
-    vi.stubEnv('VITE_WEATHER_API_KEY', '')
     const fetcher = vi.fn()
     vi.stubGlobal('fetch', fetcher)
     const response = createResponse()
@@ -111,20 +110,17 @@ describe('Vercel 날씨 API 프록시', () => {
     expect(fetcher).not.toHaveBeenCalled()
   })
 
-  it('기존 Vercel 변수명을 서버 전용 fallback으로 사용할 수 있어야 한다', async () => {
+  it('클라이언트 공개 변수만 있으면 서버 인증에 사용하지 않아야 한다', async () => {
     vi.stubEnv('WEATHER_API_KEY', '')
     vi.stubEnv('VITE_WEATHER_API_KEY', 'existing-deployment-key')
-    const fetcher = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ location: {}, current: {} }),
-    })
+    const fetcher = vi.fn()
     vi.stubGlobal('fetch', fetcher)
     const response = createResponse()
 
     await handler(createRequest(), response)
 
-    expect(response.statusCode).toBe(200)
-    expect(fetcher.mock.calls[0][0].searchParams.get('key')).toBe('existing-deployment-key')
+    expect(response.statusCode).toBe(503)
+    expect(fetcher).not.toHaveBeenCalled()
   })
 
   it('외부 API 오류 세부 내용을 노출하지 않고 502로 정규화해야 한다', async () => {

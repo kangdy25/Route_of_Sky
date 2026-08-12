@@ -160,7 +160,7 @@ describe('WeatherAPI 클라이언트', () => {
     expect(fetcher).toHaveBeenCalledWith('/api/weather?q=Seoul', { signal: controller.signal })
   })
 
-  it('강제 갱신이면 서버 CDN 캐시 우회 파라미터를 전달해야 한다', async () => {
+  it('강제 갱신도 공개 CDN 우회 파라미터를 전송하지 않아야 한다', async () => {
     const fetcher = vi.fn().mockResolvedValue({
       ok: true,
       json: () =>
@@ -178,9 +178,9 @@ describe('WeatherAPI 클라이언트', () => {
         }),
     })
 
-    await fetchCurrentWeather('Seoul', { fetcher, force: true })
+    await fetchCurrentWeather('Seoul', { fetcher })
 
-    expect(fetcher).toHaveBeenCalledWith('/api/weather?q=Seoul&fresh=1', undefined)
+    expect(fetcher).toHaveBeenCalledWith('/api/weather?q=Seoul', undefined)
   })
 
   it('WeatherAPI 오류 응답이면 메시지를 포함해 실패해야 한다', async () => {

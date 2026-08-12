@@ -88,7 +88,6 @@ export const useWeatherStore = defineStore('weather', () => {
       controller,
       promise: fetchCurrentWeather(locationQuery, {
         fetcher,
-        force,
         signal: controller.signal,
       }),
     }

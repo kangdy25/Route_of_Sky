@@ -57,8 +57,6 @@ jobs:
 
       - name: E2E Tests (Playwright)
         run: pnpm run test:e2e
-        env:
-          VITE_WEATHER_API_KEY: ${{ secrets.VITE_WEATHER_API_KEY }}
 
       - name: Upload Test Report
         if: always()

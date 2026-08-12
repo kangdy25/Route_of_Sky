@@ -24,11 +24,7 @@ function getSingleQueryValue(value) {
 }
 
 function getWeatherApiKey() {
-  // 기존 배포 환경을 끊지 않기 위해 이전 변수명을 임시 fallback으로 지원합니다.
-  // 프런트엔드는 더 이상 이 값을 import.meta.env로 읽지 않아 번들에 포함하지 않습니다.
-  return (
-    globalThis.process?.env.WEATHER_API_KEY || globalThis.process?.env.VITE_WEATHER_API_KEY || ''
-  )
+  return globalThis.process?.env.WEATHER_API_KEY || ''
 }
 
 export default async function handler(request, response) {
@@ -51,7 +47,6 @@ export default async function handler(request, response) {
     })
   }
 
-  const forceRefresh = getSingleQueryValue(request.query?.fresh) === '1'
   const upstreamUrl = new URL(WEATHER_API_ENDPOINT)
   upstreamUrl.searchParams.set('key', apiKey)
   upstreamUrl.searchParams.set('q', locationQuery)
@@ -74,7 +69,7 @@ export default async function handler(request, response) {
       })
     }
 
-    response.setHeader('CDN-Cache-Control', forceRefresh ? 'no-store' : WEATHER_CDN_CACHE_CONTROL)
+    response.setHeader('CDN-Cache-Control', WEATHER_CDN_CACHE_CONTROL)
     return sendJson(response, 200, payload)
   } catch (error) {
     const timedOut = error instanceof Error && error.name === 'AbortError'

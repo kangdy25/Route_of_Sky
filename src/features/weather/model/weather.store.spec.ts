@@ -89,7 +89,6 @@ describe('날씨 store', () => {
       '37.5512,126.9882',
       expect.objectContaining({
         fetcher: expect.any(Function),
-        force: false,
         signal: expect.any(AbortSignal),
       }),
     )
@@ -207,7 +206,7 @@ describe('날씨 store', () => {
   it('늦게 도착한 이전 지역 응답은 현재 지역을 덮어쓰지 않아야 한다', async () => {
     const seoul = createDeferred<WeatherState>()
     const tokyo = createDeferred<WeatherState>()
-    mockedFetchCurrentWeather.mockImplementation((_key, query) =>
+    mockedFetchCurrentWeather.mockImplementation((query) =>
       query === '37.5512,126.9882' ? seoul.promise : tokyo.promise,
     )
     const store = useWeatherStore()

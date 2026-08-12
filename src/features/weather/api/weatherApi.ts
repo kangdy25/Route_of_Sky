@@ -111,16 +111,14 @@ function convertUsEpaIndexToAqi(usEpaIndex?: number) {
   return US_EPA_INDEX_TO_AQI[clamp(Math.round(usEpaIndex), 1, 6) - 1]
 }
 
-function createWeatherApiUrl(locationQuery: string, force = false) {
+function createWeatherApiUrl(locationQuery: string) {
   const searchParams = new URLSearchParams({ q: locationQuery })
-  if (force) searchParams.set('fresh', '1')
 
   return `${WEATHER_API_PROXY_ENDPOINT}?${searchParams.toString()}`
 }
 
 export interface FetchCurrentWeatherOptions {
   fetcher?: WeatherApiFetcher
-  force?: boolean
   signal?: AbortSignal
 }
 
@@ -155,7 +153,7 @@ export async function fetchCurrentWeather(
   options: FetchCurrentWeatherOptions = {},
 ) {
   const response = await (options.fetcher ?? fetch)(
-    createWeatherApiUrl(locationQuery, options.force),
+    createWeatherApiUrl(locationQuery),
     options.signal ? { signal: options.signal } : undefined,
   )
   const payload = (await response.json()) as WeatherApiCurrentResponse & WeatherApiErrorResponse
