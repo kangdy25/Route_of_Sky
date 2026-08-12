@@ -84,14 +84,12 @@ function flyToSelectedLocation() {
   })
 }
 
-function loadSelectedLocationWeather(force = false, animate = false) {
+function loadSelectedLocationWeather(force = false) {
   const location = selectedLocation.value
-  const options = animate ? { force, animate: true } : { force }
 
-  return weatherStore.loadCurrentWeather(
-    createWeatherLocationQuery(location.lat, location.lng),
-    options,
-  )
+  return weatherStore.loadCurrentWeather(createWeatherLocationQuery(location.lat, location.lng), {
+    force,
+  })
 }
 
 function selectLocation(locationId: string) {
@@ -101,7 +99,7 @@ function selectLocation(locationId: string) {
   selectedLocation.value = nextLocation
   saveSelectedLocation(nextLocation.id)
   flyToSelectedLocation()
-  void loadSelectedLocationWeather(false, true)
+  void loadSelectedLocationWeather()
 }
 
 onMounted(() => {
@@ -152,7 +150,7 @@ onMounted(() => {
       :is-scene-transitioning="isSceneTransitioning"
       @fly-to-selected-location="flyToSelectedLocation"
       @select-location="selectLocation"
-      @render-current-weather="loadSelectedLocationWeather(true, true)"
+      @render-current-weather="loadSelectedLocationWeather(true)"
       @preview-weather="weatherStore.applyWeatherPatch($event, { animate: true })"
       @set-time="weatherStore.setSceneTime($event, { animate: true })"
       @manual-weather-input="weatherStore.cancelTransitions()"

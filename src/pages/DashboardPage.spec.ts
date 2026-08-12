@@ -253,10 +253,7 @@ describe('대시보드 페이지', () => {
       city: '예루살렘',
       landmark: '통곡의 벽',
     })
-    expect(loadCurrentWeather).toHaveBeenLastCalledWith('31.7767,35.2345', {
-      force: false,
-      animate: true,
-    })
+    expect(loadCurrentWeather).toHaveBeenLastCalledWith('31.7767,35.2345', { force: false })
     expect(window.localStorage.getItem('route-of-sky:selected-location-id')).toBe('il-jerusalem')
   })
 
@@ -310,10 +307,7 @@ describe('대시보드 페이지', () => {
     expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
       id: 'il-jerusalem',
     })
-    expect(loadCurrentWeather).toHaveBeenLastCalledWith('31.7767,35.2345', {
-      force: false,
-      animate: true,
-    })
+    expect(loadCurrentWeather).toHaveBeenLastCalledWith('31.7767,35.2345', { force: false })
 
     setItemSpy.mockRestore()
   })
@@ -341,10 +335,7 @@ describe('대시보드 페이지', () => {
 
     await wrapper.find('[data-testid="render-current-weather"]').trigger('click')
 
-    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855', {
-      force: true,
-      animate: true,
-    })
+    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855', { force: true })
   })
 
   it('알 수 없는 지역 선택 이벤트는 무시해야 한다', async () => {
