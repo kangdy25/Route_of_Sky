@@ -76,4 +76,4 @@ Weather 캐시는 좌표별 localStorage 키와 5분 TTL을 사용한다. 신선
 | rAF 렌더 루프 실험 | [#24](https://github.com/kangdy25/Route_of_Sky/pull/24) | [`6af9286`](https://github.com/kangdy25/Route_of_Sky/commit/6af9286) | 수치 미달, 코드 롤백 |
 | Cesium 전달·썸네일 | [#25](https://github.com/kangdy25/Route_of_Sky/pull/25) | [`c17f6b8`](https://github.com/kangdy25/Route_of_Sky/commit/c17f6b8) | 채택 |
 | 정적 성능 예산 CI | [#26](https://github.com/kangdy25/Route_of_Sky/pull/26) | [`5120dfc`](https://github.com/kangdy25/Route_of_Sky/commit/5120dfc) | 채택 |
-| 최종 실제 GPU 비교·사례 연구 | [#27](https://github.com/kangdy25/Route_of_Sky/pull/27) | 이 PR의 Merge commit | 최종 기록 |
+| 최종 실제 GPU 비교·사례 연구 | [#27](https://github.com/kangdy25/Route_of_Sky/pull/27) | [`04205a9`](https://github.com/kangdy25/Route_of_Sky/commit/04205a9) | 최종 기록 |
