@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title description">
+  <title id="title">Route of Sky Phase 2 정적 전송량 비교</title>
+  <desc id="description">썸네일과 전체 배포 산출물의 최적화 전후 바이트 크기를 비교한 막대 차트</desc>
+  <rect width="1200" height="620" fill="#07111f" rx="24" />
+  <text x="72" y="82" fill="#f8fafc" font-family="Arial, sans-serif" font-size="34" font-weight="700">Phase 2 · 정적 전송량 비교</text>
+  <text x="72" y="120" fill="#94a3b8" font-family="Arial, sans-serif" font-size="19">실제 GPU 최종 비교와 같은 production build 기준 · 바이트는 작을수록 좋음</text>
+  <rect x="72" y="164" width="1056" height="1" fill="#334155" />
+
+  <text x="72" y="222" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="22" font-weight="700">공유 썸네일</text>
+  <text x="72" y="252" fill="#94a3b8" font-family="Arial, sans-serif" font-size="18">977,995 B → 213,019 B · 764,976 B 감소 · 78.2% 개선</text>
+  <text x="72" y="298" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="16">Before</text>
+  <rect x="180" y="278" width="720" height="30" fill="#475569" rx="6" />
+  <text x="916" y="301" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="16">955 KiB</text>
+  <text x="72" y="344" fill="#5eead4" font-family="Arial, sans-serif" font-size="16">After</text>
+  <rect x="180" y="324" width="157" height="30" fill="#14b8a6" rx="6" />
+  <text x="353" y="347" fill="#99f6e4" font-family="Arial, sans-serif" font-size="16">208 KiB · 목표 250 KiB 이하 통과</text>
+
+  <rect x="72" y="395" width="1056" height="1" fill="#334155" />
+  <text x="72" y="451" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="22" font-weight="700">전체 배포 산출물</text>
+  <text x="72" y="481" fill="#94a3b8" font-family="Arial, sans-serif" font-size="18">14,299,816 B → 13,534,839 B · 764,977 B 감소 · 5.3% 개선</text>
+  <text x="72" y="527" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="16">Before</text>
+  <rect x="180" y="507" width="720" height="30" fill="#475569" rx="6" />
+  <text x="916" y="530" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="16">13.64 MiB</text>
+  <text x="72" y="573" fill="#5eead4" font-family="Arial, sans-serif" font-size="16">After</text>
+  <rect x="180" y="553" width="681" height="30" fill="#14b8a6" rx="6" />
+  <text x="877" y="576" fill="#99f6e4" font-family="Arial, sans-serif" font-size="16">12.91 MiB · 13.63 MiB 예산 통과</text>
+</svg>

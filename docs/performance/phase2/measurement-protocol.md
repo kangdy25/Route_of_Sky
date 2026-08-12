@@ -12,10 +12,11 @@
 
 ```bash
 pnpm run perf:gpu -- --label real-gpu-before --runs 3
-pnpm run perf:gpu -- --label real-gpu-after --runs 3
+pnpm run perf:gpu -- --label phase2-final-after --runs 3
 node scripts/performance/compare-gpu.mjs \
   --before docs/performance/phase2/runs/real-gpu-before.json \
-  --after docs/performance/phase2/runs/real-gpu-after.json
+  --after docs/performance/phase2/runs/phase2-final-after.json \
+  --output docs/performance/phase2/final-comparison.md
 ```
 
 `perf:gpu`는 headless 브라우저를 사용하지 않으며, 결과에는 GPU 모델·드라이버·개인 식별 정보 대신 `hardwareAcceleration: true`만 보존합니다.
@@ -29,6 +30,12 @@ node scripts/performance/compare-gpu.mjs \
 5. 품질: 적용 품질과 적용 전환 마크
 
 Event Timing을 지원하지 않는 브라우저는 값 `null`과 `unsupported` 상태를 저장합니다. Google 3D Tiles의 외부 응답은 변동성이 있으므로 타일 안정화는 관측값이며 단독 회귀 판정 근거로 사용하지 않습니다.
+
+## 최종 비교 해석
+
+- 공식 `After`는 최신 main에서 데스크톱·CPU ×4 각각 3회 실행한 `runs/phase2-final-after.json`이다. Before 원본은 `runs/real-gpu-before.json`을 그대로 참조한다.
+- HTTP 캐시를 끄고 Weather 응답을 모킹하므로, 이 명령의 API 요청 수는 캐시 정책의 효과가 아니라 시나리오 통제를 보여준다. Weather 5분 캐시는 통합 E2E에서 별도로 검증한다.
+- 최종 수치가 서로 다른 시간대의 독립 3회 배치이므로, GPU/OS 스케줄링과 Cesium 초기화 변동을 포함한다. 성능 목표를 못 맞춘 후보 구현은 코드까지 롤백하고, 수치만 실패 근거로 보존한다.
 
 ## 개발 전용 계측
 

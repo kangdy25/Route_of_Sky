@@ -46,6 +46,20 @@
 
 [한국어 사례 연구](docs/performance/case-study.md) · [측정 프로토콜](docs/performance/measurement-protocol.md) · [전체 비교표](docs/performance/comparison.md) · [PR #16](https://github.com/kangdy25/Route_of_Sky/pull/16) · [PR #17](https://github.com/kangdy25/Route_of_Sky/pull/17) · [PR #18](https://github.com/kangdy25/Route_of_Sky/pull/18) · [PR #19](https://github.com/kangdy25/Route_of_Sky/pull/19) · [PR #20](https://github.com/kangdy25/Route_of_Sky/pull/20)
 
+## Performance Optimization Case Study — Phase 2
+
+로컬 실제 GPU Chrome, 1365×768, 캐시 비활성화, 데스크톱·CPU ×4 각각 3회 중앙값으로 재검증했습니다. 목표를 못 맞춘 런타임 실험은 코드까지 롤백하고 수치만 공개했습니다.
+
+- 배포 산출물: **14,299,816 → 13,534,839 B**, 764,977 B·**5.3% 감소**
+- 공유 썸네일: **977,995 → 213,019 B**, 764,976 B·**78.2% 감소**
+- 정적 예산: JS gzip **86,752 B**(90 KiB 이하), CSS gzip **14,947 B**(18 KiB 이하), 썸네일 **213,019 B**(250 KiB 이하) — 모두 CI 차단 예산 통과
+- 재방문 전달: `/thumbnail.jpg`와 `/cesium/*`가 Production에서 `public, max-age=31536000, immutable`으로 확인됨
+- 최종 실제 GPU 런타임: 데스크톱 FCP/LCP **640 → 732 ms**, CPU ×4 FCP/LCP **940 → 1,060 ms**로 목표 미달 — 개선으로 주장하지 않고 원본 3회 수치와 원인을 공개
+
+![Phase 2 정적 전송량 비교](docs/performance/phase2/assets/phase2-static-delivery.svg)
+
+[Phase 2 사례 연구](docs/performance/phase2/case-study.md) · [측정 프로토콜](docs/performance/phase2/measurement-protocol.md) · [최종 실제 GPU 비교](docs/performance/phase2/final-comparison.md) · [PR #22](https://github.com/kangdy25/Route_of_Sky/pull/22) · [PR #23](https://github.com/kangdy25/Route_of_Sky/pull/23) · [PR #24](https://github.com/kangdy25/Route_of_Sky/pull/24) · [PR #25](https://github.com/kangdy25/Route_of_Sky/pull/25) · [PR #26](https://github.com/kangdy25/Route_of_Sky/pull/26)
+
 ## ✨ 주요 기능
 
 - 🌆 **Cesium 기반의 실사 3D 렌더링**
