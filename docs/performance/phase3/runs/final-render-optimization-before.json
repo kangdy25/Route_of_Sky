@@ -1,0 +1,24 @@
+{
+  "measurement": "Phase 3 final render optimization decision baseline",
+  "source": "render-trace-after.json",
+  "sourceCommit": "8d90518",
+  "runtimeCommit": "8d90518",
+  "conditions": {
+    "browser": "Google Chrome",
+    "headless": false,
+    "hardwareAcceleration": true,
+    "viewport": "1365x768",
+    "cacheDisabled": true,
+    "weatherResponse": "fixed mock",
+    "sampleMs": 20000,
+    "runs": 3,
+    "lowEndCpuSlowdownMultiplier": 4,
+    "quality": "medium"
+  },
+  "medianFrameP95Ms": {
+    "rain": 400.9,
+    "storm": 383.3,
+    "snow": 449.9
+  },
+  "decision": "unclassified: the leading Composite category was only 1.01x to 1.05x JavaScript, below the 1.50x implementation threshold"
+}

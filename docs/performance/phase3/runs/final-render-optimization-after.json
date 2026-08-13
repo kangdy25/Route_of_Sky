@@ -1,0 +1,19 @@
+{
+  "measurement": "Phase 3 final render optimization decision after",
+  "source": "render-trace-after.json",
+  "sourceCommit": "8d90518",
+  "runtimeCommit": "8d90518",
+  "runtimeChange": false,
+  "reason": "No single bottleneck met the required 1.50x dominance threshold, so no functional experiment was authorized.",
+  "medianFrameP95Ms": {
+    "rain": 400.9,
+    "storm": 383.3,
+    "snow": 449.9
+  },
+  "comparison": {
+    "rain": { "absoluteDifferenceMs": 0, "improvementPercent": 0 },
+    "storm": { "absoluteDifferenceMs": 0, "improvementPercent": 0 },
+    "snow": { "absoluteDifferenceMs": 0, "improvementPercent": 0 }
+  },
+  "verdict": "target not attempted; diagnostic conclusion only"
+}
