@@ -61,4 +61,4 @@ trace 범주는 포함 관계가 있을 수 있고 Cesium/GPU 항목도 proxy다
 
 - [PR #29 — 실제 GPU 렌더링 trace 기준선](https://github.com/kangdy25/Route_of_Sky/pull/29)
 - [PR #30 — 최종 렌더링 최적화 판정](https://github.com/kangdy25/Route_of_Sky/pull/30)
-- Phase 3 최종 사례 연구 PR은 병합 후 이 문서와 README에서 링크한다.
+- [PR #31 — 최종 사례 연구와 재측정](https://github.com/kangdy25/Route_of_Sky/pull/31)

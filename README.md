@@ -72,7 +72,7 @@
 
 ![Phase 3 CPU ×4 Medium raw 재측정](docs/performance/phase3/assets/final-frame-p95.svg)
 
-[Phase 3 사례 연구](docs/performance/phase3/case-study.md) · [측정 프로토콜](docs/performance/phase3/measurement-protocol.md) · [최종 비교](docs/performance/phase3/comparison.md) · [PR #29](https://github.com/kangdy25/Route_of_Sky/pull/29) · [PR #30](https://github.com/kangdy25/Route_of_Sky/pull/30)
+[Phase 3 사례 연구](docs/performance/phase3/case-study.md) · [측정 프로토콜](docs/performance/phase3/measurement-protocol.md) · [최종 비교](docs/performance/phase3/comparison.md) · [PR #29](https://github.com/kangdy25/Route_of_Sky/pull/29) · [PR #30](https://github.com/kangdy25/Route_of_Sky/pull/30) · [PR #31](https://github.com/kangdy25/Route_of_Sky/pull/31)
 
 ## ✨ 주요 기능
 
