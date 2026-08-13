@@ -5,10 +5,10 @@ import { gzipSync } from 'node:zlib'
 import { chromium } from '@playwright/test'
 
 const root = process.cwd()
-const label = readArgument('--label') ?? 'phase2-local'
+const label = readArgument('--label') ?? 'gpu-local'
 const runs = Number(readArgument('--runs') ?? 3)
 const sampleMs = Number(readArgument('--sample-ms') ?? process.env.PERF_SAMPLE_MS ?? 20_000)
-const outputDir = resolve(root, 'docs/performance/phase2/runs')
+const outputDir = resolve(root, 'docs/performance/runs')
 const previewUrl = readArgument('--url') ?? 'http://127.0.0.1:4173'
 const browserPath =
   readArgument('--browser-path') ??

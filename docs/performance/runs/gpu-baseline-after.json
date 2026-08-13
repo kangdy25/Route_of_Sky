@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "real-gpu-after",
+  "label": "gpu-baseline-after",
   "generatedAt": "2026-08-12T15:51:01.655Z",
   "conditions": {
     "browser": "Google Chrome",

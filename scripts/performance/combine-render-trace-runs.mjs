@@ -3,14 +3,14 @@ import { basename, resolve } from 'node:path'
 
 const root = process.cwd()
 const inputFiles = [
-  'final-after-desktop-high-rain.json',
-  'final-after-desktop-high-storm.json',
-  'final-after-desktop-high-snow.json',
-  'final-after-low-end-medium-rain.json',
-  'final-after-low-end-medium-storm.json',
-  'final-after-low-end-medium-snow.json',
-].map((file) => resolve(root, 'docs/performance/phase3/runs', file))
-const destination = resolve(root, 'docs/performance/phase3/runs/final-after.json')
+  'render-final-desktop-high-rain.json',
+  'render-final-desktop-high-storm.json',
+  'render-final-desktop-high-snow.json',
+  'render-final-cpu4-medium-rain.json',
+  'render-final-cpu4-medium-storm.json',
+  'render-final-cpu4-medium-snow.json',
+].map((file) => resolve(root, 'docs/performance/runs', file))
+const destination = resolve(root, 'docs/performance/runs/render-final-after.json')
 
 const fragments = await Promise.all(
   inputFiles.map(async (file) => ({
@@ -21,7 +21,7 @@ const fragments = await Promise.all(
 const first = fragments[0].data
 const result = {
   schemaVersion: first.schemaVersion,
-  label: 'final-after',
+  label: 'render-final-after',
   generatedAt: new Date().toISOString(),
   conditions: {
     ...first.conditions,

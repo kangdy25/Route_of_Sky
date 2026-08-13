@@ -2,9 +2,9 @@
 
 ## 요약
 
-Route of Sky는 Cesium 3D 도시 장면 위에 실시간 날씨 대시보드와 Rain·Storm·Snow 효과를 함께 렌더링한다. 이 사례 연구는 여러 시점의 작업을 Phase 순서가 아니라 사용자가 겪는 문제와 해결 방식으로 묶는다.
+Route of Sky는 Cesium 3D 도시 장면 위에 실시간 날씨 대시보드와 Rain·Storm·Snow 효과를 함께 렌더링한다. 이 문서는 정적 전달, Weather API, 장면 품질, 실제 GPU 진단을 하나의 최적화 이력으로 설명한다.
 
-핵심 원칙은 하나다. **배포에 남긴 변경만 성과로 기록하고, 실제 GPU에서 인과관계가 확정되지 않은 렌더링 실험은 성공으로 주장하지 않는다.**
+핵심 원칙은 단순하다. **배포에 남은 변경만 성과로 기록하고, 실제 GPU에서 인과관계가 확정되지 않은 렌더링 실험은 성공으로 주장하지 않는다.**
 
 ![성능 최적화 핵심 비교](assets/performance-overview.svg)
 
@@ -44,9 +44,9 @@ Route of Sky는 Cesium 3D 도시 장면 위에 실시간 날씨 대시보드와 
 | 앱 JS gzip | 86,752B | 86,752B | 0B | 0.0% | 90KiB 이하 통과 |
 | 앱 CSS gzip | 14,950B | 14,947B | 3B 감소 | 0.0% | 18KiB 이하 통과 |
 
-Cesium을 ESM으로 재빌드해 더 줄이는 실험도 했지만, 앱 JS gzip이 1,183.55KB로 커져 초기 파싱 비용과 예산을 크게 초과했다. 이 실험은 채택하지 않았다. 현재의 배포 크기 13.63MiB도 10MiB 목표에는 미달하므로, Cesium Worker·텍스처를 근거 없이 삭제하지 않고 제약으로 공개한다.
+Cesium을 ESM으로 재빌드해 더 줄이는 실험도 했지만, 앱 JS gzip이 1,183.55KiB로 커져 초기 파싱 비용과 예산을 크게 초과했다. 이 실험은 채택하지 않았다. 현재의 배포 크기 13.63MiB도 10MiB 목표에는 미달하므로, Cesium Worker·텍스처를 근거 없이 삭제하지 않고 제약으로 공개한다.
 
-![정적 전달량 비교](phase2/assets/phase2-static-delivery.svg)
+![정적 전달량 비교](assets/static-delivery.svg)
 
 ## 3. Weather API 캐시와 요청 제어
 
@@ -85,13 +85,13 @@ Auto 모드는 5초 frame p95가 40ms를 넘으면 한 단계 낮추고, 10초 �
 
 초기 동일 환경 software WebGL 측정에서는 프레임 p95가 개선됐다. 예를 들어 데스크톱 Storm은 1,349.9 → 783.3ms, 저사양 Rain은 1,117.6 → 834.3ms였다. 다만 이 환경은 software renderer였으므로 실제 GPU의 절대 성능 수치로 사용하지 않았다.
 
-실제 GPU Chrome에서 초기 로딩 분리와 rAF 렌더 루프 후보도 측정했다. 하지만 유지 조건을 충족하지 못해 코드를 롤백했다. 예를 들어 CPU ×4 Rain/Storm/Snow p95는 282.6/250.0/150.5ms에서 333.6/298.0/217.3ms로 악화돼, “개선”이라고 기록하지 않았다.
+실제 GPU Chrome에서 초기 로딩 분리와 rAF 렌더 루프 후보도 측정했다. 그러나 유지 조건을 충족하지 못해 코드를 롤백했다. 예를 들어 CPU ×4 Rain/Storm/Snow p95는 282.6/250.0/150.5ms에서 333.6/298.0/217.3ms로 악화돼, “개선”이라고 기록하지 않았다.
 
 마지막 실제 GPU trace에서는 CPU ×4 Medium의 Composite와 JavaScript 비용 비율이 Rain 1.04×, Storm 1.04×, Snow 1.01×였다. 확정 기준인 1.50×에 미달해 단일 병목은 `unclassified`로 판정했다. 따라서 Canvas 입자, Cesium 상세도, Medium/Low 효과를 추정으로 추가 변경하지 않았다.
 
 | 항목 | Before | After | 절대 차이 | 개선율 | 최종 판정 |
 | --- | ---: | ---: | ---: | ---: | --- |
-| 실제 GPU 렌더링 코드 | Phase 2 상태 | 변경 없음 | 0 | 0.0% | 안전한 개선 미확정 |
+| 실제 GPU 렌더링 코드 | 실제 GPU 진단 전 상태 | 변경 없음 | 0 | 0.0% | 안전한 개선 미확정 |
 | CPU ×4 Medium trace 병목 | Composite 우세처럼 보임 | JS와 1.01–1.05× 차이 | 확정 기준 미달 | 해당 없음 | `unclassified` |
 | High 시각 품질 | 기준 프로필 | 변경 없음 | 해당 없음 | 해당 없음 | 통과 |
 
@@ -99,7 +99,7 @@ Auto 모드는 5초 frame p95가 40ms를 넘으면 한 단계 낮추고, 10초 �
 
 | High Storm | Medium Rain | Low Snow |
 | --- | --- | --- |
-| ![High Storm](phase3/assets/visuals/high-storm.webp) | ![Medium Rain](phase3/assets/visuals/medium-rain.webp) | ![Low Snow](phase3/assets/visuals/low-snow.webp) |
+| ![High Storm](assets/visuals/high-storm.webp) | ![Medium Rain](assets/visuals/medium-rain.webp) | ![Low Snow](assets/visuals/low-snow.webp) |
 
 ## 5. 재현 가능한 검증 체계
 
@@ -116,17 +116,19 @@ Auto 모드는 5초 frame p95가 40ms를 넘으면 한 단계 낮추고, 10초 �
 
 이 결정은 목표 미달을 숨기지 않고, “무엇을 빨라지게 했는지”와 “왜 더 건드리지 않았는지”를 모두 증명하는 결과다.
 
-## 원본 측정·의사결정 자료
+## 측정 원본과 의사결정 근거
 
-통합 문서는 포트폴리오용 요약이며, 아래 자료는 수치와 판단의 감사 가능한 근거로 보존한다.
-
-- [Phase 1 아카이브 사례 연구](phase1-case-study.md) · [비교표](comparison.md) · [원본 runs](runs/)
-- [실제 GPU·정적 전달 자료](phase2/case-study.md) · [최종 비교](phase2/final-comparison.md) · [원본 runs](phase2/runs/)
-- [실제 GPU trace·최종 렌더링 판단](phase3/case-study.md) · [최종 비교](phase3/comparison.md) · [원본 runs](phase3/runs/)
-- [통합 작업 로그](../worklogs/performance-case-study-consolidation.md)
+- [전체 비교표](comparison.md): 적용한 변경과 롤백한 실험의 전·후 수치·판정
+- [측정 프로토콜](measurement-protocol.md): software WebGL 이력과 실제 GPU 공식 기준의 구분
+- [시간순 최적화 로그](optimization-log.md): 가설, 구현, 원본 수치, 롤백 조건
+- [원본 실행 결과](runs/): 각 3회값과 중앙값을 보존한 JSON
+- [시각 자료](assets/): 정적 전달량, 품질 검증, 전·후 캡처
+- [통합 작업 일지](../worklogs/performance-optimization.md): 문서·원본 경로 통합 작업의 검증 기록
 
 ## PR 이력
 
-- [PR #16–#20](https://github.com/kangdy25/Route_of_Sky/pulls?q=is%3Apr+is%3Aclosed+%28%2316+OR+%2317+OR+%2318+OR+%2319+OR+%2320%29): 기준선, API 캐시, 품질, 자산, 최초 사례 연구
-- [PR #22–#27](https://github.com/kangdy25/Route_of_Sky/pulls?q=is%3Apr+is%3Aclosed+%28%2322+OR+%2323+OR+%2324+OR+%2325+OR+%2326+OR+%2327%29): 실제 GPU 측정, 정적 전달, CI 예산
-- [PR #28–#31](https://github.com/kangdy25/Route_of_Sky/pulls?q=is%3Apr+is%3Aclosed+%28%2328+OR+%2329+OR+%2330+OR+%2331%29): 작업 규칙, trace, 최종 렌더링 판단, 사례 연구
+| 범위 | PR | 결과 |
+| --- | --- | --- |
+| 최초 기준선·API 캐시·품질·정적 자산·사례 연구 | [#16–#20](https://github.com/kangdy25/Route_of_Sky/pulls?q=is%3Apr+is%3Aclosed+%28%2316+OR+%2317+OR+%2318+OR+%2319+OR+%2320%29) | 적용 |
+| 실제 GPU 측정·초기 로딩/rAF 실험·정적 전달·예산 CI·최종 비교 | [#22–#27](https://github.com/kangdy25/Route_of_Sky/pulls?q=is%3Apr+is%3Aclosed+%28%2322+OR+%2323+OR+%2324+OR+%2325+OR+%2326+OR+%2327%29) | 정적 전달·CI 적용, 런타임 후보 롤백 |
+| 작업 규칙·실제 GPU trace·최종 렌더링 판단·재측정 | [#28–#31](https://github.com/kangdy25/Route_of_Sky/pulls?q=is%3Apr+is%3Aclosed+%28%2328+OR+%2329+OR+%2330+OR+%2331%29) | 병목 미확정, 코드 변경 없음 |

@@ -1,5 +1,5 @@
 {
-  "measurement": "Phase 3 final comparison baseline",
+  "measurement": "final render comparison baseline",
   "source": "render-trace-after.json",
   "sourceCommit": "8d90518",
   "runtimeCommit": "b386002",
@@ -25,5 +25,5 @@
       "snow": 449.9
     }
   },
-  "note": "This is the last pre-final measurement. Phase 3 made no runtime rendering change because no trace category met the 1.50x dominance threshold."
+  "note": "This is the last pre-final measurement. No runtime rendering change was made because no trace category met the 1.50x dominance threshold."
 }

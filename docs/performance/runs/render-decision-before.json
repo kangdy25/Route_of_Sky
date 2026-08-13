@@ -1,5 +1,5 @@
 {
-  "measurement": "Phase 3 final render optimization decision baseline",
+  "measurement": "final render optimization decision baseline",
   "source": "render-trace-after.json",
   "sourceCommit": "8d90518",
   "runtimeCommit": "8d90518",
