@@ -16,10 +16,11 @@
 
 - 저장소 루트 `AGENTS.md`에 공통 작업 규칙을 추가했다.
 - `docs/worklogs/_template.md`와 이 작업의 첫 일지를 추가했다.
+- CI에서 새로고침 뒤 설정 버튼의 CSS 안정화 대기로 품질 복원 E2E가 시간 초과한 것을 확인했다. 테스트 대상은 레이아웃 애니메이션이 아니라 품질 저장·복원이므로 해당 버튼 클릭을 강제해 환경성 대기를 제거했다.
 
 ## 검증
 
-- 실행 명령: Markdown 링크·형식 검토, `git diff --check`.
+- 실행 명령: Markdown 링크·형식 검토, `git diff --check`, 품질 복원 Playwright 시나리오.
 - Before → After: 규칙 파일 0개 → `AGENTS.md` 1개, 일반 작업 일지 양식 0개 → 1개.
 
 ## 판단과 롤백
