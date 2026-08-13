@@ -18,7 +18,9 @@
     "perf:measure": "node scripts/performance/measure.mjs",
     "perf:gpu": "node scripts/performance/measure-gpu.mjs",
     "perf:gpu:compare": "node scripts/performance/compare-gpu.mjs",
+    "perf:render-trace": "node scripts/performance/measure-render-trace.mjs",
     "perf:budget": "node scripts/performance/check-budget.mjs",
+    "test:perf-scripts": "node --test scripts/performance/render-trace-analysis.node.mjs",
     "perf:compare": "node scripts/performance/compare.mjs",
     "perf:capture": "node scripts/performance/capture.mjs"
   },
