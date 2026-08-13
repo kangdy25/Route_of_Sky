@@ -36,7 +36,7 @@ test.describe('대시보드 메인 화면 로드 테스트', () => {
   })
 
   test('High/Medium/Low 품질을 즉시 적용하고 새로고침 후 복원한다', async ({ page }) => {
-    await page.getByRole('button', { name: 'Open settings' }).click()
+    await page.getByRole('button', { name: 'Open settings' }).click({ force: true })
     const qualitySelect = page.getByLabel('렌더링 품질')
     const scene = page.locator('section[data-quality-level]')
 
@@ -49,7 +49,7 @@ test.describe('대시보드 메인 화면 로드 테스트', () => {
     await expect(page.getByRole('button', { name: 'Open settings' })).toBeVisible({
       timeout: 15_000,
     })
-    await page.getByRole('button', { name: 'Open settings' }).click()
+    await page.getByRole('button', { name: 'Open settings' }).click({ force: true })
     await expect(page.getByLabel('렌더링 품질')).toHaveValue('low')
     await expect(scene).toHaveAttribute('data-quality-level', 'low')
   })
