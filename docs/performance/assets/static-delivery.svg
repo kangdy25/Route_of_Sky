@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title description">
-  <title id="title">Route of Sky Phase 2 정적 전송량 비교</title>
+  <title id="title">Route of Sky 정적 전송량 비교</title>
   <desc id="description">썸네일과 전체 배포 산출물의 최적화 전후 바이트 크기를 비교한 막대 차트</desc>
   <rect width="1200" height="620" fill="#07111f" rx="24" />
-  <text x="72" y="82" fill="#f8fafc" font-family="Arial, sans-serif" font-size="34" font-weight="700">Phase 2 · 정적 전송량 비교</text>
+  <text x="72" y="82" fill="#f8fafc" font-family="Arial, sans-serif" font-size="34" font-weight="700">정적 전송량 비교</text>
   <text x="72" y="120" fill="#94a3b8" font-family="Arial, sans-serif" font-size="19">실제 GPU 최종 비교와 같은 production build 기준 · 바이트는 작을수록 좋음</text>
   <rect x="72" y="164" width="1056" height="1" fill="#334155" />
 

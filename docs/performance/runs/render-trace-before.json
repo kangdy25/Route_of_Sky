@@ -1,0 +1,16 @@
+{
+  "measurement": "render-trace baseline source",
+  "source": "gpu-final-after.json",
+  "sourceCommit": "d391b99",
+  "conditions": {
+    "browser": "Google Chrome",
+    "headless": false,
+    "hardwareAcceleration": true,
+    "viewport": "1365x768",
+    "cacheDisabled": true,
+    "runs": 3,
+    "sampleMs": 20000,
+    "lowEndCpuSlowdownMultiplier": 4
+  },
+  "purpose": "The trace starts without changing the runtime. It establishes fixed-quality High desktop and Medium CPU x4 scenario baselines in a separate anonymized JSON."
+}

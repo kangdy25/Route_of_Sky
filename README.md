@@ -38,9 +38,9 @@ API 요청, 정적 전달, 저사양 품질 보호를 하나의 사례 연구로
 - Weather API 요청: **2 → 1건**, **50.0% 감소**
 - 실제 GPU 렌더링 trace는 단일 병목을 확정하지 못해, High 품질을 낮추거나 추측성 코드를 추가하지 않았습니다.
 
-![정적 전달량 비교](docs/performance/phase2/assets/phase2-static-delivery.svg)
+![정적 전달량 비교](docs/performance/assets/static-delivery.svg)
 
-[통합 사례 연구](docs/performance/case-study.md) · [측정 원본과 비교 자료](docs/performance/case-study.md#원본-측정의사결정-자료) · [PR 이력](docs/performance/case-study.md#pr-이력)
+[통합 사례 연구](docs/performance/case-study.md) · [측정 원본과 비교 자료](docs/performance/case-study.md#측정-원본과-의사결정-근거) · [PR 이력](docs/performance/case-study.md#pr-이력)
 
 ## ✨ 주요 기능
 

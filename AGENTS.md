@@ -15,11 +15,11 @@
 ## 작업 일지와 문서
 
 - 일반 작업은 `docs/worklogs/<작업명>.md`에 작업 일지를 남기고 `docs/worklogs/_template.md` 양식을 따릅니다.
-- 성능 작업은 `docs/performance/phaseN/`에 독립 보관합니다.
-  - `runs/`: Before/After 원본 JSON과 중앙값
-  - `changes/`: 가설, 변경, 수치, 판단, 롤백 조건
+- 성능 작업은 시기별 폴더로 나누지 않고 `docs/performance/`에 하나의 연속된 기록으로 보관합니다.
+  - `runs/`: Before/After 원본 JSON과 중앙값. 파일명은 작업·시나리오 기반으로 짓습니다.
   - `assets/`: 동일 조건의 시각 캡처·차트
-  - `comparison.md`, `optimization-log.md`, `case-study.md`: 최종 비교·시간순 기록·공개 사례 연구
+  - `comparison.md`, `measurement-protocol.md`, `optimization-log.md`, `case-study.md`: 전체 비교·재현 조건·시간순 기록·공개 사례 연구
+  - 성능 작업 일지는 `docs/worklogs/performance-optimization.md`에 이어 쓰고, 변경 가설·수치·판정·롤백 조건을 해당 항목에 남깁니다.
 - 성능 표에는 반드시 **Before → After, 절대 차이, 개선율, 목표 판정**을 기록합니다.
 - 시간·용량·호출 수 개선율은 `(Before - After) / Before × 100`으로 계산합니다.
 - 목표 미달·실패 수치도 숨기지 않습니다. 기능 코드가 롤백되면 실패 원인, 대안, 롤백 사실을 문서와 PR에 남깁니다.

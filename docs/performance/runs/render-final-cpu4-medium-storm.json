@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "label": "final-after-low-end-medium-rain",
-  "generatedAt": "2026-08-13T10:50:56.232Z",
+  "label": "render-final-cpu4-medium-storm",
+  "generatedAt": "2026-08-13T11:02:05.434Z",
   "conditions": {
     "browser": "Google Chrome",
     "headless": false,
@@ -21,48 +21,48 @@
       "cpuSlowdownMultiplier": 4,
       "quality": "medium",
       "presets": {
-        "rain": {
+        "storm": {
           "runs": [
             {
               "run": 1,
-              "frameP95Ms": 249,
+              "frameP95Ms": 299.4,
               "trace": {
                 "mainThreadTask": {
-                  "count": 33733,
-                  "totalMs": 39272.12,
-                  "p95Ms": 1.01
+                  "count": 46259,
+                  "totalMs": 39304.56,
+                  "p95Ms": 0.76
                 },
                 "categories": {
                   "javascript": {
-                    "count": 849,
-                    "totalMs": 14760.95,
-                    "p95Ms": 129.17
+                    "count": 989,
+                    "totalMs": 12717.44,
+                    "p95Ms": 134.56
                   },
                   "gc": {
-                    "count": 1766,
-                    "totalMs": 1318.96,
-                    "p95Ms": 5.15
+                    "count": 1732,
+                    "totalMs": 1458.73,
+                    "p95Ms": 5.63
                   },
                   "paintRaster": {
-                    "count": 2707,
-                    "totalMs": 172.58,
-                    "p95Ms": 0.56
+                    "count": 1890,
+                    "totalMs": 155.79,
+                    "p95Ms": 0.68
                   },
                   "composite": {
-                    "count": 335,
-                    "totalMs": 15281.47,
-                    "p95Ms": 149.69
+                    "count": 192,
+                    "totalMs": 13188.99,
+                    "p95Ms": 210.37
                   },
                   "cesiumGpuProxy": {
-                    "count": 10107,
-                    "totalMs": 1852.16,
-                    "p95Ms": 0.62
+                    "count": 8395,
+                    "totalMs": 1848.33,
+                    "p95Ms": 0.72
                   }
                 },
                 "dominance": {
                   "category": "unclassified",
-                  "firstTotalMs": 15281.47,
-                  "secondTotalMs": 14760.95,
+                  "firstTotalMs": 13188.99,
+                  "secondTotalMs": 12717.44,
                   "ratioToSecond": 1.04,
                   "rule": "all runs must share one category whose inclusive trace duration is at least 1.5x the second category"
                 }
@@ -77,45 +77,45 @@
             },
             {
               "run": 2,
-              "frameP95Ms": 165.9,
+              "frameP95Ms": 117.3,
               "trace": {
                 "mainThreadTask": {
-                  "count": 28042,
-                  "totalMs": 37725.07,
-                  "p95Ms": 1.48
+                  "count": 28080,
+                  "totalMs": 27404.85,
+                  "p95Ms": 1.86
                 },
                 "categories": {
                   "javascript": {
-                    "count": 1192,
-                    "totalMs": 15027.21,
-                    "p95Ms": 89.64
+                    "count": 1882,
+                    "totalMs": 9941.16,
+                    "p95Ms": 30.75
                   },
                   "gc": {
-                    "count": 1546,
-                    "totalMs": 933.78,
-                    "p95Ms": 3.79
+                    "count": 1694,
+                    "totalMs": 918.08,
+                    "p95Ms": 3.88
                   },
                   "paintRaster": {
-                    "count": 5319,
-                    "totalMs": 396.1,
-                    "p95Ms": 0.62
+                    "count": 7412,
+                    "totalMs": 565.34,
+                    "p95Ms": 0.64
                   },
                   "composite": {
-                    "count": 665,
-                    "totalMs": 15614.86,
-                    "p95Ms": 100.43
+                    "count": 1278,
+                    "totalMs": 10650.65,
+                    "p95Ms": 79.18
                   },
                   "cesiumGpuProxy": {
-                    "count": 13646,
-                    "totalMs": 2352.16,
+                    "count": 13870,
+                    "totalMs": 2159.66,
                     "p95Ms": 0.62
                   }
                 },
                 "dominance": {
                   "category": "unclassified",
-                  "firstTotalMs": 15614.86,
-                  "secondTotalMs": 15027.21,
-                  "ratioToSecond": 1.04,
+                  "firstTotalMs": 10650.65,
+                  "secondTotalMs": 9941.16,
+                  "ratioToSecond": 1.07,
                   "rule": "all runs must share one category whose inclusive trace duration is at least 1.5x the second category"
                 }
               },
@@ -129,45 +129,45 @@
             },
             {
               "run": 3,
-              "frameP95Ms": 233.8,
+              "frameP95Ms": 216,
               "trace": {
                 "mainThreadTask": {
-                  "count": 37339,
-                  "totalMs": 35791.75,
-                  "p95Ms": 1.34
+                  "count": 33133,
+                  "totalMs": 37823.2,
+                  "p95Ms": 1.58
                 },
                 "categories": {
                   "javascript": {
-                    "count": 1468,
-                    "totalMs": 12231.84,
-                    "p95Ms": 81.28
+                    "count": 1233,
+                    "totalMs": 13667.33,
+                    "p95Ms": 106.88
                   },
                   "gc": {
-                    "count": 1749,
-                    "totalMs": 1301.6,
-                    "p95Ms": 5.24
+                    "count": 1699,
+                    "totalMs": 1178.48,
+                    "p95Ms": 5.07
                   },
                   "paintRaster": {
-                    "count": 5605,
-                    "totalMs": 392.48,
-                    "p95Ms": 0.6
+                    "count": 4692,
+                    "totalMs": 370.23,
+                    "p95Ms": 0.63
                   },
                   "composite": {
-                    "count": 742,
-                    "totalMs": 13012.42,
-                    "p95Ms": 124.19
+                    "count": 564,
+                    "totalMs": 14260.46,
+                    "p95Ms": 139.83
                   },
                   "cesiumGpuProxy": {
-                    "count": 12647,
-                    "totalMs": 2142.47,
-                    "p95Ms": 0.58
+                    "count": 12923,
+                    "totalMs": 2213.26,
+                    "p95Ms": 0.63
                   }
                 },
                 "dominance": {
                   "category": "unclassified",
-                  "firstTotalMs": 13012.42,
-                  "secondTotalMs": 12231.84,
-                  "ratioToSecond": 1.06,
+                  "firstTotalMs": 14260.46,
+                  "secondTotalMs": 13667.33,
+                  "ratioToSecond": 1.04,
                   "rule": "all runs must share one category whose inclusive trace duration is at least 1.5x the second category"
                 }
               },
@@ -183,145 +183,145 @@
           "summary": {
             "frameP95Ms": {
               "samples": [
-                249,
-                165.9,
-                233.8
+                299.4,
+                117.3,
+                216
               ],
-              "median": 233.8,
-              "p50": 233.8,
-              "p95": 249,
-              "total": 648.7
+              "median": 216,
+              "p50": 216,
+              "p95": 299.4,
+              "total": 632.7
             },
             "mainThreadTaskP95Ms": {
               "samples": [
-                1.01,
-                1.48,
-                1.34
+                0.76,
+                1.86,
+                1.58
               ],
-              "median": 1.34,
-              "p50": 1.34,
-              "p95": 1.48,
-              "total": 3.83
+              "median": 1.58,
+              "p50": 1.58,
+              "p95": 1.86,
+              "total": 4.2
             },
             "traceCategories": {
               "javascript": {
                 "totalMs": {
                   "samples": [
-                    14760.95,
-                    15027.21,
-                    12231.84
+                    12717.44,
+                    9941.16,
+                    13667.33
                   ],
-                  "median": 14760.95,
-                  "p50": 14760.95,
-                  "p95": 15027.21,
-                  "total": 42020
+                  "median": 12717.44,
+                  "p50": 12717.44,
+                  "p95": 13667.33,
+                  "total": 36325.93
                 },
                 "p95Ms": {
                   "samples": [
-                    129.17,
-                    89.64,
-                    81.28
+                    134.56,
+                    30.75,
+                    106.88
                   ],
-                  "median": 89.64,
-                  "p50": 89.64,
-                  "p95": 129.17,
-                  "total": 300.09
+                  "median": 106.88,
+                  "p50": 106.88,
+                  "p95": 134.56,
+                  "total": 272.19
                 }
               },
               "gc": {
                 "totalMs": {
                   "samples": [
-                    1318.96,
-                    933.78,
-                    1301.6
+                    1458.73,
+                    918.08,
+                    1178.48
                   ],
-                  "median": 1301.6,
-                  "p50": 1301.6,
-                  "p95": 1318.96,
-                  "total": 3554.34
+                  "median": 1178.48,
+                  "p50": 1178.48,
+                  "p95": 1458.73,
+                  "total": 3555.29
                 },
                 "p95Ms": {
                   "samples": [
-                    5.15,
-                    3.79,
-                    5.24
+                    5.63,
+                    3.88,
+                    5.07
                   ],
-                  "median": 5.15,
-                  "p50": 5.15,
-                  "p95": 5.24,
-                  "total": 14.18
+                  "median": 5.07,
+                  "p50": 5.07,
+                  "p95": 5.63,
+                  "total": 14.58
                 }
               },
               "paintRaster": {
                 "totalMs": {
                   "samples": [
-                    172.58,
-                    396.1,
-                    392.48
+                    155.79,
+                    565.34,
+                    370.23
                   ],
-                  "median": 392.48,
-                  "p50": 392.48,
-                  "p95": 396.1,
-                  "total": 961.16
+                  "median": 370.23,
+                  "p50": 370.23,
+                  "p95": 565.34,
+                  "total": 1091.36
                 },
                 "p95Ms": {
                   "samples": [
-                    0.56,
-                    0.62,
-                    0.6
+                    0.68,
+                    0.64,
+                    0.63
                   ],
-                  "median": 0.6,
-                  "p50": 0.6,
-                  "p95": 0.62,
-                  "total": 1.78
+                  "median": 0.64,
+                  "p50": 0.64,
+                  "p95": 0.68,
+                  "total": 1.95
                 }
               },
               "composite": {
                 "totalMs": {
                   "samples": [
-                    15281.47,
-                    15614.86,
-                    13012.42
+                    13188.99,
+                    10650.65,
+                    14260.46
                   ],
-                  "median": 15281.47,
-                  "p50": 15281.47,
-                  "p95": 15614.86,
-                  "total": 43908.75
+                  "median": 13188.99,
+                  "p50": 13188.99,
+                  "p95": 14260.46,
+                  "total": 38100.1
                 },
                 "p95Ms": {
                   "samples": [
-                    149.69,
-                    100.43,
-                    124.19
+                    210.37,
+                    79.18,
+                    139.83
                   ],
-                  "median": 124.19,
-                  "p50": 124.19,
-                  "p95": 149.69,
-                  "total": 374.31
+                  "median": 139.83,
+                  "p50": 139.83,
+                  "p95": 210.37,
+                  "total": 429.38
                 }
               },
               "cesiumGpuProxy": {
                 "totalMs": {
                   "samples": [
-                    1852.16,
-                    2352.16,
-                    2142.47
+                    1848.33,
+                    2159.66,
+                    2213.26
                   ],
-                  "median": 2142.47,
-                  "p50": 2142.47,
-                  "p95": 2352.16,
-                  "total": 6346.79
+                  "median": 2159.66,
+                  "p50": 2159.66,
+                  "p95": 2213.26,
+                  "total": 6221.25
                 },
                 "p95Ms": {
                   "samples": [
+                    0.72,
                     0.62,
-                    0.62,
-                    0.58
+                    0.63
                   ],
-                  "median": 0.62,
-                  "p50": 0.62,
-                  "p95": 0.62,
-                  "total": 1.82
+                  "median": 0.63,
+                  "p50": 0.63,
+                  "p95": 0.72,
+                  "total": 1.97
                 }
               }
             },
