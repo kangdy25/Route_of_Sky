@@ -24,11 +24,19 @@ const browserPath =
   process.env.PERF_BROWSER_EXECUTABLE ??
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const skipBuild = process.argv.includes('--skip-build')
-const scenarios = [
+const allScenarios = [
   { id: 'desktop-high', cpuSlowdownMultiplier: 1, quality: 'high' },
   { id: 'low-end-medium', cpuSlowdownMultiplier: 4, quality: 'medium' },
 ]
-const presets = ['Rain', 'Storm', 'Snow']
+const allPresets = ['Rain', 'Storm', 'Snow']
+const scenarioFilter = readArgument('--scenario')
+const presetFilter = readArgument('--preset')
+const scenarios = scenarioFilter
+  ? allScenarios.filter((scenario) => scenario.id === scenarioFilter)
+  : allScenarios
+const presets = presetFilter
+  ? allPresets.filter((preset) => preset.toLowerCase() === presetFilter.toLowerCase())
+  : allPresets
 
 function readArgument(name) {
   const index = process.argv.indexOf(name)
@@ -159,7 +167,7 @@ async function measureScenarioRun(scenario, preset, runNumber) {
       })
     })
 
-    await page.goto(previewUrl, { waitUntil: 'domcontentloaded' })
+    await page.goto(previewUrl, { waitUntil: 'domcontentloaded', timeout: 90_000 })
     await page
       .locator('#cesiumContainer canvas')
       .first()
@@ -213,6 +221,14 @@ async function measureScenarioRun(scenario, preset, runNumber) {
 
 if (!Number.isInteger(runs) || runs < 1) {
   throw new Error('--runs must be a positive integer')
+}
+
+if (!scenarios.length) {
+  throw new Error(`Unknown --scenario value: ${scenarioFilter}`)
+}
+
+if (!presets.length) {
+  throw new Error(`Unknown --preset value: ${presetFilter}`)
 }
 
 await mkdir(outputDirectory, { recursive: true })
