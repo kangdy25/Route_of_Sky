@@ -30,49 +30,17 @@
 
 ## Performance Optimization Case Study
 
-프로덕션 Chromium 동일 조건 3회 중앙값으로 API·렌더링·정적 자산 최적화를 검증했습니다.
+API 요청, 정적 전달, 저사양 품질 보호를 하나의 사례 연구로 검증했습니다. 수치는 출처·측정 환경·인과관계가 분명한 경우에만 성과로 기록했습니다.
 
-- 배포 산출물: **35.78 → 13.63 MiB**, 22.16 MiB·61.9% 감소
-- 데스크톱 Storm p95: **1,349.9 → 783.3 ms**, 566.6 ms·42.0% 개선
-- 저사양 Rain p95: **1,117.6 → 834.3 ms**, 283.3 ms·25.3% 개선
-- Weather API 요청: **2 → 1건**, 1건·50.0% 감소
-- 헤더 로고: **3,872,089 → 5,154 bytes**, 99.9% 감소
+- 배포 산출물: **35.78 → 13.63MiB**, 22.16MiB·**61.9% 감소**
+- 헤더 로고: **3,872,089 → 5,154B**, **99.9% 감소**
+- 공유 썸네일: **977,995 → 213,019B**, **78.2% 감소**
+- Weather API 요청: **2 → 1건**, **50.0% 감소**
+- 실제 GPU 렌더링 trace는 단일 병목을 확정하지 못해, High 품질을 낮추거나 추측성 코드를 추가하지 않았습니다.
 
-![성능 최적화 핵심 비교](docs/performance/assets/performance-overview.svg)
+![정적 전달량 비교](docs/performance/phase2/assets/phase2-static-delivery.svg)
 
-| Before · Rain                                                                                | After · Rain                                                                                |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| <img src="docs/performance/assets/before-rain.webp" alt="최적화 전 Rain 화면" width="560" /> | <img src="docs/performance/assets/after-rain.webp" alt="최적화 후 Rain 화면" width="560" /> |
-
-[한국어 사례 연구](docs/performance/case-study.md) · [측정 프로토콜](docs/performance/measurement-protocol.md) · [전체 비교표](docs/performance/comparison.md) · [PR #16](https://github.com/kangdy25/Route_of_Sky/pull/16) · [PR #17](https://github.com/kangdy25/Route_of_Sky/pull/17) · [PR #18](https://github.com/kangdy25/Route_of_Sky/pull/18) · [PR #19](https://github.com/kangdy25/Route_of_Sky/pull/19) · [PR #20](https://github.com/kangdy25/Route_of_Sky/pull/20)
-
-## Performance Optimization Case Study — Phase 2
-
-로컬 실제 GPU Chrome, 1365×768, 캐시 비활성화, 데스크톱·CPU ×4 각각 3회 중앙값으로 재검증했습니다. 목표를 못 맞춘 런타임 실험은 코드까지 롤백하고 수치만 공개했습니다.
-
-- 배포 산출물: **14,299,816 → 13,534,839 B**, 764,977 B·**5.3% 감소**
-- 공유 썸네일: **977,995 → 213,019 B**, 764,976 B·**78.2% 감소**
-- 정적 예산: JS gzip **86,752 B**(90 KiB 이하), CSS gzip **14,947 B**(18 KiB 이하), 썸네일 **213,019 B**(250 KiB 이하) — 모두 CI 차단 예산 통과
-- 재방문 전달: `/thumbnail.jpg`와 `/cesium/*`가 Production에서 `public, max-age=31536000, immutable`으로 확인됨
-- 최종 실제 GPU 런타임: 데스크톱 FCP/LCP **640 → 732 ms**, CPU ×4 FCP/LCP **940 → 1,060 ms**로 목표 미달 — 개선으로 주장하지 않고 원본 3회 수치와 원인을 공개
-
-![Phase 2 정적 전송량 비교](docs/performance/phase2/assets/phase2-static-delivery.svg)
-
-[Phase 2 사례 연구](docs/performance/phase2/case-study.md) · [측정 프로토콜](docs/performance/phase2/measurement-protocol.md) · [최종 실제 GPU 비교](docs/performance/phase2/final-comparison.md) · [PR #22](https://github.com/kangdy25/Route_of_Sky/pull/22) · [PR #23](https://github.com/kangdy25/Route_of_Sky/pull/23) · [PR #24](https://github.com/kangdy25/Route_of_Sky/pull/24) · [PR #25](https://github.com/kangdy25/Route_of_Sky/pull/25) · [PR #26](https://github.com/kangdy25/Route_of_Sky/pull/26) · [PR #27](https://github.com/kangdy25/Route_of_Sky/pull/27)
-
-## Performance Optimization Case Study — Phase 3 (Final)
-
-마지막 렌더링 최적화 사이클은 실제 GPU Chrome·1365×768·캐시 비활성화·20초·3회 중앙값으로 병목을 먼저 검증했습니다. **안전한 개선은 확정하지 못했고, High 시각 품질과 런타임 렌더링 코드는 변경하지 않았습니다.**
-
-- CPU ×4 Medium 초기 기준선: Rain **400.9ms**, Storm **383.3ms**, Snow **449.9ms** frame p95
-- trace 병목: Composite와 JavaScript가 **1.01–1.05×**로 1.50× 확정 기준 미달 → `unclassified`
-- 최종 재측정 raw 중앙값: Rain **233.8ms**, Storm **216.0ms**, Snow **250.9ms** (각 41.7% / 43.6% / 44.2% 낮음)
-- 위 raw 차이는 **코드 변경 0건** 상태에서 발생했으므로 최적화 성공으로 주장하지 않음
-- High/Medium/Low × Rain/Storm/Snow 시각 확인, 단위 256개·E2E 7개·정적 예산 통과
-
-![Phase 3 CPU ×4 Medium raw 재측정](docs/performance/phase3/assets/final-frame-p95.svg)
-
-[Phase 3 사례 연구](docs/performance/phase3/case-study.md) · [측정 프로토콜](docs/performance/phase3/measurement-protocol.md) · [최종 비교](docs/performance/phase3/comparison.md) · [PR #29](https://github.com/kangdy25/Route_of_Sky/pull/29) · [PR #30](https://github.com/kangdy25/Route_of_Sky/pull/30) · [PR #31](https://github.com/kangdy25/Route_of_Sky/pull/31)
+[통합 사례 연구](docs/performance/case-study.md) · [측정 원본과 비교 자료](docs/performance/case-study.md#원본-측정의사결정-자료) · [PR 이력](docs/performance/case-study.md#pr-이력)
 
 ## ✨ 주요 기능
 
