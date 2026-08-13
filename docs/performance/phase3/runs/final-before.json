@@ -1,0 +1,29 @@
+{
+  "measurement": "Phase 3 final comparison baseline",
+  "source": "render-trace-after.json",
+  "sourceCommit": "8d90518",
+  "runtimeCommit": "b386002",
+  "conditions": {
+    "browser": "Google Chrome",
+    "headless": false,
+    "hardwareAcceleration": true,
+    "viewport": "1365x768",
+    "cacheDisabled": true,
+    "weatherResponse": "fixed mock",
+    "sampleMs": 20000,
+    "runs": 3
+  },
+  "referenceMedianFrameP95Ms": {
+    "desktopHigh": {
+      "rain": 166.7,
+      "storm": 182.7,
+      "snow": 166.7
+    },
+    "cpu4Medium": {
+      "rain": 400.9,
+      "storm": 383.3,
+      "snow": 449.9
+    }
+  },
+  "note": "This is the last pre-final measurement. Phase 3 made no runtime rendering change because no trace category met the 1.50x dominance threshold."
+}
