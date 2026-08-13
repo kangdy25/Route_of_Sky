@@ -1,0 +1,342 @@
+{
+  "schemaVersion": 1,
+  "label": "final-after-desktop-high-storm",
+  "generatedAt": "2026-08-13T11:13:22.841Z",
+  "conditions": {
+    "browser": "Google Chrome",
+    "headless": false,
+    "actualGpuRequired": true,
+    "rawGpuInfoPersisted": false,
+    "rawTracePersisted": false,
+    "viewport": "1365x768",
+    "cacheDisabled": true,
+    "sampleMs": 20000,
+    "runs": 3,
+    "weatherResponse": "fixed mock",
+    "dominanceRule": "same leading category across all three runs and at least 1.5x second category"
+  },
+  "scenarios": {
+    "desktop-high": {
+      "id": "desktop-high",
+      "cpuSlowdownMultiplier": 1,
+      "quality": "high",
+      "presets": {
+        "storm": {
+          "runs": [
+            {
+              "run": 1,
+              "frameP95Ms": 66.7,
+              "trace": {
+                "mainThreadTask": {
+                  "count": 37667,
+                  "totalMs": 22541.87,
+                  "p95Ms": 0.76
+                },
+                "categories": {
+                  "javascript": {
+                    "count": 2262,
+                    "totalMs": 9467.98,
+                    "p95Ms": 38.98
+                  },
+                  "gc": {
+                    "count": 3030,
+                    "totalMs": 777.81,
+                    "p95Ms": 1.71
+                  },
+                  "paintRaster": {
+                    "count": 17471,
+                    "totalMs": 299.75,
+                    "p95Ms": 0.11
+                  },
+                  "composite": {
+                    "count": 1473,
+                    "totalMs": 9700.51,
+                    "p95Ms": 42.01
+                  },
+                  "cesiumGpuProxy": {
+                    "count": 29944,
+                    "totalMs": 5496.17,
+                    "p95Ms": 1.02
+                  }
+                },
+                "dominance": {
+                  "category": "unclassified",
+                  "firstTotalMs": 9700.51,
+                  "secondTotalMs": 9467.98,
+                  "ratioToSecond": 1.02,
+                  "rule": "all runs must share one category whose inclusive trace duration is at least 1.5x the second category"
+                }
+              },
+              "environment": {
+                "hardwareAcceleration": true,
+                "viewport": "1365x768",
+                "cacheDisabled": true,
+                "cpuSlowdownMultiplier": 1,
+                "quality": "high"
+              }
+            },
+            {
+              "run": 2,
+              "frameP95Ms": 83.3,
+              "trace": {
+                "mainThreadTask": {
+                  "count": 47419,
+                  "totalMs": 31161.36,
+                  "p95Ms": 0.59
+                },
+                "categories": {
+                  "javascript": {
+                    "count": 1905,
+                    "totalMs": 13287.81,
+                    "p95Ms": 46.01
+                  },
+                  "gc": {
+                    "count": 4358,
+                    "totalMs": 1128.85,
+                    "p95Ms": 1.69
+                  },
+                  "paintRaster": {
+                    "count": 14536,
+                    "totalMs": 249.26,
+                    "p95Ms": 0.11
+                  },
+                  "composite": {
+                    "count": 1099,
+                    "totalMs": 13596.01,
+                    "p95Ms": 51.81
+                  },
+                  "cesiumGpuProxy": {
+                    "count": 26224,
+                    "totalMs": 6364.9,
+                    "p95Ms": 1.15
+                  }
+                },
+                "dominance": {
+                  "category": "unclassified",
+                  "firstTotalMs": 13596.01,
+                  "secondTotalMs": 13287.81,
+                  "ratioToSecond": 1.02,
+                  "rule": "all runs must share one category whose inclusive trace duration is at least 1.5x the second category"
+                }
+              },
+              "environment": {
+                "hardwareAcceleration": true,
+                "viewport": "1365x768",
+                "cacheDisabled": true,
+                "cpuSlowdownMultiplier": 1,
+                "quality": "high"
+              }
+            },
+            {
+              "run": 3,
+              "frameP95Ms": 83.4,
+              "trace": {
+                "mainThreadTask": {
+                  "count": 46618,
+                  "totalMs": 35204.88,
+                  "p95Ms": 0.47
+                },
+                "categories": {
+                  "javascript": {
+                    "count": 1731,
+                    "totalMs": 15306.18,
+                    "p95Ms": 53.67
+                  },
+                  "gc": {
+                    "count": 4623,
+                    "totalMs": 1293.08,
+                    "p95Ms": 1.86
+                  },
+                  "paintRaster": {
+                    "count": 12626,
+                    "totalMs": 212.77,
+                    "p95Ms": 0.11
+                  },
+                  "composite": {
+                    "count": 913,
+                    "totalMs": 15601.2,
+                    "p95Ms": 58.34
+                  },
+                  "cesiumGpuProxy": {
+                    "count": 24887,
+                    "totalMs": 6468.25,
+                    "p95Ms": 1.09
+                  }
+                },
+                "dominance": {
+                  "category": "unclassified",
+                  "firstTotalMs": 15601.2,
+                  "secondTotalMs": 15306.18,
+                  "ratioToSecond": 1.02,
+                  "rule": "all runs must share one category whose inclusive trace duration is at least 1.5x the second category"
+                }
+              },
+              "environment": {
+                "hardwareAcceleration": true,
+                "viewport": "1365x768",
+                "cacheDisabled": true,
+                "cpuSlowdownMultiplier": 1,
+                "quality": "high"
+              }
+            }
+          ],
+          "summary": {
+            "frameP95Ms": {
+              "samples": [
+                66.7,
+                83.3,
+                83.4
+              ],
+              "median": 83.3,
+              "p50": 83.3,
+              "p95": 83.4,
+              "total": 233.4
+            },
+            "mainThreadTaskP95Ms": {
+              "samples": [
+                0.76,
+                0.59,
+                0.47
+              ],
+              "median": 0.59,
+              "p50": 0.59,
+              "p95": 0.76,
+              "total": 1.82
+            },
+            "traceCategories": {
+              "javascript": {
+                "totalMs": {
+                  "samples": [
+                    9467.98,
+                    13287.81,
+                    15306.18
+                  ],
+                  "median": 13287.81,
+                  "p50": 13287.81,
+                  "p95": 15306.18,
+                  "total": 38061.97
+                },
+                "p95Ms": {
+                  "samples": [
+                    38.98,
+                    46.01,
+                    53.67
+                  ],
+                  "median": 46.01,
+                  "p50": 46.01,
+                  "p95": 53.67,
+                  "total": 138.66
+                }
+              },
+              "gc": {
+                "totalMs": {
+                  "samples": [
+                    777.81,
+                    1128.85,
+                    1293.08
+                  ],
+                  "median": 1128.85,
+                  "p50": 1128.85,
+                  "p95": 1293.08,
+                  "total": 3199.74
+                },
+                "p95Ms": {
+                  "samples": [
+                    1.71,
+                    1.69,
+                    1.86
+                  ],
+                  "median": 1.71,
+                  "p50": 1.71,
+                  "p95": 1.86,
+                  "total": 5.26
+                }
+              },
+              "paintRaster": {
+                "totalMs": {
+                  "samples": [
+                    299.75,
+                    249.26,
+                    212.77
+                  ],
+                  "median": 249.26,
+                  "p50": 249.26,
+                  "p95": 299.75,
+                  "total": 761.78
+                },
+                "p95Ms": {
+                  "samples": [
+                    0.11,
+                    0.11,
+                    0.11
+                  ],
+                  "median": 0.11,
+                  "p50": 0.11,
+                  "p95": 0.11,
+                  "total": 0.33
+                }
+              },
+              "composite": {
+                "totalMs": {
+                  "samples": [
+                    9700.51,
+                    13596.01,
+                    15601.2
+                  ],
+                  "median": 13596.01,
+                  "p50": 13596.01,
+                  "p95": 15601.2,
+                  "total": 38897.72
+                },
+                "p95Ms": {
+                  "samples": [
+                    42.01,
+                    51.81,
+                    58.34
+                  ],
+                  "median": 51.81,
+                  "p50": 51.81,
+                  "p95": 58.34,
+                  "total": 152.16
+                }
+              },
+              "cesiumGpuProxy": {
+                "totalMs": {
+                  "samples": [
+                    5496.17,
+                    6364.9,
+                    6468.25
+                  ],
+                  "median": 6364.9,
+                  "p50": 6364.9,
+                  "p95": 6468.25,
+                  "total": 18329.32
+                },
+                "p95Ms": {
+                  "samples": [
+                    1.02,
+                    1.15,
+                    1.09
+                  ],
+                  "median": 1.09,
+                  "p50": 1.09,
+                  "p95": 1.15,
+                  "total": 3.26
+                }
+              }
+            },
+            "bottleneck": {
+              "category": "unclassified",
+              "runCategories": [
+                "unclassified",
+                "unclassified",
+                "unclassified"
+              ],
+              "ruleSatisfied": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -60,6 +60,20 @@
 
 [Phase 2 사례 연구](docs/performance/phase2/case-study.md) · [측정 프로토콜](docs/performance/phase2/measurement-protocol.md) · [최종 실제 GPU 비교](docs/performance/phase2/final-comparison.md) · [PR #22](https://github.com/kangdy25/Route_of_Sky/pull/22) · [PR #23](https://github.com/kangdy25/Route_of_Sky/pull/23) · [PR #24](https://github.com/kangdy25/Route_of_Sky/pull/24) · [PR #25](https://github.com/kangdy25/Route_of_Sky/pull/25) · [PR #26](https://github.com/kangdy25/Route_of_Sky/pull/26) · [PR #27](https://github.com/kangdy25/Route_of_Sky/pull/27)
 
+## Performance Optimization Case Study — Phase 3 (Final)
+
+마지막 렌더링 최적화 사이클은 실제 GPU Chrome·1365×768·캐시 비활성화·20초·3회 중앙값으로 병목을 먼저 검증했습니다. **안전한 개선은 확정하지 못했고, High 시각 품질과 런타임 렌더링 코드는 변경하지 않았습니다.**
+
+- CPU ×4 Medium 초기 기준선: Rain **400.9ms**, Storm **383.3ms**, Snow **449.9ms** frame p95
+- trace 병목: Composite와 JavaScript가 **1.01–1.05×**로 1.50× 확정 기준 미달 → `unclassified`
+- 최종 재측정 raw 중앙값: Rain **233.8ms**, Storm **216.0ms**, Snow **250.9ms** (각 41.7% / 43.6% / 44.2% 낮음)
+- 위 raw 차이는 **코드 변경 0건** 상태에서 발생했으므로 최적화 성공으로 주장하지 않음
+- High/Medium/Low × Rain/Storm/Snow 시각 확인, 단위 256개·E2E 7개·정적 예산 통과
+
+![Phase 3 CPU ×4 Medium raw 재측정](docs/performance/phase3/assets/final-frame-p95.svg)
+
+[Phase 3 사례 연구](docs/performance/phase3/case-study.md) · [측정 프로토콜](docs/performance/phase3/measurement-protocol.md) · [최종 비교](docs/performance/phase3/comparison.md) · [PR #29](https://github.com/kangdy25/Route_of_Sky/pull/29) · [PR #30](https://github.com/kangdy25/Route_of_Sky/pull/30) · [PR #31](https://github.com/kangdy25/Route_of_Sky/pull/31)
+
 ## ✨ 주요 기능
 
 - 🌆 **Cesium 기반의 실사 3D 렌더링**
