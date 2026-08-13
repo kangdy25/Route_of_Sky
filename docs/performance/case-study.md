@@ -1,139 +1,132 @@
 # Route of Sky 성능 최적화 사례 연구
 
-## 한눈에 보는 결과
+## 요약
 
-Route of Sky는 Google Photorealistic 3D Tiles 위에 실시간 날씨, 구름, 비·눈·폭풍 효과와 대시보드를 결합한 Vue 3 애플리케이션입니다. 기능 완성 뒤 실제 병목을 측정하고 API·렌더링·정적 자산을 독립 PR로 최적화했습니다.
+Route of Sky는 Cesium 3D 도시 장면 위에 실시간 날씨 대시보드와 Rain·Storm·Snow 효과를 함께 렌더링한다. 이 사례 연구는 여러 시점의 작업을 Phase 순서가 아니라 사용자가 겪는 문제와 해결 방식으로 묶는다.
 
-![핵심 성능 전후 비교](assets/performance-overview.svg)
+핵심 원칙은 하나다. **배포에 남긴 변경만 성과로 기록하고, 실제 GPU에서 인과관계가 확정되지 않은 렌더링 실험은 성공으로 주장하지 않는다.**
 
-- 배포 산출물: 35.78 → 13.63 MiB, 22.16 MiB·61.9% 감소
-- 데스크톱 Storm p95 프레임 시간: 1,349.9 → 783.3 ms, 566.6 ms·42.0% 개선
-- 저사양 Rain p95 프레임 시간: 1,117.6 → 834.3 ms, 283.3 ms·25.3% 개선
-- Weather API 네트워크 요청: 2 → 1건, 1건·50.0% 감소
-- 헤더 로고: 3,872,089 → 5,154 bytes, 3,866,935 bytes·99.9% 감소
+![성능 최적화 핵심 비교](assets/performance-overview.svg)
 
-상대 성능은 전 지표에서 개선됐지만 배포 10 MiB, 데스크톱 FCP/LCP, 저사양 FCP, 절대 프레임 시간 목표는 달성하지 못했습니다. 미달 항목도 성공 수치와 같은 기준으로 공개합니다.
+| 사용자 문제 | 배포에 남긴 해결 | 정량 결과 | 판정 |
+| --- | --- | --- | --- |
+| 첫 방문에 큰 정적 파일을 받음 | 로고 WebP 전환, 런타임 미사용 데모 자산 분리, 썸네일 압축·정적 캐시 | 배포 산출물 **35.78 → 13.63MiB**, 로고 **3,872,089 → 5,154B**, 썸네일 **977,995 → 213,019B** | 적용·검증 완료 |
+| 같은 날씨 데이터를 반복 요청 | 5분 localStorage 캐시, 동일 요청 병합, 이전 요청 취소, 강제 새로고침 우회 | 고정 시나리오 API 요청 **2 → 1건**, 50.0% 감소 | 적용·E2E 검증 완료 |
+| 저사양 장치에서 날씨 효과가 무거움 | High/Medium/Low·Auto 품질, 선택 갱신, 실제 GPU trace로 재검증 | 단일 병목이 1.50× 기준에 미달 | 품질 저하 없이 추가 렌더링 변경 미적용 |
 
-## 프로젝트 맥락과 사용자 문제
+## 1. 사용자 경험을 기준으로 우선순위 정하기
 
-이 앱은 3D Tiles 렌더링과 2D 날씨 입자, 후처리, DOM 기반 대시보드를 동시에 갱신합니다. 초기 구현은 시각 품질과 기능 완성에 집중해 다음 문제가 남아 있었습니다.
+초기 앱은 3D Tiles, 2D 날씨 입자, 후처리, 대시보드 DOM을 동시에 갱신했다. 체감 문제는 세 가지였다.
 
-1. 모든 상태 변경이 태양·대기·구름·후처리 전체 갱신을 유발했습니다.
-2. 강한 비·폭풍·눈에서 고정된 입자 수와 해상도를 사용해 느린 장치도 같은 부하를 감당했습니다.
-3. Weather API는 같은 지역 재진입과 새로고침 때도 매번 호출됐습니다.
-4. 3,174px PNG 로고와 런타임 미사용 GIF 두 개가 public에 있어 배포 산출물이 35.78 MiB였습니다.
+1. 첫 화면에 표시 크기보다 훨씬 큰 이미지와 런타임에서 쓰지 않는 자산이 포함됐다.
+2. 같은 지역을 다시 보거나 새로고침해도 Weather API를 다시 호출했다.
+3. 비·눈·폭풍과 3D 장면의 비용이 섞여 저사양 환경에서 어떤 경로를 고쳐야 할지 확정하기 어려웠다.
 
-사용자 관점의 핵심 문제는 “날씨를 바꿀수록 화면 반응이 느려지고, 같은 데이터를 다시 기다리며, 첫 화면을 위해 불필요하게 큰 파일을 받는다”는 것이었습니다.
+우선 정적 자산과 API 요청처럼 원인·효과가 분명하고 기능 위험이 낮은 작업을 적용했다. 렌더링은 품질을 낮추기 전에 실제 GPU 측정과 trace를 추가했다.
 
-## 측정 원칙
+## 2. 정적 자산과 전달 최적화
 
-- 프로덕션 빌드, Chromium 1365×768, HTTP 캐시 비활성화
-- 데스크톱과 CPU 4배 제한 환경을 각각 3회 실행한 중앙값
-- Rain, Storm, Snow를 각각 20초 실행해 rAF 간격 p95 수집
-- Weather API는 동일한 고정 응답으로 대체해 외부 변동을 제거
-- Google 3D Tiles는 실제 외부 서비스로 유지하되 단독 회귀 판정에 사용하지 않음
-- 개선율: `(Before - After) / Before × 100`
+### 변경
 
-세부 재현 방법은 [측정 프로토콜](measurement-protocol.md), 원본은 [Before JSON](runs/before.json)과 [After JSON](runs/after.json)에 보존했습니다.
+- 3,174px PNG 헤더 로고를 실제 표시 크기 128px WebP로 교체했다.
+- 런타임에서 사용하지 않는 데모 GIF를 문서 자산으로 분리했다.
+- 공유 썸네일을 시각 검증한 경량 이미지로 교체했다.
+- `/thumbnail.jpg`와 `/cesium/*`에 `public, max-age=31536000, immutable` 캐시 정책을 추가했다.
+- JS·CSS gzip, 전체 배포 크기, 썸네일 크기를 CI 성능 예산으로 검사한다.
 
-## 병목 발견과 우선순위
+### 결과
 
-### 1. 배포 자산
+| 지표 | Before | After | 절대 차이 | 개선율 | 최종 판정 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 배포 산출물 | 35.78MiB | 13.63MiB | 22.16MiB 감소 | 61.9% | 적용 완료. 10MiB 목표는 미달 |
+| 헤더 로고 | 3,872,089B | 5,154B | 3,866,935B 감소 | 99.9% | 통과 |
+| 공유 썸네일 | 977,995B | 213,019B | 764,976B 감소 | 78.2% | 250KiB 이하 통과 |
+| 앱 JS gzip | 86,752B | 86,752B | 0B | 0.0% | 90KiB 이하 통과 |
+| 앱 CSS gzip | 14,950B | 14,947B | 3B 감소 | 0.0% | 18KiB 이하 통과 |
 
-기준선 37,522,860 bytes 중 public의 로고와 GIF만 23,248,881 bytes였습니다. 코드 변경보다 위험이 낮고 개선 상한이 명확해 정적 자산을 높은 우선순위로 분류했습니다.
+Cesium을 ESM으로 재빌드해 더 줄이는 실험도 했지만, 앱 JS gzip이 1,183.55KB로 커져 초기 파싱 비용과 예산을 크게 초과했다. 이 실험은 채택하지 않았다. 현재의 배포 크기 13.63MiB도 10MiB 목표에는 미달하므로, Cesium Worker·텍스처를 근거 없이 삭제하지 않고 제약으로 공개한다.
 
-### 2. 중복 API 호출
+![정적 전달량 비교](phase2/assets/phase2-static-delivery.svg)
 
-고정 시나리오에서 초기 진입과 새로고침이 각각 Weather API를 호출해 총 2건이 발생했습니다. 동일 좌표·5분 이내 데이터는 사용자에게 의미 있는 신선도 차이가 없어 캐시 대상으로 판단했습니다.
+## 3. Weather API 캐시와 요청 제어
 
-### 3. 날씨 효과와 전체 씬 갱신
+### 변경
 
-기준선 데스크톱 p95는 Rain 849.9 ms, Storm 1,349.9 ms, Snow 1,333.6 ms였습니다. 헤드리스 software WebGL이라는 제약을 감안해 절대 FPS보다 동일 환경의 상대 차이를 최적화 판단에 사용했습니다.
+- 위도·경도를 정규화한 키로 5분 TTL localStorage 캐시를 저장한다.
+- 유효 캐시는 즉시 화면에 반영한다.
+- 같은 좌표의 동시 요청은 Promise 하나로 병합한다.
+- 빠른 지역 전환에서는 이전 `AbortController` 요청을 취소해 늦은 응답이 현재 지역을 덮어쓰지 못하게 한다.
+- “Render Current Weather”만 `force: true`로 캐시를 우회한다.
+- 만료 캐시는 네트워크 오류 때만 복구값으로 사용하고 데이터 경과 시간을 표시한다.
 
-## 최적화 1 · Weather API 캐시와 요청 제어
+### 결과와 데이터 신선도
 
-좌표를 정규화한 키로 localStorage에 5분 TTL 캐시를 저장합니다. 유효 캐시는 즉시 화면에 반영하고, 같은 좌표의 동시 요청은 하나의 Promise로 병합합니다. 빠르게 지역을 바꾸면 이전 AbortController 요청을 취소해 늦은 응답이 최신 지역을 덮어쓰지 못하게 했습니다.
+| 지표 | Before | After | 절대 차이 | 개선율 | 최종 판정 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 고정 시나리오 API 네트워크 요청 | 2건 | 1건 | 1건 감소 | 50.0% | 통과 |
+| 새로고침이 추가한 요청 | 1건 | 0건 | 1건 감소 | 100.0% | 통과 |
+| 캐시 반영 p95 | 측정 불가 | 0.30ms | 측정 불가 | 측정 불가 | 100ms 이하 통과 |
 
-“Render Current Weather”는 사용자가 명시적으로 최신 데이터를 요구하는 동작이므로 `force: true`로 캐시를 우회합니다. 만료 데이터는 정상 흐름에서 사용하지 않고 네트워크 오류 때만 복구값으로 노출하며 데이터 경과 시간을 표시합니다.
+공식 GPU 측정은 재현성을 위해 HTTP 캐시를 끄고 Weather 응답도 고정 mock으로 바꾼다. 이 통제 환경의 `2 → 2건`은 캐시 실패가 아니라 네트워크 조건을 고정한 결과다. 실제 재방문 0건과 강제 새로고침 우회는 Playwright 통합 테스트로 검증했다.
 
-결과는 총 요청 2 → 1건으로 50.0% 감소했고, 새로고침이 추가한 요청은 1 → 0건이 됐습니다. 캐시 hydration은 데스크톱 0.30 ms로 p95 100 ms 목표를 통과했습니다.
+## 4. 렌더링 품질과 저사양 사용자 경험
 
-## 최적화 2 · 적응형 씬 품질과 선택 갱신
+### 배포에 남긴 품질 보호 장치
 
-| 단계   | 해상도 | 날씨 FPS | 입자 | 구름 | 후처리 | 눈 효과    |
-| ------ | -----: | -------: | ---: | ---: | ------ | ---------- |
-| High   |   1.00 |       30 | 100% |   34 | 활성   | 그라데이션 |
-| Medium |   0.85 |       24 |  70% |   22 | 활성   | 그라데이션 |
-| Low    |   0.70 |       20 |  45% |   12 | 비활성 | 단색 원형  |
+| 품질 | 해상도 | 날씨 FPS | 입자 | 구름 | 후처리 | 목적 |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| High | 1.00 | 30 | 100% | 34 | 활성 | 기준 시각 품질 보존 |
+| Medium | 0.85 | 24 | 70% | 22 | 활성 | 저사양에서 효과와 부하 균형 |
+| Low | 0.70 | 20 | 45% | 12 | 비활성 | 최소 사양에서 기능 유지 |
 
-Auto 모드는 5초 구간의 p95 프레임 시간이 40 ms를 넘으면 한 단계 낮춥니다. 품질 진동을 막기 위해 10초 쿨다운을 두고, p95 25 ms 미만이 3구간 연속일 때만 한 단계 높입니다. 사용자가 High·Medium·Low를 직접 고르면 자동 전환을 중지하고 선택을 localStorage에 보존합니다.
+Auto 모드는 5초 frame p95가 40ms를 넘으면 한 단계 낮추고, 10초 쿨다운 뒤 25ms 미만이 세 번 연속일 때만 다시 올린다. 사용자가 직접 선택한 품질은 localStorage에 보존된다. 씬 업데이트는 requestAnimationFrame으로 병합하고, 변경된 하위 시스템만 갱신하도록 했다.
 
-씬 상태 변경은 한 requestAnimationFrame으로 병합했습니다. 시간·위치가 바뀔 때만 태양 시간을, 대기 관련 값이 바뀔 때만 안개와 대기를, 운량 관련 값이 바뀔 때만 구름을 갱신합니다. 구름의 Color와 Cartesian3는 재사용해 반복 할당도 줄였습니다.
+### 렌더링 수치의 올바른 해석
 
-![날씨 효과 프레임 시간 비교](assets/frame-time-comparison.svg)
+초기 동일 환경 software WebGL 측정에서는 프레임 p95가 개선됐다. 예를 들어 데스크톱 Storm은 1,349.9 → 783.3ms, 저사양 Rain은 1,117.6 → 834.3ms였다. 다만 이 환경은 software renderer였으므로 실제 GPU의 절대 성능 수치로 사용하지 않았다.
 
-모든 날씨 프리셋의 상대 p95가 개선됐습니다. 다만 After도 데스크톱 599.9~1,033.2 ms, 저사양 834.3~1,216.2 ms로 절대 목표에는 미달했습니다. 이는 software WebGL에서 외부 3D Tiles와 rAF 자체가 크게 정체되는 측정 환경을 포함합니다. 실제 GPU RUM을 다음 검증 단계로 남겼습니다.
+실제 GPU Chrome에서 초기 로딩 분리와 rAF 렌더 루프 후보도 측정했다. 하지만 유지 조건을 충족하지 못해 코드를 롤백했다. 예를 들어 CPU ×4 Rain/Storm/Snow p95는 282.6/250.0/150.5ms에서 333.6/298.0/217.3ms로 악화돼, “개선”이라고 기록하지 않았다.
 
-## 최적화 3 · 정적 자산
+마지막 실제 GPU trace에서는 CPU ×4 Medium의 Composite와 JavaScript 비용 비율이 Rain 1.04×, Storm 1.04×, Snow 1.01×였다. 확정 기준인 1.50×에 미달해 단일 병목은 `unclassified`로 판정했다. 따라서 Canvas 입자, Cesium 상세도, Medium/Low 효과를 추정으로 추가 변경하지 않았다.
 
-3,174×3,174 PNG 로고를 실제 표시 크기의 128×128 WebP로 바꿨습니다. 30초·28초 데모 GIF는 각각 재생 시간을 유지한 애니메이션 WebP로 변환해 docs로 이동했고 public 배포에서 제외했습니다.
+| 항목 | Before | After | 절대 차이 | 개선율 | 최종 판정 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 실제 GPU 렌더링 코드 | Phase 2 상태 | 변경 없음 | 0 | 0.0% | 안전한 개선 미확정 |
+| CPU ×4 Medium trace 병목 | Composite 우세처럼 보임 | JS와 1.01–1.05× 차이 | 확정 기준 미달 | 해당 없음 | `unclassified` |
+| High 시각 품질 | 기준 프로필 | 변경 없음 | 해당 없음 | 해당 없음 | 통과 |
 
-Cesium의 ESM 재빌드도 실험했습니다. 배포 크기는 14,288,823 → 12,506,663 bytes로 12.5% 더 줄었지만 앱 JS gzip이 83.59 → 1,183.55KB로 1,315.9% 늘었습니다. 초기 다운로드·파싱 회귀와 90KB 목표 위반이 더 크다고 판단해 채택하지 않았습니다.
+최종 재측정의 raw p95는 낮아졌지만, 그 사이 렌더링 런타임 코드는 0건 변경됐다. 따라서 이 수치 차이는 운영체제·브라우저 스케줄링·Cesium 타일 상태 변동으로 보존할 뿐, 최적화 성과로 귀속하지 않는다.
 
-최종 배포 크기 13.63 MiB는 목표보다 3.63 MiB 큽니다. 남은 12.96MB는 Cesium 런타임, 좌표 변환, 텍스처, Worker 자산입니다. 실제 네트워크 요청과 시각 기능 검증 없이 이를 삭제하는 것은 위험해 미달을 수용하고 CDN 또는 선택 자산 배포를 후속 과제로 두었습니다.
+| High Storm | Medium Rain | Low Snow |
+| --- | --- | --- |
+| ![High Storm](phase3/assets/visuals/high-storm.webp) | ![Medium Rain](phase3/assets/visuals/medium-rain.webp) | ![Low Snow](phase3/assets/visuals/low-snow.webp) |
 
-## 정량 Before → After
+## 5. 재현 가능한 검증 체계
 
-| 지표                 |     Before |      After |      절대 차이 | 개선율 | 목표        |
-| -------------------- | ---------: | ---------: | -------------: | -----: | ----------- |
-| 배포 산출물          |  35.78 MiB |  13.63 MiB | 22.16 MiB 감소 |  61.9% | 미달        |
-| 앱 JS gzip           |  77.79 KiB |  80.77 KiB |  2.98 KiB 증가 |  -3.8% | 통과        |
-| CSS gzip             |  14.69 KiB |  14.74 KiB |  0.05 KiB 증가 |  -0.3% | 통과        |
-| 데스크톱 FCP / LCP   |   3,528 ms |   3,264 ms |    264 ms 감소 |   7.5% | 미달 / 미달 |
-| 저사양 FCP / LCP     |   3,976 ms |   3,092 ms |    884 ms 감소 |  22.2% | 미달 / 통과 |
-| 데스크톱 Viewer 준비 |   557.7 ms |   496.2 ms |   61.5 ms 감소 |  11.0% | 통과        |
-| 저사양 Viewer 준비   | 1,453.7 ms | 1,349.1 ms |  104.6 ms 감소 |   7.2% | 통과        |
-| 데스크톱 Rain p95    |   849.9 ms |   599.9 ms |  250.0 ms 감소 |  29.4% | 미달        |
-| 데스크톱 Storm p95   | 1,349.9 ms |   783.3 ms |  566.6 ms 감소 |  42.0% | 미달        |
-| 데스크톱 Snow p95    | 1,333.6 ms | 1,033.2 ms |  300.4 ms 감소 |  22.5% | 미달        |
-| 저사양 Rain p95      | 1,117.6 ms |   834.3 ms |  283.3 ms 감소 |  25.3% | 미달        |
-| 저사양 Storm p95     | 1,434.0 ms | 1,083.3 ms |  350.7 ms 감소 |  24.5% | 미달        |
-| 저사양 Snow p95      | 1,533.2 ms | 1,216.2 ms |  317.0 ms 감소 |  20.7% | 미달        |
-| API 요청 수          |        2건 |        1건 |       1건 감소 |  50.0% | 통과        |
-| 리소스 전송량        |   5.57 MiB |   2.72 MiB |  2.86 MiB 감소 |  51.2% | 관찰        |
+- 실제 GPU 공식 수치는 non-headless Chrome, 1365×768, HTTP 캐시 비활성화, 동일 시나리오 3회 중앙값으로 기록한다.
+- SwiftShader·llvmpipe·software renderer는 실제 GPU 공식 수치에서 제외한다.
+- 저사양은 CPU 4배 제한을 별도로 기록한다.
+- 원시 GPU 모델·드라이버, 위치, API 키, URL 쿼리, 식별자, 원시 trace는 문서·JSON·스크린샷에 저장하지 않는다.
+- `perf:budget` CI는 JS gzip 90KiB, CSS gzip 18KiB, 썸네일 250KiB, 전체 배포 산출물 13.63MiB 이하를 차단한다.
+- 단위 테스트 256개, Playwright E2E 7개, High/Medium/Low × Rain/Storm/Snow 시각 캡처로 기능·품질을 확인했다.
 
-전체 19개 지표와 목표 판정은 [개발자용 비교표](comparison.md)에서 확인할 수 있습니다.
+## 6. 최종 결론
 
-## 동일 조건 시각 검증
+완료한 최적화는 정적 전달과 API 요청처럼 인과관계가 검증된 영역에 남겼다. 반대로 렌더링은 실제 GPU 측정·trace를 도입했지만 공통 단일 병목을 확정하지 못했다. 그래서 품질을 희생하거나 기능 위험을 추가하는 최적화를 하지 않았다.
 
-| Before · Rain                                   | After · Rain                                   |
-| ----------------------------------------------- | ---------------------------------------------- |
-| ![최적화 전 Rain 화면](assets/before-rain.webp) | ![최적화 후 Rain 화면](assets/after-rain.webp) |
+이 결정은 목표 미달을 숨기지 않고, “무엇을 빨라지게 했는지”와 “왜 더 건드리지 않았는지”를 모두 증명하는 결과다.
 
-| 품질   | Rain                                                   | Storm                                                    | Snow                                                   |
-| ------ | ------------------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------ |
-| High   | ![High Rain](assets/quality-matrix/high-rain.webp)     | ![High Storm](assets/quality-matrix/high-storm.webp)     | ![High Snow](assets/quality-matrix/high-snow.webp)     |
-| Medium | ![Medium Rain](assets/quality-matrix/medium-rain.webp) | ![Medium Storm](assets/quality-matrix/medium-storm.webp) | ![Medium Snow](assets/quality-matrix/medium-snow.webp) |
-| Low    | ![Low Rain](assets/quality-matrix/low-rain.webp)       | ![Low Storm](assets/quality-matrix/low-storm.webp)       | ![Low Snow](assets/quality-matrix/low-snow.webp)       |
+## 원본 측정·의사결정 자료
 
-High·Medium·Low의 즉시 적용과 새로고침 복원은 E2E로 검증했습니다. 9개 캡처에서는 Rain·Storm·Snow가 모든 단계에서 유지되고 Low의 낮은 밀도, 후처리 제거, 단순 원형 눈 입자가 실제 화면에 반영되는지 확인했습니다.
+통합 문서는 포트폴리오용 요약이며, 아래 자료는 수치와 판단의 감사 가능한 근거로 보존한다.
 
-## 제약, 실패와 다음 단계
+- [Phase 1 아카이브 사례 연구](phase1-case-study.md) · [비교표](comparison.md) · [원본 runs](runs/)
+- [실제 GPU·정적 전달 자료](phase2/case-study.md) · [최종 비교](phase2/final-comparison.md) · [원본 runs](phase2/runs/)
+- [실제 GPU trace·최종 렌더링 판단](phase3/case-study.md) · [최종 비교](phase3/comparison.md) · [원본 runs](phase3/runs/)
+- [통합 작업 로그](../worklogs/performance-case-study-consolidation.md)
 
-- 데스크톱 FCP/LCP는 264 ms 개선됐지만 3,264 ms로 목표 미달입니다. 가장 긴 초기 long task와 외부 Cesium 전역 스크립트 분석이 다음 우선순위입니다.
-- 저사양 FCP는 3,092 ms로 목표보다 292 ms 느립니다. LCP와 Viewer 준비는 통과했습니다.
-- 프레임 절대값은 headless software WebGL에서 목표와 큰 차이가 납니다. 실제 GPU 장치의 PerformanceObserver/RUM p50·p95를 별도로 수집해야 합니다.
-- 데스크톱 타일 안정화 이벤트는 세 번 모두 측정 구간에서 관측되지 않아 수치화하지 않았습니다. 저사양 타일 안정화 중앙값은 5,314.6 → 5,307.4 ms로 7.2 ms·0.1% 개선됐지만 외부 CDN 변동만으로 회귀를 판정하지 않았습니다.
-- Weather API 네트워크 지연은 재현성을 위해 고정 응답으로 대체했습니다. 실제 공급자 p50·p95는 API 키를 노출하지 않는 운영 관측 환경에서 수집해야 합니다.
+## PR 이력
 
-## 브랜치·PR·리뷰 기록
-
-모든 변경은 최신 main에서 분기해 기능 단위 커밋, 푸시, 한국어 PR, 자체 리뷰 코멘트, CI·Vercel·CodeRabbit 검증, Merge commit 순서로 병합했습니다.
-
-1. [PR #16 · 기준선 측정](https://github.com/kangdy25/Route_of_Sky/pull/16) — [5964a66](https://github.com/kangdy25/Route_of_Sky/commit/5964a66)
-2. [PR #17 · Weather API 캐시](https://github.com/kangdy25/Route_of_Sky/pull/17) — [d91cf78](https://github.com/kangdy25/Route_of_Sky/commit/d91cf78), [211c9e7](https://github.com/kangdy25/Route_of_Sky/commit/211c9e7)
-3. [PR #18 · 적응형 씬 품질](https://github.com/kangdy25/Route_of_Sky/pull/18) — [5aa37b0](https://github.com/kangdy25/Route_of_Sky/commit/5aa37b0), [0d09d87](https://github.com/kangdy25/Route_of_Sky/commit/0d09d87), [4cd1aa0](https://github.com/kangdy25/Route_of_Sky/commit/4cd1aa0)
-4. [PR #19 · 정적 자산 최적화](https://github.com/kangdy25/Route_of_Sky/pull/19) — [1e45a64](https://github.com/kangdy25/Route_of_Sky/commit/1e45a64), [ac3a098](https://github.com/kangdy25/Route_of_Sky/commit/ac3a098), [08757f0](https://github.com/kangdy25/Route_of_Sky/commit/08757f0)
-5. [PR #20 · 최종 비교와 사례 연구](https://github.com/kangdy25/Route_of_Sky/pull/20) — [b3f58ec](https://github.com/kangdy25/Route_of_Sky/commit/b3f58ec), [b061443](https://github.com/kangdy25/Route_of_Sky/commit/b061443), [d2e5245](https://github.com/kangdy25/Route_of_Sky/commit/d2e5245)
-
-각 PR에는 테스트 결과와 정량 Before→After, 위험, 롤백 조건을 남겼습니다. 세부 의사결정의 시간순 기록은 [최적화 로그](optimization-log.md)에 있습니다.
+- [PR #16–#20](https://github.com/kangdy25/Route_of_Sky/pulls?q=is%3Apr+is%3Aclosed+%28%2316+OR+%2317+OR+%2318+OR+%2319+OR+%2320%29): 기준선, API 캐시, 품질, 자산, 최초 사례 연구
+- [PR #22–#27](https://github.com/kangdy25/Route_of_Sky/pulls?q=is%3Apr+is%3Aclosed+%28%2322+OR+%2323+OR+%2324+OR+%2325+OR+%2326+OR+%2327%29): 실제 GPU 측정, 정적 전달, CI 예산
+- [PR #28–#31](https://github.com/kangdy25/Route_of_Sky/pulls?q=is%3Apr+is%3Aclosed+%28%2328+OR+%2329+OR+%2330+OR+%2331%29): 작업 규칙, trace, 최종 렌더링 판단, 사례 연구
