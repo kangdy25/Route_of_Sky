@@ -18,6 +18,7 @@ const runs = Number(readArgument('--runs') ?? 3)
 const sampleMs = Number(readArgument('--sample-ms') ?? process.env.PERF_SAMPLE_MS ?? 20_000)
 const outputDirectory = resolve(root, 'docs/performance/phase3/runs')
 const previewUrl = readArgument('--url') ?? 'http://127.0.0.1:4173'
+const previewPort = new URL(previewUrl).port || '80'
 const browserPath =
   readArgument('--browser-path') ??
   process.env.PERF_BROWSER_EXECUTABLE ??
@@ -218,7 +219,7 @@ await mkdir(outputDirectory, { recursive: true })
 if (!skipBuild) await run('pnpm', ['build'])
 const preview = spawn(
   'pnpm',
-  ['exec', 'vite', 'preview', '--host', '127.0.0.1', '--port', '4173'],
+  ['exec', 'vite', 'preview', '--host', '127.0.0.1', '--port', previewPort, '--strictPort'],
   {
     cwd: root,
     stdio: 'ignore',
