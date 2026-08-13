@@ -9,6 +9,7 @@ const preset = readArgument('--preset') ?? 'Rain'
 const quality = readArgument('--quality')
 const matrixDirectoryArgument = readArgument('--matrix-output-directory')
 const matrixDirectory = matrixDirectoryArgument ? resolve(root, matrixDirectoryArgument) : null
+const matrixFormat = readArgument('--matrix-format') ?? 'png'
 
 function readArgument(name) {
   const index = process.argv.indexOf(name)
@@ -42,15 +43,28 @@ const context = await browser.newContext({
 const page = await context.newPage()
 
 async function captureState(selectedQuality, selectedPreset, destination) {
-  await page.getByRole('button', { name: 'Open settings' }).click()
+  await page.getByRole('button', { name: 'Open settings' }).click({
+    force: true,
+    noWaitAfter: true,
+  })
   if (selectedQuality) {
     await page.getByLabel('렌더링 품질').selectOption(selectedQuality)
   }
-  await page.getByRole('button', { name: selectedPreset, exact: true }).click()
-  await page.getByRole('button', { name: 'Close settings' }).last().click()
+  await page.getByRole('button', { name: selectedPreset, exact: true }).click({
+    force: true,
+    noWaitAfter: true,
+  })
+  await page.getByRole('button', { name: 'Close settings' }).last().click({
+    force: true,
+    noWaitAfter: true,
+  })
   await page.evaluate(() => document.fonts.ready)
   await page.waitForTimeout(matrixDirectory ? 1_200 : 4_000)
   await page.screenshot({ path: destination })
+}
+
+if (!['png', 'jpeg'].includes(matrixFormat)) {
+  throw new Error('--matrix-format must be png or jpeg')
 }
 
 try {
@@ -67,7 +81,7 @@ try {
       for (const selectedPreset of ['Rain', 'Storm', 'Snow']) {
         const destination = resolve(
           matrixDirectory,
-          `${selectedQuality}-${selectedPreset.toLowerCase()}.png`,
+          `${selectedQuality}-${selectedPreset.toLowerCase()}.${matrixFormat}`,
         )
         await captureState(selectedQuality, selectedPreset, destination)
         process.stdout.write(`Visual check capture written to ${destination}\n`)

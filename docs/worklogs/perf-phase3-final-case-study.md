@@ -15,8 +15,14 @@
 ## 진행 기록
 
 - Before 원본 포인터를 [`../performance/phase3/runs/final-before.json`](../performance/phase3/runs/final-before.json)에 기록했다.
-- 다음 단계: 최신 main 기준 non-headless Chrome 실제 GPU 측정, 20초·프리셋별 3회, 이후 시각 캡처와 검증을 수행한다.
+- 최신 main에서 실제 GPU 재측정을 시도했다. Storm 두 번째 실행이 정상 창을 넘겨 전체 묶음은 폐기했고, 결과 파일도 생성되지 않아 공식 비교에서 제외했다.
+- 측정기는 CPU ×4 초기 문서 로드가 30초를 넘길 수 있어 navigation timeout을 90초로 조정했고, `--scenario`/`--preset` 분리 실행을 지원하도록 보완했다.
+- 유효한 최종 3회 세트: CPU ×4 Medium Rain 249.0/165.9/233.8ms → 233.8ms, Storm 299.4/117.3/216.0ms → 216.0ms, Snow 250.0/300.0/250.9ms → 250.9ms.
+- 코드 변경이 없으므로 초기 기준선 대비 raw 차이(41.7/43.6/44.2%)를 최적화 성과로 귀속하지 않았다.
+- High/Medium/Low × Rain/Storm/Snow 9개 시각 캡처를 독립 실행해 확인했고, WebP로 변환 후 PNG는 삭제했다.
+- 최종 문서: `measurement-protocol.md`, `comparison.md`, `case-study.md`, 6개 원본과 결합 JSON, 정적 차트를 완성했다.
 
 ## 롤백 조건
 
 - 소프트웨어 렌더러, 원시 GPU/위치/키/식별자 저장, 테스트 실패 또는 시각 기능 회귀가 있으면 해당 산출물을 폐기하고 원인을 기록한다.
+- 최종 결론: 실제 GPU 병목은 다시 `unclassified`였고 기능 코드도 바꾸지 않았다. 마지막 성능 사이클은 “안전한 개선 미확정·코드 변경 없음”으로 종료한다.
