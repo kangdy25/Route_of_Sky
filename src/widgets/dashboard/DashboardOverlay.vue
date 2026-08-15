@@ -5,6 +5,7 @@ import { hasCesiumIonAccessToken } from '@/shared/config/env'
 import type { SceneLocation } from '@/features/scene/model/scene.types'
 import type { SceneQualityLevel, SceneQualityMode } from '@/features/scene/model/scene.types'
 import type { WeatherStatePatch } from '@/features/weather/model/weather.types'
+import type { WeatherDataSource } from '@/features/weather/model/weather.store'
 import { prefersReducedMotion } from '@/shared/lib/motion'
 import AppHeader from './AppHeader.vue'
 import AtmospherePanel from './AtmospherePanel.vue'
@@ -31,6 +32,10 @@ const props = defineProps<{
   selectedLocationId: string
   effectiveQuality: SceneQualityLevel
   isSceneTransitioning?: boolean
+  weatherDataSource?: WeatherDataSource
+  weatherIsLoading?: boolean
+  weatherErrorMessage?: string
+  weatherLastUpdatedAt?: number | null
 }>()
 
 const overlayRef = ref<HTMLElement | null>(null)
@@ -48,6 +53,7 @@ const emit = defineEmits<{
   setTime: [time: number]
   manualWeatherInput: []
   manualTimeInput: []
+  retryWeather: []
 }>()
 
 const selectedLocation = computed(
@@ -55,6 +61,14 @@ const selectedLocation = computed(
     props.locations.find((location) => location.id === props.selectedLocationId) ??
     props.locations[0],
 )
+
+const weatherAlertMessage = computed(() => {
+  if (!props.weatherErrorMessage) return ''
+
+  return props.weatherDataSource === 'stale-cache'
+    ? '실시간 날씨를 불러오지 못했습니다. 저장된 날씨를 계속 표시합니다.'
+    : '실시간 날씨를 불러오지 못했습니다. 현재 값은 최신 정보가 아닐 수 있습니다.'
+})
 
 function registerPanel(el: unknown) {
   if (el instanceof HTMLElement && !panelRefs.value.includes(el)) {
@@ -173,11 +187,33 @@ watch(() => props.isSceneTransitioning ?? false, animateSceneTransition, { immed
       :locations="locations"
       :selected-location-id="selectedLocationId"
       :is-dashboard-open="isDashboardOpen"
+      :weather-data-source="weatherDataSource"
+      :weather-is-loading="weatherIsLoading"
+      :weather-error-message="weatherErrorMessage"
+      :weather-last-updated-at="weatherLastUpdatedAt"
       @fly-to-selected-location="emit('flyToSelectedLocation')"
       @select-location="emit('selectLocation', $event)"
       @open-settings="isSettingsOpen = true"
       @toggle-dashboard="toggleDashboard"
     />
+
+    <div
+      v-if="weatherAlertMessage"
+      data-testid="weather-sync-alert"
+      role="alert"
+      class="pointer-events-auto mt-3 flex flex-col gap-3 rounded-lg border border-amber-300/35 bg-amber-950/65 p-3 text-sm text-amber-50 shadow-[0_0_24px_rgba(251,191,36,0.10)] backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:p-4"
+    >
+      <p>{{ weatherAlertMessage }}</p>
+      <button
+        type="button"
+        class="rounded-md border border-amber-200/50 px-3 py-1.5 text-sm font-bold text-amber-50 transition-colors hover:bg-amber-200/15 focus:ring-2 focus:ring-amber-200/50 focus:outline-none disabled:cursor-not-allowed disabled:opacity-55"
+        aria-label="Retry weather update"
+        :disabled="weatherIsLoading"
+        @click="emit('retryWeather')"
+      >
+        {{ weatherIsLoading ? '업데이트 중' : '다시 시도' }}
+      </button>
+    </div>
 
     <!-- Cesium ion 토큰이 없을 때 3D Tiles 활성화 방법을 안내합니다. -->
     <div

@@ -66,4 +66,16 @@ describe('앱 헤더', () => {
 
     expect(wrapper.emitted('toggleDashboard')).toHaveLength(1)
   })
+
+  it('날씨 동기화 상태를 헤더에 표시해야 한다', () => {
+    const wrapper = mount(AppHeader, {
+      props: {
+        ...baseProps,
+        weatherDataSource: 'network',
+        weatherLastUpdatedAt: new Date('2026-08-15T09:30:00').getTime(),
+      },
+    })
+
+    expect(wrapper.get('[data-testid="weather-sync-status"]').text()).toContain('실시간 데이터')
+  })
 })

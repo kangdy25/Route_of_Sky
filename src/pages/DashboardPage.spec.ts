@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { computed, defineComponent, h } from 'vue'
+import { computed, defineComponent, h, nextTick } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useWeatherStore } from '@/features/weather/model/weather.store'
 import DashboardPage from './DashboardPage.vue'
@@ -42,6 +42,7 @@ function mountDashboardPage() {
           },
         }),
         DashboardOverlay: defineComponent({
+          name: 'DashboardOverlay',
           props: [
             'time',
             'temperature',
@@ -58,11 +59,16 @@ function mountDashboardPage() {
             'selectedLocationId',
             'qualityMode',
             'effectiveQuality',
+            'weatherDataSource',
+            'weatherIsLoading',
+            'weatherErrorMessage',
+            'weatherLastUpdatedAt',
           ],
           emits: [
             'flyToSelectedLocation',
             'selectLocation',
             'renderCurrentWeather',
+            'retryWeather',
             'update:time',
             'update:temperature',
             'update:humidity',
@@ -113,6 +119,14 @@ function mountDashboardPage() {
                     onClick: () => emit('renderCurrentWeather'),
                   },
                   'Render current weather',
+                ),
+                h(
+                  'button',
+                  {
+                    'data-testid': 'retry-weather',
+                    onClick: () => emit('retryWeather'),
+                  },
+                  'Retry weather',
                 ),
                 h(
                   'button',
@@ -336,6 +350,26 @@ describe('대시보드 페이지', () => {
     await wrapper.find('[data-testid="render-current-weather"]').trigger('click')
 
     expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855', { force: true })
+  })
+
+  it('날씨 재시도 이벤트를 받으면 현재 지역을 강제 갱신해야 한다', async () => {
+    const { wrapper } = mountDashboardPage()
+    loadCurrentWeather.mockClear()
+
+    await wrapper.find('[data-testid="retry-weather"]').trigger('click')
+
+    expect(loadCurrentWeather).toHaveBeenCalledWith('40.758,-73.9855', { force: true })
+  })
+
+  it('날씨 동기화 메타데이터를 오버레이에 전달해야 한다', async () => {
+    const { wrapper, store } = mountDashboardPage()
+    store.dataSource = 'cache'
+    store.lastUpdatedAt = 123
+    await nextTick()
+
+    const overlay = wrapper.findComponent({ name: 'DashboardOverlay' })
+    expect(overlay.props('weatherDataSource')).toBe('cache')
+    expect(overlay.props('weatherLastUpdatedAt')).toBe(123)
   })
 
   it('알 수 없는 지역 선택 이벤트는 무시해야 한다', async () => {
