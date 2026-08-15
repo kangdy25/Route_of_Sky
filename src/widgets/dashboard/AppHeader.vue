@@ -1,15 +1,25 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { SceneLocation } from '@/features/scene/model/scene.types'
+import type { WeatherDataSource } from '@/features/weather/model/weather.store'
+import WeatherSyncStatus from './WeatherSyncStatus.vue'
 
 const props = withDefaults(
   defineProps<{
     locations: SceneLocation[]
     selectedLocationId: string
     isDashboardOpen?: boolean
+    weatherDataSource?: WeatherDataSource
+    weatherIsLoading?: boolean
+    weatherErrorMessage?: string
+    weatherLastUpdatedAt?: number | null
   }>(),
   {
     isDashboardOpen: true,
+    weatherDataSource: 'default',
+    weatherIsLoading: false,
+    weatherErrorMessage: '',
+    weatherLastUpdatedAt: null,
   },
 )
 
@@ -53,40 +63,48 @@ const dashboardToggleLabel = computed(() =>
       </h1>
     </div>
 
-    <label
-      class="col-span-2 row-start-2 flex min-w-0 items-center gap-2 rounded-lg border border-cyan-300/25 bg-cyan-950/20 px-3 py-2.5 shadow-[inset_0_0_14px_rgba(34,211,238,0.10)] backdrop-blur-md sm:gap-3 sm:px-4 lg:col-span-1 lg:row-start-auto lg:py-3"
-    >
-      <svg class="h-5 w-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-        ></path>
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-        ></path>
-      </svg>
-      <span class="sr-only">지역 선택</span>
-      <select
-        class="min-w-0 flex-1 bg-transparent text-sm font-black text-cyan-50 uppercase outline-none sm:text-base"
-        :value="props.selectedLocationId"
-        aria-label="지역 선택"
-        @change="emit('selectLocation', ($event.target as HTMLSelectElement).value)"
+    <div class="col-span-2 row-start-2 min-w-0 lg:col-span-1 lg:row-start-auto">
+      <label
+        class="flex min-w-0 items-center gap-2 rounded-lg border border-cyan-300/25 bg-cyan-950/20 px-3 py-2.5 shadow-[inset_0_0_14px_rgba(34,211,238,0.10)] backdrop-blur-md sm:gap-3 sm:px-4 lg:py-3"
       >
-        <option
-          v-for="location in props.locations"
-          :key="location.id"
-          class="bg-slate-950 text-cyan-50"
-          :value="location.id"
+        <svg class="h-5 w-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+          ></path>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+          ></path>
+        </svg>
+        <span class="sr-only">지역 선택</span>
+        <select
+          class="min-w-0 flex-1 bg-transparent text-sm font-black text-cyan-50 uppercase outline-none sm:text-base"
+          :value="props.selectedLocationId"
+          aria-label="지역 선택"
+          @change="emit('selectLocation', ($event.target as HTMLSelectElement).value)"
         >
-          {{ location.label }}, {{ location.city }}
-        </option>
-      </select>
-    </label>
+          <option
+            v-for="location in props.locations"
+            :key="location.id"
+            class="bg-slate-950 text-cyan-50"
+            :value="location.id"
+          >
+            {{ location.label }}, {{ location.city }}
+          </option>
+        </select>
+      </label>
+      <WeatherSyncStatus
+        :data-source="weatherDataSource"
+        :is-loading="weatherIsLoading"
+        :error-message="weatherErrorMessage"
+        :last-updated-at="weatherLastUpdatedAt"
+      />
+    </div>
 
     <div
       class="col-start-2 row-start-1 flex justify-end gap-2 sm:gap-3 lg:col-start-auto lg:row-start-auto lg:gap-4"

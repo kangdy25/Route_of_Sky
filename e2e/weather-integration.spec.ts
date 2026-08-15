@@ -80,7 +80,7 @@ function createWeatherPayload(weather: WeatherMock) {
   }
 }
 
-async function mockWeatherApi(page: Page) {
+async function mockWeatherApi(page: Page, shouldFail = () => false) {
   const queries: string[] = []
 
   await page.addInitScript(() => {
@@ -97,6 +97,15 @@ async function mockWeatherApi(page: Page) {
     const weather = weatherByQuery[query] ?? weatherByQuery['40.758,-73.9855']
 
     queries.push(query)
+
+    if (shouldFail()) {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: { message: 'Weather service unavailable' } }),
+      })
+      return
+    }
 
     await route.fulfill({
       status: 200,
@@ -193,5 +202,66 @@ test.describe('WeatherAPI 통합 흐름', () => {
     await page.getByRole('button', { name: 'Render Current Weather' }).click({ force: true })
 
     await expectWeatherRequest(queries, '40.758,-73.9855')
+  })
+
+  test('초기 요청 실패 후 재시도하면 실시간 날씨를 다시 표시해야 한다', async ({ page }) => {
+    let failRequest = true
+    const queries = await mockWeatherApi(page, () => failRequest)
+
+    await page.goto('/')
+    await expectWeatherRequest(queries, '40.758,-73.9855')
+    await expect(page.getByTestId('weather-sync-alert')).toContainText(
+      '현재 값은 최신 정보가 아닐 수 있습니다.',
+    )
+    await expectPageText(page, '날씨 업데이트 실패')
+
+    failRequest = false
+    await page.getByRole('button', { name: 'Retry weather update' }).click()
+
+    await expect.poll(() => queries.filter((query) => query === '40.758,-73.9855')).toHaveLength(2)
+    await expectPageText(page, '실시간 데이터')
+    await expect(page.getByTestId('weather-sync-alert')).toHaveCount(0)
+  })
+
+  test('만료 캐시에서 네트워크 요청이 실패하면 경고와 저장된 날씨를 표시해야 한다', async ({
+    page,
+  }) => {
+    let failRequest = false
+    const queries = await mockWeatherApi(page, () => failRequest)
+
+    await page.goto('/')
+    await expectWeatherRequest(queries, '40.758,-73.9855')
+    await page.evaluate(() => {
+      window.localStorage.setItem(
+        'route-of-sky:weather-cache:v1:40.758,-73.9855',
+        JSON.stringify({
+          version: 1,
+          fetchedAt: Date.now() - 5 * 60 * 1000 - 1,
+          weather: {
+            time: 9.5,
+            temperature: 11,
+            temperatureMin: 7,
+            temperatureMax: 14,
+            humidity: 55,
+            windSpeed: 3,
+            windDirectionDegrees: 180,
+            aqi: 40,
+            cloudCover: 30,
+            precipitation: 0,
+            visibility: 12,
+          },
+        }),
+      )
+    })
+
+    failRequest = true
+    await page.reload({ waitUntil: 'domcontentloaded' })
+
+    await expect.poll(() => queries.filter((query) => query === '40.758,-73.9855')).toHaveLength(2)
+    await expect(page.getByTestId('weather-sync-alert')).toContainText(
+      '저장된 날씨를 계속 표시합니다.',
+    )
+    await expectPageText(page, '저장된 날씨 표시 중')
+    await expectMetricText(page, '가시 거리', '12 km')
   })
 })

@@ -70,6 +70,10 @@ const {
   cloudCover,
   precipitation,
   visibility,
+  isLoading,
+  errorMessage,
+  lastUpdatedAt,
+  dataSource,
 } = storeToRefs(weatherStore)
 
 function flyToSelectedLocation() {
@@ -148,9 +152,14 @@ onMounted(() => {
       :selected-location-id="selectedLocation.id"
       :effective-quality="effectiveQuality"
       :is-scene-transitioning="isSceneTransitioning"
+      :weather-data-source="dataSource"
+      :weather-is-loading="isLoading"
+      :weather-error-message="errorMessage"
+      :weather-last-updated-at="lastUpdatedAt"
       @fly-to-selected-location="flyToSelectedLocation"
       @select-location="selectLocation"
       @render-current-weather="loadSelectedLocationWeather(true)"
+      @retry-weather="loadSelectedLocationWeather(true)"
       @preview-weather="weatherStore.applyWeatherPatch($event, { animate: true })"
       @set-time="weatherStore.setSceneTime($event, { animate: true })"
       @manual-weather-input="weatherStore.cancelTransitions()"

@@ -171,6 +171,38 @@ describe('대시보드 오버레이', () => {
     expect(wrapper.emitted('renderCurrentWeather')).toHaveLength(1)
   })
 
+  it('만료 캐시 경고는 원본 오류 대신 재시도 버튼과 함께 표시해야 한다', async () => {
+    const wrapper = mount(DashboardOverlay, {
+      props: {
+        ...baseProps,
+        weatherDataSource: 'stale-cache',
+        weatherErrorMessage: 'WeatherAPI provider internal detail',
+      },
+    })
+
+    const alert = wrapper.get('[data-testid="weather-sync-alert"]')
+    expect(alert.text()).toContain('저장된 날씨를 계속 표시합니다.')
+    expect(alert.text()).not.toContain('WeatherAPI provider internal detail')
+
+    await wrapper.get('button[aria-label="Retry weather update"]').trigger('click')
+
+    expect(wrapper.emitted('retryWeather')).toHaveLength(1)
+  })
+
+  it('날씨 재시도 중에는 재시도 버튼을 비활성화해야 한다', () => {
+    const wrapper = mount(DashboardOverlay, {
+      props: {
+        ...baseProps,
+        weatherErrorMessage: 'request failed',
+        weatherIsLoading: true,
+      },
+    })
+
+    const retryButton = wrapper.get('button[aria-label="Retry weather update"]')
+    expect(retryButton.attributes('disabled')).toBeDefined()
+    expect(retryButton.text()).toBe('업데이트 중')
+  })
+
   it('시간 패널의 v-model 업데이트를 전달해야 한다', async () => {
     const wrapper = mount(DashboardOverlay, {
       props: {
