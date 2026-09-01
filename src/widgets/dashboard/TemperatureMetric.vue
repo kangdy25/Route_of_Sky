@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatSingleDecimal } from '@/shared/lib/formatMetricValue'
 
 const props = defineProps<{
   temperature: number
@@ -31,6 +32,7 @@ const temperatureStatus = computed(() => {
   if (props.temperature > 30) return '고온'
   return '안정'
 })
+const displayedTemperature = computed(() => formatSingleDecimal(props.temperature))
 
 const temperatureDescription = computed(() => {
   if (props.temperature <= 0) {
@@ -68,7 +70,7 @@ const temperatureDescription = computed(() => {
           class="absolute top-3 right-3 h-2 w-2 rounded-full bg-orange-300 shadow-[0_0_10px_rgba(251,191,36,0.65)]"
         ></div>
         <span class="text-3xl leading-none font-black text-white sm:text-4xl">
-          {{ temperature }}°
+          {{ displayedTemperature }}°
         </span>
         <span
           class="mt-3 rounded-full border border-orange-300/20 bg-orange-400/10 px-3 py-1 text-sm font-bold text-orange-300"

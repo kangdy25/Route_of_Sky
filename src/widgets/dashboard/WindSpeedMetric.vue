@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { CSSProperties } from 'vue'
+import { formatSingleDecimal } from '@/shared/lib/formatMetricValue'
 
 const props = defineProps<{
   windSpeed: number
@@ -42,6 +43,7 @@ const windNeedleStyle = computed<CSSProperties>(() => ({
 const windSpeedPercent = computed(() => {
   return `${Math.min(100, Math.max(0, (props.windSpeed / 15) * 100))}%`
 })
+const displayedWindSpeed = computed(() => formatSingleDecimal(props.windSpeed))
 
 const windSpeedLabel = computed(() => {
   if (props.windSpeed < 0.5) return '고요'
@@ -129,7 +131,7 @@ const windDescription = computed(() => {
         <div
           class="absolute flex h-[4.5rem] w-[4.5rem] flex-col items-center justify-center rounded-full border border-cyan-300/20 bg-slate-950/85 shadow-[inset_0_0_14px_rgba(34,211,238,0.12)] sm:h-20 sm:w-20"
         >
-          <span class="text-2xl font-black text-white">{{ windSpeed }}</span>
+          <span class="text-2xl font-black text-white">{{ displayedWindSpeed }}</span>
           <span class="text-xs font-bold text-slate-200 uppercase">m/s</span>
         </div>
       </div>

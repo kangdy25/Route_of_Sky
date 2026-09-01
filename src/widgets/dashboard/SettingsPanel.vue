@@ -6,6 +6,7 @@ import type { WeatherStatePatch } from '@/features/weather/model/weather.types'
 import { getCurrentLocalTimeForLocation } from '@/features/scene/lib/sky'
 import { WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
 import { prefersReducedMotion } from '@/shared/lib/motion'
+import { formatInteger, formatSingleDecimal } from '@/shared/lib/formatMetricValue'
 import type {
   SceneLocation,
   SceneQualityLevel,
@@ -54,6 +55,9 @@ const precipitationTestUnit = computed(() => {
   return isSnowPreview.value ? 'cm/h' : 'mm/h'
 })
 const formattedTime = computed(() => formatTime(time.value))
+const displayedTemperature = computed(() => formatSingleDecimal(temperature.value))
+const displayedHumidity = computed(() => formatInteger(humidity.value))
+const displayedWindSpeed = computed(() => formatSingleDecimal(windSpeed.value))
 
 type WeatherPreset = Omit<WeatherStatePatch, 'visibility'>
 
@@ -461,7 +465,7 @@ watch(autoVisibility, (enabled) => {
                 <label class="block">
                   <span class="flex justify-between gap-3 text-xs font-bold text-slate-300">
                     <span>Temperature</span>
-                    <span>{{ temperature.toFixed(1) }} C</span>
+                    <span>{{ displayedTemperature }} C</span>
                   </span>
                   <input
                     v-model.number="temperature"
@@ -494,7 +498,7 @@ watch(autoVisibility, (enabled) => {
                   <label class="block">
                     <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
                       <span>Wind</span>
-                      <span>{{ windSpeed.toFixed(1) }} m/s</span>
+                      <span>{{ displayedWindSpeed }} m/s</span>
                     </span>
                     <input
                       v-model.number="windSpeed"
@@ -526,7 +530,7 @@ watch(autoVisibility, (enabled) => {
                   <label class="block">
                     <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
                       <span>Humidity</span>
-                      <span>{{ humidity }}%</span>
+                      <span>{{ displayedHumidity }}%</span>
                     </span>
                     <input
                       v-model.number="humidity"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatInteger } from '@/shared/lib/formatMetricValue'
 
 const props = defineProps<{
   humidity: number
@@ -18,6 +19,7 @@ const humidityStatus = computed(() => {
   if (normalizedHumidity.value > 75) return '습함'
   return '안정'
 })
+const displayedHumidity = computed(() => formatInteger(props.humidity))
 const condensationLabel = computed(() => {
   if (normalizedHumidity.value < 35) return '낮은 수분도 ↗'
   if (normalizedHumidity.value > 75) return '높은 응결도 ↗'
@@ -72,7 +74,7 @@ const condensationLabel = computed(() => {
         </svg>
         <div class="flex flex-col items-center">
           <span class="text-3xl leading-none font-black text-white sm:text-4xl"
-            >{{ humidity
+            >{{ displayedHumidity
             }}<span class="ml-1 text-lg font-normal text-slate-200 sm:text-xl">%</span></span
           >
           <span class="mt-2 text-base font-black text-cyan-400 uppercase">{{

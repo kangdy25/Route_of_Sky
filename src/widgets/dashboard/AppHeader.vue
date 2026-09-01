@@ -33,6 +33,7 @@ const emit = defineEmits<{
 const dashboardToggleLabel = computed(() =>
   props.isDashboardOpen ? 'Hide dashboard' : 'Show dashboard',
 )
+const logoUrl = '/logo.webp'
 </script>
 
 <template>
@@ -47,7 +48,7 @@ const dashboardToggleLabel = computed(() =>
         class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-cyan-300/20 bg-slate-950/45 p-1.5 shadow-[inset_0_0_18px_rgba(34,211,238,0.10),0_0_18px_rgba(34,211,238,0.24)] backdrop-blur-md max-[380px]:hidden sm:h-12 sm:w-12 lg:h-14 lg:w-14 lg:rounded-xl"
       >
         <img
-          src="/logo.webp"
+          :src="logoUrl"
           alt="Route of Sky"
           width="128"
           height="128"

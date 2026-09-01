@@ -105,6 +105,22 @@ describe('설정 패널', () => {
     expect(wrapper.text()).toContain('적용: MEDIUM')
   })
 
+  it('날씨 전환 중 기온, 습도, 풍속은 소수점 한 자리로 표시해야 한다', async () => {
+    const { wrapper, state } = mountSettingsPanel()
+
+    state.temperature = 24.63
+    state.humidity = 61.54
+    state.windSpeed = 5.56
+    await nextTick()
+
+    expect(wrapper.text()).toContain('24.6 C')
+    expect(wrapper.text()).toContain('62%')
+    expect(wrapper.text()).toContain('5.6 m/s')
+    expect(wrapper.text()).not.toContain('24.63 C')
+    expect(wrapper.text()).not.toContain('61.54%')
+    expect(wrapper.text()).not.toContain('5.56 m/s')
+  })
+
   it('렌더링 품질을 수동 단계로 변경해야 한다', async () => {
     const { wrapper, state } = mountSettingsPanel()
 

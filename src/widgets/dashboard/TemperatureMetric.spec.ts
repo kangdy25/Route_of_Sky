@@ -34,6 +34,20 @@ describe('기온 지표 카드', () => {
     expect(wrapper.text()).toContain('현재 고도에서 열 변화가 안정적으로 유지되고 있습니다.')
   })
 
+  it('보간 중 기온은 소수점 한 자리로 표시해야 한다', () => {
+    const wrapper = mount(TemperatureMetric, { props: { ...baseProps, temperature: 24.567 } })
+
+    expect(wrapper.text()).toContain('24.6°')
+    expect(wrapper.text()).not.toContain('24.567°')
+  })
+
+  it('기온의 소수점이 0이면 생략해야 한다', () => {
+    const wrapper = mount(TemperatureMetric, { props: { ...baseProps, temperature: 24 } })
+
+    expect(wrapper.text()).toContain('24°')
+    expect(wrapper.text()).not.toContain('24.0°')
+  })
+
   it('오늘 최저/최고 기온을 기준 범위와 요약 값으로 표시해야 한다', () => {
     const wrapper = mount(TemperatureMetric, {
       props: { temperature: 24.5, temperatureMin: 17.2, temperatureMax: 29.8 },
