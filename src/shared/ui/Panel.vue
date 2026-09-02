@@ -7,6 +7,7 @@ const props = withDefaults(
     accentClass?: string
     headerClass?: string
     paddingClass?: string
+    /** 패널 배경 톤: 'default'(딥블루) | 'soft'(청록 틴트) */
     surface?: 'default' | 'soft'
     fullHeight?: boolean
     justify?: boolean
@@ -38,6 +39,7 @@ const surfaceClass = computed(() => {
     ]"
   >
     <div class="relative z-10 flex min-h-0 flex-1 flex-col">
+      <!-- 헤더 슬롯 (커스텀 헤더 주입 가능, 기본은 타이틀 + 네온 액센트 라인) -->
       <slot name="header">
         <div v-if="title" :class="['flex items-center justify-between', headerClass]">
           <h2
@@ -47,13 +49,13 @@ const surfaceClass = computed(() => {
           </h2>
           <div
             :class="[
-              'h-px bg-gradient-to-r from-cyan-300/80 via-cyan-300/35 to-transparent shadow-[0_0_12px_rgba(34,211,238,0.65)]',
+              'h-px bg-linear-to-r from-cyan-300/80 via-cyan-300/35 to-transparent shadow-[0_0_12px_rgba(34,211,238,0.65)]',
               accentClass,
             ]"
           ></div>
         </div>
       </slot>
-
+      <!-- 패널 메인 본문 콘텐츠 -->
       <slot />
     </div>
   </section>

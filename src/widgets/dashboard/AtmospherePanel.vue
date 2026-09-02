@@ -9,35 +9,35 @@ const props = defineProps<{
 const normalizedAqi = computed(() => Math.min(300, Math.max(0, props.aqi)))
 const aqiPercent = computed(() => `${(normalizedAqi.value / 300) * 100}%`)
 const aqiLevel = computed(() => {
-  if (normalizedAqi.value <= 50) return '매우 좋음'
-  if (normalizedAqi.value <= 100) return '보통'
-  if (normalizedAqi.value <= 150) return '민감군 주의'
-  if (normalizedAqi.value <= 200) return '나쁨'
-  if (normalizedAqi.value <= 250) return '매우 나쁨'
-  return '매우 나쁨'
+  if (normalizedAqi.value <= 40) return '매우 좋음'
+  if (normalizedAqi.value <= 80) return '보통'
+  if (normalizedAqi.value <= 120) return '민감군 주의'
+  if (normalizedAqi.value <= 160) return '나쁨'
+  if (normalizedAqi.value <= 200) return '매우 나쁨'
+  return '최악'
 })
 const aqiRange = computed(() => {
-  if (normalizedAqi.value <= 50) return '정상 범위'
-  if (normalizedAqi.value <= 100) return '관리 범위'
-  if (normalizedAqi.value <= 150) return '주의 범위'
-  if (normalizedAqi.value <= 200) return '시정 저하'
-  if (normalizedAqi.value <= 250) return '위험 범위'
-  return '강한 연무'
+  if (normalizedAqi.value <= 40) return '정상 범위'
+  if (normalizedAqi.value <= 80) return '관리 범위'
+  if (normalizedAqi.value <= 120) return '주의 범위'
+  if (normalizedAqi.value <= 160) return '시정 저하'
+  if (normalizedAqi.value <= 200) return '위험 범위'
+  return '심각 범위'
 })
 const aqiAccentClass = computed(() => {
-  if (normalizedAqi.value <= 50) return 'text-cyan-300'
-  if (normalizedAqi.value <= 100) return 'text-lime-300'
-  if (normalizedAqi.value <= 150) return 'text-yellow-300'
-  if (normalizedAqi.value <= 200) return 'text-orange-300'
-  if (normalizedAqi.value <= 250) return 'text-red-400'
+  if (normalizedAqi.value <= 40) return 'text-cyan-300'
+  if (normalizedAqi.value <= 80) return 'text-lime-300'
+  if (normalizedAqi.value <= 120) return 'text-yellow-300'
+  if (normalizedAqi.value <= 160) return 'text-orange-300'
+  if (normalizedAqi.value <= 200) return 'text-red-400'
   return 'text-zinc-500'
 })
 const aqiBarClass = computed(() => {
-  if (normalizedAqi.value <= 50) return 'bg-cyan-400 shadow-[0_0_10px_#22d3ee]'
-  if (normalizedAqi.value <= 100) return 'bg-lime-400 shadow-[0_0_10px_#a3e635]'
-  if (normalizedAqi.value <= 150) return 'bg-yellow-400 shadow-[0_0_10px_#facc15]'
-  if (normalizedAqi.value <= 200) return 'bg-orange-400 shadow-[0_0_10px_#fb923c]'
-  if (normalizedAqi.value <= 250) return 'bg-red-500 shadow-[0_0_10px_#ef4444]'
+  if (normalizedAqi.value <= 40) return 'bg-cyan-400 shadow-[0_0_10px_#22d3ee]'
+  if (normalizedAqi.value <= 80) return 'bg-lime-400 shadow-[0_0_10px_#a3e635]'
+  if (normalizedAqi.value <= 120) return 'bg-yellow-400 shadow-[0_0_10px_#facc15]'
+  if (normalizedAqi.value <= 160) return 'bg-orange-400 shadow-[0_0_10px_#fb923c]'
+  if (normalizedAqi.value <= 200) return 'bg-red-500 shadow-[0_0_10px_#ef4444]'
   return 'bg-zinc-800 shadow-[0_0_10px_rgba(39,39,42,0.9)]'
 })
 </script>

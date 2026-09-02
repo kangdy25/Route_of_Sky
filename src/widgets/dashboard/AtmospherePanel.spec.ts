@@ -4,12 +4,12 @@ import AtmospherePanel from './AtmospherePanel.vue'
 
 describe('대기질 정보 패널', () => {
   const cases = [
-    { aqi: 45, level: '매우 좋음', range: '정상 범위', className: 'text-cyan-300' },
+    { aqi: 40, level: '매우 좋음', range: '정상 범위', className: 'text-cyan-300' },
     { aqi: 80, level: '보통', range: '관리 범위', className: 'text-lime-300' },
-    { aqi: 125, level: '민감군 주의', range: '주의 범위', className: 'text-yellow-300' },
-    { aqi: 180, level: '나쁨', range: '시정 저하', className: 'text-orange-300' },
-    { aqi: 230, level: '매우 나쁨', range: '위험 범위', className: 'text-red-400' },
-    { aqi: 290, level: '매우 나쁨', range: '강한 연무', className: 'text-zinc-500' },
+    { aqi: 120, level: '민감군 주의', range: '주의 범위', className: 'text-yellow-300' },
+    { aqi: 160, level: '나쁨', range: '시정 저하', className: 'text-orange-300' },
+    { aqi: 200, level: '매우 나쁨', range: '위험 범위', className: 'text-red-400' },
+    { aqi: 250, level: '최악', range: '심각 범위', className: 'text-zinc-500' },
   ]
 
   it.each(cases)('AQI $aqi 상태를 렌더링해야 한다', ({ aqi, level, range, className }) => {
