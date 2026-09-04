@@ -21,9 +21,7 @@ describe('기온 지표 카드', () => {
 
     expect(wrapper.text()).toContain('차가운 공기 ↘')
     expect(wrapper.text()).toContain('저온')
-    expect(wrapper.text()).toContain(
-      '낮은 기온으로 공기 밀도가 높고 체감 조건이 차갑게 유지됩니다.',
-    )
+    expect(wrapper.text()).toContain('낮은 기온으로 공기 밀도가 높고 체감 조건이 차갑게 유지됩니다.')
   })
 
   it('안정 기온이면 쾌적한 상태와 설명을 렌더링해야 한다', () => {
@@ -73,15 +71,15 @@ describe('기온 지표 카드', () => {
       props: { temperature: 60, temperatureMin: 0, temperatureMax: 30 },
     })
 
-    expect(lowWrapper.find('.bg-gradient-to-r').attributes('style')).toContain('width: 0%;')
-    expect(highWrapper.find('.bg-gradient-to-r').attributes('style')).toContain('width: 100%;')
+    expect(lowWrapper.find('.bg-linear-to-r').attributes('style')).toContain('width: 0%;')
+    expect(highWrapper.find('.bg-linear-to-r').attributes('style')).toContain('width: 100%;')
   })
 
-  it('최저/최고 기온이 같으면 진행 막대를 가득 채워야 한다', () => {
+  it('최저/최고 기온이 같으면 진행 막대를 중립값으로 표시해야 한다', () => {
     const wrapper = mount(TemperatureMetric, {
       props: { temperature: 12, temperatureMin: 12, temperatureMax: 12 },
     })
 
-    expect(wrapper.find('.bg-gradient-to-r').attributes('style')).toContain('width: 100%;')
+    expect(wrapper.find('.bg-linear-to-r').attributes('style')).toContain('width: 50%;')
   })
 })

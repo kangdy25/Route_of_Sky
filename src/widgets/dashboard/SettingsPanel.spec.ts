@@ -105,6 +105,17 @@ describe('설정 패널', () => {
     expect(wrapper.text()).toContain('적용: MEDIUM')
   })
 
+  it('AQI 슬라이더 라벨은 정수로 표시해야 한다', async () => {
+    const { wrapper, state } = mountSettingsPanel()
+
+    state.aqi = 80.74
+    await nextTick()
+
+    const aqiLabel = wrapper.findAll('label').find((label) => label.text().includes('AQI'))
+    expect(aqiLabel?.text()).toContain('81')
+    expect(aqiLabel?.text()).not.toContain('80.74')
+  })
+
   it('날씨 전환 중 기온, 습도, 풍속은 소수점 한 자리로 표시해야 한다', async () => {
     const { wrapper, state } = mountSettingsPanel()
 

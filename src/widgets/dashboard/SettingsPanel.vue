@@ -7,11 +7,7 @@ import { getCurrentLocalTimeForLocation } from '@/features/scene/lib/sky'
 import { WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
 import { prefersReducedMotion } from '@/shared/lib/motion'
 import { formatInteger, formatSingleDecimal } from '@/shared/lib/formatMetricValue'
-import type {
-  SceneLocation,
-  SceneQualityLevel,
-  SceneQualityMode,
-} from '@/features/scene/model/scene.types'
+import type { SceneLocation, SceneQualityLevel, SceneQualityMode } from '@/features/scene/model/scene.types'
 
 const time = defineModel<number>('time', { required: true })
 const temperature = defineModel<number>('temperature', { required: true })
@@ -55,6 +51,7 @@ const precipitationTestUnit = computed(() => {
   return isSnowPreview.value ? 'cm/h' : 'mm/h'
 })
 const formattedTime = computed(() => formatTime(time.value))
+const displayedAqi = computed(() => formatInteger(aqi.value))
 const displayedTemperature = computed(() => formatSingleDecimal(temperature.value))
 const displayedHumidity = computed(() => formatInteger(humidity.value))
 const displayedWindSpeed = computed(() => formatSingleDecimal(windSpeed.value))
@@ -67,10 +64,7 @@ function getPresetVisibility(preset: WeatherPreset) {
   const precipitationPenalty = Math.min(8, (preset.precipitation ?? precipitation.value) * 0.45)
   const cloudPenalty = Math.max(0, ((preset.cloudCover ?? cloudCover.value) - 70) * 0.025)
 
-  return Math.max(
-    1,
-    Math.min(22, Number((airQualityVisibility - precipitationPenalty - cloudPenalty).toFixed(1))),
-  )
+  return Math.max(1, Math.min(22, Number((airQualityVisibility - precipitationPenalty - cloudPenalty).toFixed(1))))
 }
 
 type WeatherPresetValues = {
@@ -89,10 +83,7 @@ function estimateVisibilityFromAirQuality(aqiValue: number) {
   const precipitationPenalty = Math.min(8, precipitation.value * 0.45)
   const cloudPenalty = Math.max(0, (cloudCover.value - 70) * 0.025)
 
-  return Math.max(
-    1,
-    Math.min(22, Number((airQualityVisibility - precipitationPenalty - cloudPenalty).toFixed(1))),
-  )
+  return Math.max(1, Math.min(22, Number((airQualityVisibility - precipitationPenalty - cloudPenalty).toFixed(1))))
 }
 
 function syncVisibilityFromAirQuality() {
@@ -195,12 +186,7 @@ function enter(el: Element, done: () => void) {
   gsap
     .timeline({ onComplete: done })
     .fromTo(backdrop, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2, ease: 'power1.out' })
-    .fromTo(
-      panel,
-      { autoAlpha: 0, x: 32 },
-      { autoAlpha: 1, x: 0, duration: 0.28, ease: 'power3.out' },
-      0,
-    )
+    .fromTo(panel, { autoAlpha: 0, x: 32 }, { autoAlpha: 1, x: 0, duration: 0.28, ease: 'power3.out' }, 0)
 }
 
 function leave(el: Element, done: () => void) {
@@ -268,12 +254,7 @@ watch(autoVisibility, (enabled) => {
               @click="emit('close')"
             >
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 6l12 12M18 6 6 18"
-                ></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6 6 18"></path>
               </svg>
             </button>
           </header>
@@ -294,13 +275,9 @@ watch(autoVisibility, (enabled) => {
                 </span>
               </div>
               <label class="mt-4 block">
-                <span
-                  class="flex items-center justify-between gap-3 text-xs font-bold text-slate-300"
-                >
+                <span class="flex items-center justify-between gap-3 text-xs font-bold text-slate-300">
                   <span>렌더링 품질</span>
-                  <span
-                    class="rounded-full border border-cyan-300/25 bg-cyan-400/10 px-2 py-1 text-cyan-200"
-                  >
+                  <span class="rounded-full border border-cyan-300/25 bg-cyan-400/10 px-2 py-1 text-cyan-200">
                     적용: {{ effectiveQuality.toUpperCase() }}
                   </span>
                 </span>
@@ -320,9 +297,7 @@ watch(autoVisibility, (enabled) => {
             <section class="mt-4 rounded-lg border border-cyan-300/15 bg-slate-900/50 p-4">
               <div class="flex items-center justify-between gap-3">
                 <div>
-                  <h3 class="text-sm font-black tracking-wide text-cyan-100 uppercase">
-                    Scene Time
-                  </h3>
+                  <h3 class="text-sm font-black tracking-wide text-cyan-100 uppercase">Scene Time</h3>
                   <p class="mt-1 text-xs leading-relaxed text-slate-400">
                     Tune sunlight, sky color, and building shadows together.
                   </p>
@@ -391,9 +366,7 @@ watch(autoVisibility, (enabled) => {
             <section class="mt-4 rounded-lg border border-cyan-300/15 bg-slate-900/50 p-4">
               <div class="flex items-center justify-between gap-3">
                 <div>
-                  <h3 class="text-sm font-black tracking-wide text-cyan-100 uppercase">
-                    Weather Lab
-                  </h3>
+                  <h3 class="text-sm font-black tracking-wide text-cyan-100 uppercase">Weather Lab</h3>
                   <p class="mt-1 text-xs leading-relaxed text-slate-400">
                     Preview weather states before live API data is connected.
                   </p>
@@ -546,7 +519,7 @@ watch(autoVisibility, (enabled) => {
                   <label class="block">
                     <span class="flex justify-between gap-2 text-xs font-bold text-slate-300">
                       <span>AQI</span>
-                      <span>{{ aqi }}</span>
+                      <span>{{ displayedAqi }}</span>
                     </span>
                     <input
                       :value="aqi"

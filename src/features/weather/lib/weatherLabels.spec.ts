@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  getCloudCoverLabel,
-  getPrecipitationLabel,
-  getTimeStatus,
-  getVisibilityLabel,
-} from './weatherLabels'
+import { getCloudCoverLabel, getPrecipitationLabel, getTimeStatus, getVisibilityLabel } from './weatherLabels'
 
 describe('날씨 표시 라벨', () => {
   it('운량 범위에 맞는 라벨을 반환해야 한다', () => {
@@ -19,21 +14,21 @@ describe('날씨 표시 라벨', () => {
     expect(getPrecipitationLabel(1.5)).toBe('약한 비')
     expect(getPrecipitationLabel(5)).toBe('보통 비')
     expect(getPrecipitationLabel(10)).toBe('강한 비')
-    expect(getPrecipitationLabel(13)).toBe('뇌우')
+    expect(getPrecipitationLabel(13)).toBe('폭우')
   })
 
   it('눈 모드에서는 강설 라벨을 반환해야 한다', () => {
     expect(getPrecipitationLabel(1.5, true)).toBe('약한 눈')
     expect(getPrecipitationLabel(5, true)).toBe('보통 눈')
     expect(getPrecipitationLabel(10, true)).toBe('강한 눈')
-    expect(getPrecipitationLabel(13, true)).toBe('강한 눈')
+    expect(getPrecipitationLabel(13, true)).toBe('폭설')
   })
 
   it('가시거리 범위에 맞는 라벨을 반환해야 한다', () => {
-    expect(getVisibilityLabel(12)).toBe('선명함')
-    expect(getVisibilityLabel(7)).toBe('연무')
-    expect(getVisibilityLabel(3)).toBe('박무')
-    expect(getVisibilityLabel(1)).toBe('안개')
+    expect(getVisibilityLabel(16)).toBe('선명함')
+    expect(getVisibilityLabel(12)).toBe('약간 탁함')
+    expect(getVisibilityLabel(7)).toBe('옅은 안개')
+    expect(getVisibilityLabel(3)).toBe('짙은 안개')
   })
 
   it('시간대별 상태 문구를 반환해야 한다', () => {

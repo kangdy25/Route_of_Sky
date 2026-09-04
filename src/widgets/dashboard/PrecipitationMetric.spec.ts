@@ -23,9 +23,9 @@ describe('강수량 지표 카드', () => {
     expect(wrapper.text()).toContain('강한 비')
   })
 
-  it('강수량이 12 이상일 때 "뇌우"를 렌더링해야 한다', () => {
+  it('강수량이 12 이상일 때 "폭우"를 렌더링해야 한다', () => {
     const wrapper = mount(PrecipitationMetric, { props: { precipitation: 13.0 } })
-    expect(wrapper.text()).toContain('뇌우')
+    expect(wrapper.text()).toContain('폭우')
   })
 
   it('영하에서 강수량이 있으면 강설량과 눈 라벨을 렌더링해야 한다', () => {
@@ -34,8 +34,17 @@ describe('강수량 지표 카드', () => {
     })
 
     expect(wrapper.text()).toContain('강설량')
-    expect(wrapper.text()).toContain('5.0')
+    expect(wrapper.text()).toContain('5')
     expect(wrapper.text()).toContain('cm/h')
     expect(wrapper.text()).toContain('보통 눈')
+  })
+
+  it('강수량은 한 자리 소수까지만 표시하고 .0은 생략해야 한다', () => {
+    const fractional = mount(PrecipitationMetric, { props: { precipitation: 2.34 } })
+    const whole = mount(PrecipitationMetric, { props: { precipitation: 5 } })
+
+    expect(fractional.text()).toContain('2.3 mm/h')
+    expect(whole.text()).toContain('5 mm/h')
+    expect(whole.text()).not.toContain('5.0 mm/h')
   })
 })

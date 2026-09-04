@@ -22,4 +22,11 @@ describe('운량 지표 카드', () => {
     const wrapper = mount(CloudCoverMetric, { props: { cloudCover: 90 } })
     expect(wrapper.text()).toContain('흐림')
   })
+
+  it('GSAP 보간 중인 운량은 정수로만 표시해야 한다', () => {
+    const wrapper = mount(CloudCoverMetric, { props: { cloudCover: 36.74 } })
+
+    expect(wrapper.text()).toContain('37%')
+    expect(wrapper.text()).not.toContain('36.74%')
+  })
 })

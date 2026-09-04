@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatInteger } from '@/shared/lib/formatMetricValue'
 import Panel from '@/shared/ui/Panel.vue'
 
 const props = defineProps<{
@@ -7,6 +8,7 @@ const props = defineProps<{
 }>()
 
 const normalizedAqi = computed(() => Math.min(300, Math.max(0, props.aqi)))
+const displayedAqi = computed(() => formatInteger(normalizedAqi.value))
 const aqiPercent = computed(() => `${(normalizedAqi.value / 300) * 100}%`)
 const aqiLevel = computed(() => {
   if (normalizedAqi.value <= 40) return '매우 좋음'
@@ -48,7 +50,7 @@ const aqiBarClass = computed(() => {
       <div>
         <span class="block text-base font-bold text-cyan-100/80 uppercase">대기질 지수</span>
         <span class="mt-2 block text-3xl font-black text-white sm:text-4xl"
-          >지수: <span class="text-cyan-400">{{ aqi }}</span></span
+          >지수: <span class="text-cyan-400">{{ displayedAqi }}</span></span
         >
       </div>
       <div class="flex flex-col items-start sm:items-end">
@@ -57,11 +59,7 @@ const aqiBarClass = computed(() => {
       </div>
     </div>
     <div class="relative h-2 w-full rounded-full border border-cyan-300/10 bg-cyan-950/50">
-      <div
-        class="absolute top-0 left-0 h-full rounded-full"
-        :class="aqiBarClass"
-        :style="{ width: aqiPercent }"
-      ></div>
+      <div class="absolute top-0 left-0 h-full rounded-full" :class="aqiBarClass" :style="{ width: aqiPercent }"></div>
     </div>
   </Panel>
 </template>

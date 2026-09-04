@@ -85,9 +85,7 @@ describe('풍속 지표 카드', () => {
     expect(wrapper.text()).toContain('강한 바람')
     expect(wrapper.text()).toContain('Strong Breeze')
     expect(wrapper.text()).toContain('강풍 영향 ↗')
-    expect(wrapper.text()).toContain(
-      '강한 바람으로 눈과 비가 빠르게 휘날리며 시정 저하가 커질 수 있습니다.',
-    )
+    expect(wrapper.text()).toContain('강한 바람으로 눈과 비가 빠르게 휘날리며 시정 저하가 커질 수 있습니다.')
   })
 
   it('풍속 진행 막대 값은 0에서 100 사이로 제한해야 한다', () => {
@@ -98,7 +96,7 @@ describe('풍속 지표 카드', () => {
       props: { windSpeed: 20, windDirectionDegrees: 0 },
     })
 
-    expect(lowWrapper.find('.bg-gradient-to-r').attributes('style')).toContain('width: 0%;')
-    expect(highWrapper.find('.bg-gradient-to-r').attributes('style')).toContain('width: 100%;')
+    expect(lowWrapper.find('.bg-linear-to-r').attributes('style')).toContain('width: 0%;')
+    expect(highWrapper.find('.bg-linear-to-r').attributes('style')).toContain('width: 100%;')
   })
 })

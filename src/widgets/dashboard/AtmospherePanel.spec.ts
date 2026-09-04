@@ -28,4 +28,11 @@ describe('대기질 정보 패널', () => {
     expect(lowWrapper.find('.absolute.top-0.left-0').attributes('style')).toContain('width: 0%;')
     expect(highWrapper.find('.absolute.top-0.left-0').attributes('style')).toContain('width: 100%;')
   })
+
+  it('GSAP 보간 중인 AQI는 정수로만 표시해야 한다', () => {
+    const wrapper = mount(AtmospherePanel, { props: { aqi: 80.74 } })
+
+    expect(wrapper.text()).toContain('지수: 81')
+    expect(wrapper.text()).not.toContain('80.74')
+  })
 })
