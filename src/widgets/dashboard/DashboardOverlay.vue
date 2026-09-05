@@ -87,7 +87,7 @@ function registerPanel(el: unknown) {
   }
 }
 
-/** 4개 서브 패널 순차 등장(Stagger) 애니메이션 */
+/** 좌/우 서브 패널 그룹 순차 등장(Stagger) 애니메이션 */
 function animatePanelEntrance() {
   activePanelTween?.kill()
   if (prefersReducedMotion() || panelRefs.value.length === 0) return

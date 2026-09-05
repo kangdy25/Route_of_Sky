@@ -48,7 +48,7 @@ const displayedCloudCover = computed(() => formatInteger(normalizedCloudCover.va
           fill="none"
           stroke="url(#cloudGrad)"
           stroke-width="8"
-          stroke-dasharray="GAUGE_CIRCUMFERENCE"
+          :stroke-dasharray="GAUGE_CIRCUMFERENCE"
           :stroke-dashoffset="gaugeDashOffset"
           stroke-linecap="round"
           class="drop-shadow-[0_0_8px_rgba(34,211,238,0.45)] transition-[stroke-dashoffset] duration-500 ease-out"
