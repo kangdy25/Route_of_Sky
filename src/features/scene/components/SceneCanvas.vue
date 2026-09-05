@@ -36,6 +36,7 @@ import { getSkyPhase, getSunPositionForTime } from '@/features/scene/lib/sky'
 import { WeatherPostProcessController } from '@/features/scene/lib/weatherPostProcess'
 
 const TILESET_WARMUP_TIMEOUT_MS = 6000
+const INITIAL_VIEW_IDLE_WINDOW_MS = 500
 
 // 이 컴포넌트는 Cesium Viewer와 Vue 템플릿을 연결하는 조립자 역할만 맡습니다.
 // 실제 날씨 계산, 캔버스 렌더링, primitive 관리는 각 lib 모듈에 위임합니다.
@@ -92,7 +93,10 @@ let sceneUpdateFrame = 0
 let lastAppliedState: SceneWeatherState | null = null
 let lastAppliedLocationId = ''
 
-function reportPerformanceInDevelopment(event: 'viewer-ready' | 'tiles-stable' | 'quality-applied', valueMs: number) {
+function reportPerformanceInDevelopment(
+  event: 'viewer-ready' | 'tiles-stable' | 'initial-view-ready' | 'quality-applied',
+  valueMs: number,
+) {
   void import('@/shared/lib/performanceTelemetry').then(({ reportDevelopmentPerformance }) => {
     reportDevelopmentPerformance({ event, valueMs })
   })
@@ -109,9 +113,11 @@ function markPerformance(name: string) {
         ? 'viewer-ready'
         : name === 'route-of-sky:tiles-stable'
           ? 'tiles-stable'
-          : name.startsWith('route-of-sky:quality-applied-')
-            ? 'quality-applied'
-            : null
+          : name === 'route-of-sky:initial-view-ready'
+            ? 'initial-view-ready'
+            : name.startsWith('route-of-sky:quality-applied-')
+              ? 'quality-applied'
+              : null
     if (event) {
       reportPerformanceInDevelopment(event, performance.now())
     }
@@ -386,8 +392,10 @@ function keepRenderingUntilInitialTilesLoaded(
   onInitialTilesLoaded: () => void,
 ) {
   let timeoutId = 0
+  let idleTimeoutId = 0
   let stopped = false
   let initialTilesSettled = false
+  let initialViewReady = false
   const removeListeners: Array<() => void> = []
 
   const requestRender = () => {
@@ -403,6 +411,9 @@ function keepRenderingUntilInitialTilesLoaded(
     if (timeoutId) {
       window.clearTimeout(timeoutId)
     }
+    if (idleTimeoutId) {
+      window.clearTimeout(idleTimeoutId)
+    }
     for (const removeListener of removeListeners) {
       removeListener()
     }
@@ -416,32 +427,70 @@ function keepRenderingUntilInitialTilesLoaded(
     if (initialTilesSettled) return
 
     initialTilesSettled = true
+    if (timeoutId) {
+      window.clearTimeout(timeoutId)
+      timeoutId = 0
+    }
     tileset.maximumScreenSpaceError = 8
     onInitialTilesLoaded()
     markPerformance('route-of-sky:tiles-stable')
     requestRender()
   }
 
-  const finishInitialLoad = () => {
+  /** 현재 카메라와 SSE 목표에 필요한 초기 타일이 모두 준비됐을 때 한 번만 기록합니다. */
+  const finishInitialViewLoad = () => {
+    if (initialViewReady) return
+
+    initialViewReady = true
     requestRender()
     settleInitialTiles()
+    markPerformance('route-of-sky:initial-view-ready')
     stop()
+  }
+
+  /**
+   * 첫 타일 이후 Cesium의 요청·처리 큐가 일정 시간 비어 있으면 초기 구도가 안정됐다고 봅니다.
+   * SSE 2와 8의 후속 LOD 요청량 차이를 같은 기준으로 비교하기 위한 개발·측정용 mark입니다.
+   */
+  const scheduleInitialViewReady = () => {
+    if (!initialTilesSettled || initialViewReady || idleTimeoutId) return
+
+    idleTimeoutId = window.setTimeout(() => {
+      idleTimeoutId = 0
+      finishInitialViewLoad()
+    }, INITIAL_VIEW_IDLE_WINDOW_MS)
+  }
+
+  const handleLoadProgress = (pendingRequests = 0, tilesProcessing = 0) => {
+    requestRender()
+    if (!initialTilesSettled || initialViewReady) return
+
+    if (pendingRequests > 0 || tilesProcessing > 0) {
+      if (idleTimeoutId) {
+        window.clearTimeout(idleTimeoutId)
+        idleTimeoutId = 0
+      }
+      return
+    }
+
+    scheduleInitialViewReady()
   }
 
   removeListeners.push(
     tileset.tileLoad.addEventListener(() => {
       requestRender()
       settleInitialTiles()
+      scheduleInitialViewReady()
     }),
   )
-  removeListeners.push(tileset.loadProgress.addEventListener(() => requestRender()))
-  removeListeners.push(tileset.initialTilesLoaded.addEventListener(finishInitialLoad))
-  removeListeners.push(tileset.allTilesLoaded.addEventListener(finishInitialLoad))
+  removeListeners.push(tileset.loadProgress.addEventListener(handleLoadProgress))
+  removeListeners.push(tileset.initialTilesLoaded.addEventListener(finishInitialViewLoad))
+  removeListeners.push(tileset.allTilesLoaded.addEventListener(finishInitialViewLoad))
 
   requestRender()
   timeoutId = window.setTimeout(() => {
     settleInitialTiles()
-    stop()
+    scheduleInitialViewReady()
   }, TILESET_WARMUP_TIMEOUT_MS)
 
   return stop

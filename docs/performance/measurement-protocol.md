@@ -40,6 +40,21 @@ node scripts/performance/compare-gpu.mjs \
 
 공식 측정은 HTTP 캐시를 끄고 Weather 응답을 모킹하므로 API 요청 수는 캐시 정책 효과가 아니라 시나리오 통제를 보여 준다. 5분 Weather 캐시와 강제 새로고침은 Playwright 통합 테스트로 별도 검증한다.
 
+## 초기 3D 씬 안정화 측정
+
+Google 3D Tiles의 첫 타일 표시와 이후 LOD 요청이 멈추는 시점은 구분한다. 이 비교는 다음과 같이 데스크톱 실제 GPU에서 각 SSE 값 3회씩 실행한다.
+
+```bash
+pnpm build
+node scripts/performance/measure-gpu.mjs \
+  --skip-build --initial-only --desktop-only --runs 3 --label sse8-usable
+```
+
+- `route-of-sky:tiles-stable`: 첫 `tileLoad` 뒤 화면을 표시하기 시작한 시점.
+- `route-of-sky:initial-view-ready`: 첫 타일 이후 Cesium의 요청·처리 큐가 500ms 동안 비어 초기 구도가 안정됐다고 판단한 시점.
+- **후속 LOD 안정화 시간**은 `initial-view-ready - tiles-stable`로 계산한다. 이는 사용자가 장면이 더 이상 계속 바뀌지 않는다고 느끼는 Time to Usable Scene 지표다.
+- SSE가 다른 조건은 요구하는 최종 상세도가 다르다. 따라서 이 결과는 “동일한 시각 품질을 더 빨리 렌더링”한 결과가 아니라, **허용 가능한 상세도 목표를 조정해 사용 가능한 씬까지의 시간을 줄인 UX 개선**으로만 기록한다.
+
 ## 실제 GPU 렌더링 trace
 
 ```bash

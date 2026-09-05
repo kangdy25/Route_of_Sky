@@ -115,9 +115,14 @@ describe('Cesium scene 설정', () => {
     const viewer = createViewer()
     const fromDegreesSpy = vi.spyOn(Cartesian3, 'fromDegrees')
 
-    setInitialLocationView(viewer as never, WORLD_LOCATIONS[2])
+    const location = WORLD_LOCATIONS[2]
+    setInitialLocationView(viewer as never, location)
 
-    expect(fromDegreesSpy).toHaveBeenCalledWith(139.7454, 35.6586, 1650)
+    expect(fromDegreesSpy).toHaveBeenCalledWith(
+      location.cameraView.longitude,
+      location.cameraView.latitude,
+      location.cameraView.height,
+    )
     expect(viewer.camera.setView).toHaveBeenCalled()
 
     fromDegreesSpy.mockRestore()

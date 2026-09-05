@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { computed, defineComponent, h, nextTick } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
 import { useWeatherStore } from '@/features/weather/model/weather.store'
 import DashboardPage from './DashboardPage.vue'
 
@@ -81,9 +82,7 @@ function mountDashboardPage() {
             'update:qualityMode',
           ],
           setup(props, { emit }) {
-            const summary = computed(
-              () => `${props.temperature}/${props.precipitation}/${props.visibility}`,
-            )
+            const summary = computed(() => `${props.temperature}/${props.precipitation}/${props.visibility}`)
 
             return () =>
               h('div', { 'data-testid': 'dashboard-overlay' }, [
@@ -128,11 +127,7 @@ function mountDashboardPage() {
                   },
                   'Retry weather',
                 ),
-                h(
-                  'button',
-                  { 'data-testid': 'set-time', onClick: () => emit('update:time', 8) },
-                  'Set time',
-                ),
+                h('button', { 'data-testid': 'set-time', onClick: () => emit('update:time', 8) }, 'Set time'),
                 h(
                   'button',
                   {
@@ -238,14 +233,7 @@ describe('대시보드 페이지', () => {
 
     await wrapper.find('[data-testid="fly-to-selected-location"]').trigger('click')
 
-    expect(flyToLocation).toHaveBeenCalledWith({
-      longitude: -73.9855,
-      latitude: 40.758,
-      height: 1650,
-      headingDegrees: 28,
-      pitchDegrees: -38,
-      duration: 3.4,
-    })
+    expect(flyToLocation).toHaveBeenCalledWith(WORLD_LOCATIONS[1].cameraView)
   })
 
   it('오버레이 지역 선택 이벤트를 SceneCanvas 이동과 선택 상태에 반영해야 한다', async () => {
@@ -253,14 +241,7 @@ describe('대시보드 페이지', () => {
 
     await wrapper.find('[data-testid="select-jerusalem"]').trigger('click')
 
-    expect(flyToLocation).toHaveBeenCalledWith({
-      longitude: 35.2345,
-      latitude: 31.7767,
-      height: 1650,
-      headingDegrees: 28,
-      pitchDegrees: -38,
-      duration: 3.4,
-    })
+    expect(flyToLocation).toHaveBeenCalledWith(WORLD_LOCATIONS[3].cameraView)
     expect(wrapper.findComponent({ name: 'SceneCanvas' }).props('location')).toMatchObject({
       id: 'il-jerusalem',
       label: '이스라엘',
@@ -333,14 +314,7 @@ describe('대시보드 페이지', () => {
     flyToLocation.mockClear()
     await wrapper.find('[data-testid="fly-to-selected-location"]').trigger('click')
 
-    expect(flyToLocation).toHaveBeenCalledWith({
-      longitude: 35.2345,
-      latitude: 31.7767,
-      height: 1650,
-      headingDegrees: 28,
-      pitchDegrees: -38,
-      duration: 3.4,
-    })
+    expect(flyToLocation).toHaveBeenCalledWith(WORLD_LOCATIONS[3].cameraView)
   })
 
   it('현재 날씨 렌더링 이벤트를 받으면 선택된 지역의 실제 날씨를 다시 불러와야 한다', async () => {

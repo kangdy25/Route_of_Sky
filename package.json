@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc -b && vite build",
-    "preview": "vite preview",
+    "dev": "vite --configLoader native",
+    "build": "vue-tsc -b && vite build --configLoader native",
+    "preview": "vite preview --configLoader native",
     "lint": "eslint . --fix",
     "format": "prettier --write src/ e2e/",
     "prepare": "husky",

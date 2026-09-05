@@ -1,7 +1,7 @@
 // 3D scene 모듈들이 공유하는 공개 타입입니다.
 
-/** 4대 표준 시간대 프리셋 키 ('dawn': 새벽, 'noon': 정오, 'sunset': 일몰, 'night': 밤) */
-export type TimePresetKey = 'dawn' | 'noon' | 'sunset' | 'night'
+/** 4대 표준 시간대 프리셋 키 ('dawn': 새벽, 'daylight': 낮, 'sunset': 일몰, 'night': 밤) */
+export type TimePresetKey = 'dawn' | 'daylight' | 'sunset' | 'night'
 
 /** 시간대 프리셋 메타데이터 인터페이스 */
 export interface TimePreset {
@@ -13,13 +13,10 @@ export interface TimePreset {
 /** 시간 및 태양 고도에 따라 산출되는 대기 광량/발광 비율 계수 (0.0 ~ 1.0). */
 export interface SkyPhase {
   dawn: number
-  noon: number
+  /** 일출부터 해질녘까지의 전체 낮 조도 */
+  daylight: number
   sunset: number
   night: number
-  /** 기존 렌더링 모듈과 호환되는 낮 광량 계수 (noon과 같은 값) */
-  daylight: number
-  /** 기존 렌더링 모듈과 호환되는 해질녘 계수 (sunset과 같은 값) */
-  dusk: number
   /** 수평선 붉은 노을 발광 비율 (dawn과 sunset 중 최댓값) */
   horizonGlow: number
 }

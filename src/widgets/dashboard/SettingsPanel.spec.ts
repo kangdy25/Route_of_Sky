@@ -95,12 +95,12 @@ describe('설정 패널', () => {
   it('날씨 실험실 설정을 렌더링해야 한다', () => {
     const { wrapper } = mountSettingsPanel()
 
-    expect(wrapper.text()).toContain('Settings')
-    expect(wrapper.text()).toContain('Scene Time')
-    expect(wrapper.text()).toContain('Weather Lab')
-    expect(wrapper.text()).toContain('Render Current Weather')
-    expect(wrapper.text()).toContain('Sunny')
-    expect(wrapper.text()).toContain('Precipitation')
+    expect(wrapper.text()).toContain('환경설정')
+    expect(wrapper.text()).toContain('시간대 설정')
+    expect(wrapper.text()).toContain('날씨 시뮬레이션 (Lab)')
+    expect(wrapper.text()).toContain('실시간 날씨 반영')
+    expect(wrapper.text()).toContain('맑음')
+    expect(wrapper.text()).toContain('강수량')
     expect(wrapper.text()).toContain('0.0 mm/h')
     expect(wrapper.text()).toContain('적용: MEDIUM')
   })
@@ -124,10 +124,10 @@ describe('설정 패널', () => {
     state.windSpeed = 5.56
     await nextTick()
 
-    expect(wrapper.text()).toContain('24.6 C')
+    expect(wrapper.text()).toContain('24.6°C')
     expect(wrapper.text()).toContain('62%')
     expect(wrapper.text()).toContain('5.6 m/s')
-    expect(wrapper.text()).not.toContain('24.63 C')
+    expect(wrapper.text()).not.toContain('24.63°C')
     expect(wrapper.text()).not.toContain('61.54%')
     expect(wrapper.text()).not.toContain('5.56 m/s')
   })
@@ -145,14 +145,14 @@ describe('설정 패널', () => {
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Night')
+      .find((button) => button.text() === '밤')
       ?.trigger('click')
 
     expect(state.time).toBe(22.5)
 
     const timeInput = wrapper
       .findAll('label')
-      .find((label) => label.text().includes('Time scrubber'))
+      .find((label) => label.text().includes('시간 조절'))
       ?.find('input')
 
     await timeInput?.setValue('6.2')
@@ -168,7 +168,7 @@ describe('설정 패널', () => {
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Current Time')
+      .find((button) => button.text() === '현재 시각 반영')
       ?.trigger('click')
 
     expect(state.time).toBe(12.3)
@@ -179,7 +179,7 @@ describe('설정 패널', () => {
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Render Current Weather')
+      .find((button) => button.text() === '실시간 날씨 반영')
       ?.trigger('click')
 
     expect(wrapper.findComponent(SettingsPanel).emitted('renderCurrentWeather')).toHaveLength(1)
@@ -190,7 +190,7 @@ describe('설정 패널', () => {
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Rain')
+      .find((button) => button.text() === '비')
       ?.trigger('click')
 
     expect(state.temperature).toBe(15)
@@ -208,7 +208,7 @@ describe('설정 패널', () => {
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Storm')
+      .find((button) => button.text() === '폭풍우')
       ?.trigger('click')
 
     expect(state.temperature).toBe(23)
@@ -226,7 +226,7 @@ describe('설정 패널', () => {
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Snow')
+      .find((button) => button.text() === '눈')
       ?.trigger('click')
 
     expect(state.temperature).toBe(-7)
@@ -237,7 +237,7 @@ describe('설정 패널', () => {
     expect(state.humidity).toBe(90)
     expect(state.aqi).toBe(20)
     expect(state.visibility).toBe(18.4)
-    expect(wrapper.text()).toContain('Snowfall')
+    expect(wrapper.text()).toContain('적설량')
     expect(wrapper.text()).toContain('cm/h')
   })
 
@@ -246,11 +246,11 @@ describe('설정 패널', () => {
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Snow')
+      .find((button) => button.text() === '눈')
       ?.trigger('click')
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Sunny')
+      .find((button) => button.text() === '맑음')
       ?.trigger('click')
 
     expect(state.temperature).toBe(22)
@@ -261,7 +261,7 @@ describe('설정 패널', () => {
     expect(state.humidity).toBe(42)
     expect(state.aqi).toBe(32)
     expect(state.visibility).toBe(20.5)
-    expect(wrapper.text()).toContain('Precipitation')
+    expect(wrapper.text()).toContain('강수량')
     expect(wrapper.text()).toContain('mm/h')
   })
 
@@ -270,7 +270,7 @@ describe('설정 패널', () => {
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Haze')
+      .find((button) => button.text() === '미세먼지')
       ?.trigger('click')
 
     expect(state.precipitation).toBe(0)
@@ -304,12 +304,12 @@ describe('설정 패널', () => {
         .find((label) => label.text().includes(labelText))
         ?.find('input')
 
-    await findInputByLabel('Precipitation')?.setValue('6.5')
-    await findInputByLabel('Temperature')?.setValue('-2.5')
-    await findInputByLabel('Cloud')?.setValue('77')
-    await findInputByLabel('Wind')?.setValue('11.5')
-    await findInputByLabel('Wind angle')?.setValue('180')
-    await findInputByLabel('Humidity')?.setValue('91')
+    await findInputByLabel('강수량')?.setValue('6.5')
+    await findInputByLabel('기온')?.setValue('-2.5')
+    await findInputByLabel('운량 (구름)')?.setValue('77')
+    await findInputByLabel('풍속')?.setValue('11.5')
+    await findInputByLabel('풍향')?.setValue('180')
+    await findInputByLabel('습도')?.setValue('91')
 
     expect(state.precipitation).toBe(6.5)
     expect(state.temperature).toBe(-2.5)
@@ -323,7 +323,7 @@ describe('설정 패널', () => {
     const { wrapper, state } = mountSettingsPanel()
     const temperatureInput = wrapper
       .findAll('label')
-      .find((label) => label.text().includes('Temperature'))
+      .find((label) => label.text().includes('기온'))
       ?.find('input')
 
     expect(temperatureInput?.attributes('min')).toBe('-20')
@@ -341,19 +341,19 @@ describe('설정 패널', () => {
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Dawn')
+      .find((button) => button.text() === '새벽')
       ?.trigger('click')
     expect(state.time).toBe(6.2)
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Noon')
+      .find((button) => button.text() === '정오')
       ?.trigger('click')
     expect(state.time).toBe(12)
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === 'Sunset')
+      .find((button) => button.text() === '일몰')
       ?.trigger('click')
     expect(state.time).toBe(18.6)
   })
@@ -387,7 +387,7 @@ describe('설정 패널', () => {
     const { wrapper, state } = mountSettingsPanel()
     const autoVisibilityInput = wrapper
       .findAll('label')
-      .find((label) => label.text().includes('Auto visibility'))
+      .find((label) => label.text().includes('가시거리 자동 연동'))
       ?.find('input')
 
     await autoVisibilityInput?.setValue(false)
@@ -395,7 +395,7 @@ describe('설정 패널', () => {
 
     const visibilityInput = wrapper
       .findAll('label')
-      .find((label) => label.text().includes('Visibility'))
+      .find((label) => label.text().includes('가시거리'))
       ?.find('input')
 
     await visibilityInput?.setValue('4.5')

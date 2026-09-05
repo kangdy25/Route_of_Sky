@@ -1,6 +1,7 @@
 export const PERFORMANCE_EVENT_NAMES = [
   'viewer-ready',
   'tiles-stable',
+  'initial-view-ready',
   'quality-applied',
   'weather-cache-hit',
   'weather-network',
@@ -25,9 +26,7 @@ export function isDevelopmentPerformanceReportingEnabled(
   return isDevelopment && hasPerformanceQuery(search)
 }
 
-export function reportDevelopmentPerformance(
-  event: Omit<PerformanceTelemetryEvent, 'timestampMs'>,
-) {
+export function reportDevelopmentPerformance(event: Omit<PerformanceTelemetryEvent, 'timestampMs'>) {
   if (!isDevelopmentPerformanceReportingEnabled() || typeof window === 'undefined') return
 
   const payload: PerformanceTelemetryEvent = {

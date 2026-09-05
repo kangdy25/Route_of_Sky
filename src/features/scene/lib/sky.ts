@@ -10,11 +10,9 @@ const sunTransformScratch = new Matrix3()
 /** getSkyPhase 기본 반환용 재사용 버퍼 (매 프레임 객체 할당 방지) */
 const defaultSkyPhaseScratch: SkyPhase = {
   dawn: 0,
-  noon: 0,
+  daylight: 0,
   sunset: 0,
   night: 0,
-  daylight: 0,
-  dusk: 0,
   horizonGlow: 0,
 }
 
@@ -25,7 +23,7 @@ const defaultSkyPhaseScratch: SkyPhase = {
  *
  * @param time 24시간제 로컬 시간 수치 (0.0 ~ 24.0, 예: 14.5 = 14:30)
  * @param result 재사용할 SkyPhase 객체 버퍼 (생략 시 내부 scratch 버퍼 사용)
- * @returns {SkyPhase} 새벽(dawn), 정오(noon), 일몰(sunset), 밤(night), 노을(horizonGlow) 광량 계수
+ * @returns {SkyPhase} 새벽(dawn), 낮(daylight), 일몰(sunset), 밤(night), 노을(horizonGlow) 광량 계수
  */
 export function getSkyPhase(time: number, result: SkyPhase = defaultSkyPhaseScratch): SkyPhase {
   const localTime = ((time % 24) + 24) % 24
@@ -33,17 +31,15 @@ export function getSkyPhase(time: number, result: SkyPhase = defaultSkyPhaseScra
   const sunriseStart = 4.75
   const sunrise = 5.4
   const sunset = 20.5
-  const duskEnd = 21.25
+  const sunsetEnd = 21.25
   const morningLight = smoothstep(sunriseStart, sunrise + 0.8, localTime)
-  const eveningFade = 1 - smoothstep(sunset - 1.0, duskEnd, localTime)
+  const eveningFade = 1 - smoothstep(sunset - 1.0, sunsetEnd, localTime)
   const daylight = clampToUnitInterval(morningLight * eveningFade)
 
   result.dawn = clampToUnitInterval(1 - Math.abs(localTime - sunrise) / 1.65)
-  result.noon = daylight
+  result.daylight = daylight
   result.sunset = clampToUnitInterval(1 - Math.abs(localTime - sunset) / 1.8)
   result.night = 1 - daylight
-  result.daylight = daylight
-  result.dusk = result.sunset
   result.horizonGlow = Math.max(result.dawn, result.sunset)
 
   return result

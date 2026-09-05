@@ -54,7 +54,7 @@ export function getWhiteoutOverlayStyle(state: SceneWeatherState) {
 
 export function getSkyTimeStyle(state: SceneWeatherState) {
   const sky = getSkyPhase(state.time)
-  const dawnWarmth = sky.dawn + sky.dusk
+  const dawnWarmth = sky.dawn + sky.sunset
   const nightOpacity = 1 - sky.daylight
   const dayBlue = 0.28 + sky.daylight * 0.42
   const horizonWarmth = 0.12 + dawnWarmth * 0.72
@@ -69,13 +69,9 @@ export function getSkyTimeStyle(state: SceneWeatherState) {
 
 export function getTwilightCloudGlowStyle(state: SceneWeatherState) {
   const sky = getSkyPhase(state.time)
-  const twilight = clampToUnitInterval(sky.dawn + sky.dusk)
+  const twilight = clampToUnitInterval(sky.dawn + sky.sunset)
   const cloudFactor = clampToUnitInterval((state.cloudCover - 18) / 82)
-  const precipitationDampening = CesiumMath.lerp(
-    1,
-    0.62,
-    clampToUnitInterval(state.precipitation / 14),
-  )
+  const precipitationDampening = CesiumMath.lerp(1, 0.62, clampToUnitInterval(state.precipitation / 14))
   const opacity = twilight * cloudFactor * precipitationDampening
 
   return {

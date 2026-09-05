@@ -8,6 +8,11 @@ const root = process.cwd()
 const label = readArgument('--label') ?? 'gpu-local'
 const runs = Number(readArgument('--runs') ?? 3)
 const sampleMs = Number(readArgument('--sample-ms') ?? process.env.PERF_SAMPLE_MS ?? 20_000)
+const initialOnly = process.argv.includes('--initial-only')
+const desktopOnly = process.argv.includes('--desktop-only')
+const tilesStableTimeoutMs = Number(readArgument('--tiles-stable-timeout-ms') ?? 90_000)
+const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
+const viteCli = resolve(root, 'node_modules', 'vite', 'bin', 'vite.js')
 const outputDir = resolve(root, 'docs/performance/runs')
 const previewUrl = readArgument('--url') ?? 'http://127.0.0.1:4173'
 const browserPath =
@@ -83,7 +88,12 @@ async function getBuildMetrics() {
 
 function run(command, args, options = {}) {
   return new Promise((resolvePromise, reject) => {
-    const child = spawn(command, args, { cwd: root, stdio: 'inherit', ...options })
+    const child = spawn(command, args, {
+      cwd: root,
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+      ...options,
+    })
     child.once('error', reject)
     child.once('exit', (code) => {
       if (code === 0) resolvePromise()
@@ -171,6 +181,23 @@ async function getHardwareAcceleration(browser) {
   }
 
   return true
+}
+
+/** 지정한 Performance mark가 기록될 때까지 기다리고, 시간 초과 시 null을 반환합니다. */
+async function waitForPerformanceMark(page, name, timeoutMs) {
+  return page
+    .waitForFunction(
+      (markName) => performance.getEntriesByName(markName).length > 0,
+      name,
+      { timeout: timeoutMs },
+    )
+    .then(() =>
+      page.evaluate(
+        (markName) => performance.getEntriesByName(markName).at(-1)?.startTime ?? null,
+        name,
+      ),
+    )
+    .catch(() => null)
 }
 
 async function captureFrameTiming(page, preset) {
@@ -267,10 +294,53 @@ async function measureRun(cpuSlowdownMultiplier) {
     const viewerReadyMs = await page.evaluate(
       () => performance.getEntriesByName('route-of-sky:viewer-ready').at(-1)?.startTime ?? null,
     )
-    await page.waitForTimeout(400)
-    const tilesStableMs = await page.evaluate(
-      () => performance.getEntriesByName('route-of-sky:tiles-stable').at(-1)?.startTime ?? null,
+    const tilesStableMs = await waitForPerformanceMark(
+      page,
+      'route-of-sky:tiles-stable',
+      tilesStableTimeoutMs,
     )
+    const initialViewReadyMs = await waitForPerformanceMark(
+      page,
+      'route-of-sky:initial-view-ready',
+      tilesStableTimeoutMs,
+    )
+    const postFirstTileRefinementMs =
+      typeof tilesStableMs === 'number' && typeof initialViewReadyMs === 'number'
+        ? Number((initialViewReadyMs - tilesStableMs).toFixed(2))
+        : null
+
+    if (initialOnly) {
+      await context.close()
+      return {
+        cpuSlowdownMultiplier,
+        environment: { hardwareAcceleration, viewport: '1365x768', cacheDisabled: true },
+        api: {
+          networkRequestCount: apiRequestCount,
+          cacheHitCount: 0,
+          cacheMissCount: apiRequestCount,
+          responseP95Ms: percentile(apiResponseTimes, 0.95),
+        },
+        page: {
+          firstContentfulPaintMs: null,
+          largestContentfulPaintMs: null,
+          cumulativeLayoutShift: 0,
+          longTaskCount: 0,
+          longTaskP95Ms: 0,
+          eventTimingP95Ms: null,
+          eventTimingSupport: 'not-measured',
+          resourceTransferBytes: 0,
+          resourceDecodedBytes: 0,
+          weatherCacheHitMs: null,
+        },
+        viewerReadyMs,
+        tilesStableMs,
+        initialViewReadyMs,
+        postFirstTileRefinementMs,
+        locationChangeReadyMs: null,
+        quality: { effectiveLevel: null, mode: null, transitions: [] },
+        frames: {},
+      }
+    }
 
     const interactionStartedAt = performance.now()
     const locationSelect = page.getByRole('combobox', { name: '지역 선택' })
@@ -331,6 +401,8 @@ async function measureRun(cpuSlowdownMultiplier) {
       page: { ...summarizePageMetrics(metrics), weatherCacheHitMs: metrics.weatherCacheHitMs },
       viewerReadyMs,
       tilesStableMs,
+      initialViewReadyMs,
+      postFirstTileRefinementMs,
       locationChangeReadyMs,
       quality,
       frames: Object.fromEntries(
@@ -360,6 +432,8 @@ function aggregate(runResults) {
     scene: {
       viewerReadyMs: metric((run) => run.viewerReadyMs),
       tilesStableMs: metric((run) => run.tilesStableMs),
+      initialViewReadyMs: metric((run) => run.initialViewReadyMs),
+      postFirstTileRefinementMs: metric((run) => run.postFirstTileRefinementMs),
       locationChangeReadyMs: metric((run) => run.locationChangeReadyMs),
       rainFrameP95Ms: frameMetric('rain'),
       stormFrameP95Ms: frameMetric('storm'),
@@ -375,15 +449,27 @@ function aggregate(runResults) {
   }
 }
 
-if (!Number.isInteger(runs) || runs < 1) {
-  throw new Error('--runs must be a positive integer')
+if (!Number.isInteger(runs) || runs < 1 || !Number.isFinite(tilesStableTimeoutMs)) {
+  throw new Error('--runs must be a positive integer and --tiles-stable-timeout-ms must be a number')
 }
 
 await mkdir(outputDir, { recursive: true })
-if (!skipBuild) await run('pnpm', ['build'])
+if (!skipBuild) {
+  await run(pnpmCommand, ['exec', 'vue-tsc', '-b'])
+  await run(pnpmCommand, ['exec', 'vite', 'build', '--configLoader', 'native'])
+}
 const preview = spawn(
-  'pnpm',
-  ['exec', 'vite', 'preview', '--host', '127.0.0.1', '--port', '4173'],
+  process.execPath,
+  [
+    viteCli,
+    'preview',
+    '--host',
+    '127.0.0.1',
+    '--port',
+    '4173',
+    '--configLoader',
+    'native',
+  ],
   {
     cwd: root,
     stdio: 'ignore',
@@ -396,7 +482,9 @@ try {
   const lowEndRuns = []
   for (let index = 0; index < runs; index += 1) {
     desktopRuns.push(await measureRun(1))
-    lowEndRuns.push(await measureRun(4))
+    if (!desktopOnly) {
+      lowEndRuns.push(await measureRun(4))
+    }
   }
 
   const result = {
@@ -411,6 +499,9 @@ try {
       rawGpuInfoPersisted: false,
       runs,
       sampleMs,
+      initialOnly,
+      desktopOnly,
+      tilesStableTimeoutMs,
       viewport: '1365x768',
       cacheDisabled: true,
       lowEndCpuSlowdownMultiplier: 4,
@@ -418,7 +509,7 @@ try {
     },
     build: await getBuildMetrics(),
     desktop: { runs: desktopRuns, summary: aggregate(desktopRuns) },
-    lowEnd: { runs: lowEndRuns, summary: aggregate(lowEndRuns) },
+    lowEnd: desktopOnly ? null : { runs: lowEndRuns, summary: aggregate(lowEndRuns) },
   }
   const destination = resolve(outputDir, `${label}.json`)
   await writeFile(destination, `${JSON.stringify(result, null, 2)}\n`)

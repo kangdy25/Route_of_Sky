@@ -20,9 +20,10 @@
   - `skipLevelOfDetail`, `loadSiblings`, foveated/점진 해상도 옵션을 이전의 점진 LOD 조합으로 복원했다. 이 조합은 빈 화면에서 고해상도 타일을 기다리지 않고, 먼저 표시 가능한 부모 타일과 주변 타일을 보여 준다.
 - `src/features/scene/lib/cesiumScene.ts`
   - GSAP 카메라 이동 완료 시 `scene.requestRender()`를 호출해 `requestRenderMode` 환경에서도 최종 시점의 타일 선택이 이어지게 했다.
-  - 시간대 상태의 기존 `daylight`, `dusk` 소비처와 새 시간대 모델의 호환 계약을 유지했다.
+  - 시간대 상태의 기존 `daylight`, `sunset` 소비처와 새 시간대 모델의 호환 계약을 유지했다.
 - `src/features/scene/lib/sky.ts`
   - 시간 프리셋 주변 거리만으로 조도를 0으로 만들던 계산을, 일출부터 해질녘까지 부드럽게 이어지는 조도 계산으로 보정했다. 따라서 저녁 시간에도 3D Tiles 조명이 갑자기 꺼지지 않는다.
+  - 하늘 광량 계약을 `daylight`, `dawn`, `sunset`, `night`, `horizonGlow`로 정리하고, 기존 중복 별칭을 제거해 모든 렌더링 소비처를 같은 용어로 맞췄다.
 - `src/pages/DashboardPage.vue`
   - 지역 변경 시 `location.cameraView`를 우선 전달하고, 없는 경우에만 기존 공통 카메라 값을 사용하게 했다.
 - `src/features/scene/model/scene.constants.ts`

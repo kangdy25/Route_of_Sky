@@ -205,7 +205,7 @@ export type SceneLocationId = (typeof WORLD_LOCATIONS)[number]['id']
 /** Settings UI 및 씬에서 공유하는 4대 표준 시간대 프리셋 */
 export const TIME_PRESETS = [
   { key: 'dawn', label: '새벽', time: 6.2 },
-  { key: 'noon', label: '정오', time: 12.0 },
+  { key: 'daylight', label: '정오', time: 12.0 },
   { key: 'sunset', label: '일몰', time: 18.6 },
   { key: 'night', label: '밤', time: 22.5 },
 ] as const satisfies readonly TimePreset[]

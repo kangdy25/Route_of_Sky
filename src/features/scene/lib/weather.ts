@@ -1,9 +1,6 @@
 import { Color, Math as CesiumMath } from 'cesium'
 
-import {
-  PRECIPITATION_MODE_THRESHOLD,
-  THUNDERSTORM_PRECIPITATION_THRESHOLD,
-} from '../model/scene.constants'
+import { PRECIPITATION_MODE_THRESHOLD, THUNDERSTORM_PRECIPITATION_THRESHOLD } from '../model/scene.constants'
 import type { PrecipitationMode, SceneWeatherState } from '../model/scene.types'
 import { clampToUnitInterval, smoothstep } from './math'
 import { getSkyPhase } from './sky'
@@ -44,7 +41,7 @@ export function getSnowstormIntensity(state: SceneWeatherState) {
 
 export function getWeatherTint(state: SceneWeatherState) {
   const sky = getSkyPhase(state.time)
-  const dawnWarmth = sky.dawn + sky.dusk
+  const dawnWarmth = sky.dawn + sky.sunset
   const dustFactor = clampToUnitInterval((state.aqi - 55) / 210)
   const clearRed = CesiumMath.lerp(0.58, 0.96, dawnWarmth)
   const clearGreen = CesiumMath.lerp(0.66, 0.82, sky.daylight) + dawnWarmth * 0.05

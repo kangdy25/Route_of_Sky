@@ -1,12 +1,4 @@
-import {
-  Cartesian2,
-  Cartesian3,
-  CloudCollection,
-  Color,
-  CumulusCloud,
-  Math as CesiumMath,
-  Viewer,
-} from 'cesium'
+import { Cartesian2, Cartesian3, CloudCollection, Color, CumulusCloud, Math as CesiumMath, Viewer } from 'cesium'
 
 import { CLOUD_LOD } from '../model/scene.constants'
 import type { SceneLocation, SceneQualityProfile, SceneWeatherState } from '../model/scene.types'
@@ -29,11 +21,7 @@ export class CloudController {
   private quality = SCENE_QUALITY_PROFILES.high
   private locationKey = ''
 
-  constructor(
-    getViewer: () => Viewer | null,
-    getState: () => SceneWeatherState,
-    getLocation: () => SceneLocation,
-  ) {
+  constructor(getViewer: () => Viewer | null, getState: () => SceneWeatherState, getLocation: () => SceneLocation) {
     this.getViewer = getViewer
     this.getState = getState
     this.getLocation = getLocation
@@ -69,12 +57,10 @@ export class CloudController {
       this.quality.maxClouds,
       Math.round(CesiumMath.lerp(4, CLOUD_LOD.maxClouds, cover / 100)),
     )
-    const brightness =
-      CesiumMath.lerp(0.38, 0.92, sky.daylight) -
-      clampToUnitInterval(state.precipitation / 14) * 0.16
+    const brightness = CesiumMath.lerp(0.38, 0.92, sky.daylight) - clampToUnitInterval(state.precipitation / 14) * 0.16
     const alpha = CesiumMath.lerp(0.36, 0.86, cover / 100)
     const tint = getWeatherTint(state)
-    const twilightWarmth = clampToUnitInterval((sky.dawn + sky.dusk) * cover * 0.012)
+    const twilightWarmth = clampToUnitInterval((sky.dawn + sky.sunset) * cover * 0.012)
     const cloudRed = CesiumMath.lerp(tint.red, 1.0, twilightWarmth * 0.52)
     const cloudGreen = CesiumMath.lerp(tint.green, 0.62, twilightWarmth * 0.42)
     const cloudBlue = CesiumMath.lerp(tint.blue, 0.56, twilightWarmth * 0.36)

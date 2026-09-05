@@ -1,6 +1,7 @@
 const ALLOWED_EVENTS = new Set([
   'viewer-ready',
   'tiles-stable',
+  'initial-view-ready',
   'quality-applied',
   'weather-cache-hit',
   'weather-network',
@@ -38,10 +39,7 @@ export default function handler(request, response) {
   }
 
   const body = parseBody(request.body)
-  if (
-    !body ||
-    Object.keys(body).some((key) => !['event', 'valueMs', 'timestampMs'].includes(key))
-  ) {
+  if (!body || Object.keys(body).some((key) => !['event', 'valueMs', 'timestampMs'].includes(key))) {
     return send(response, 400, { error: { message: '허용되지 않은 성능 이벤트 형식입니다.' } })
   }
 

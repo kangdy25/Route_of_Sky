@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config' // 'vite' 대신 'vitest/config' 사용
+import { defineConfig } from 'vite'
 import { loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
@@ -36,20 +36,6 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
-    },
-    test: {
-      environment: 'jsdom',
-      coverage: {
-        include: ['src/**/*.{ts,vue}'],
-        exclude: ['src/**/*.spec.ts', 'src/**/*.types.ts', 'src/env.d.ts', 'src/main.ts'],
-      },
-      exclude: [
-        '**/node_modules/**',
-        '**/dist/**',
-        '**/e2e/**',
-        '**/.{idea,git,cache,output,temp}/**',
-      ],
-      root: rootDirectory,
     },
   }
 })

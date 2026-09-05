@@ -24,11 +24,9 @@ const COLOR_BACKGROUND_DAY = Color.fromCssColorString('#0f2747')
 
 const atmosphereSkyPhaseScratch: SkyPhase = {
   dawn: 0,
-  noon: 0,
+  daylight: 0,
   sunset: 0,
   night: 0,
-  daylight: 0,
-  dusk: 0,
   horizonGlow: 0,
 }
 const atmosphereColorScratch = new Color()
@@ -131,10 +129,10 @@ export function applyAtmosphereToScene(viewer: Viewer, state: SceneWeatherState)
   viewer.scene.fog.enabled = visibilityKm < 22 || state.aqi > 65 || snowstormHazeFactor > 0 || state.precipitation > 0.2
   viewer.scene.fog.renderable = true
   viewer.scene.fog.density = fogDensity
-  viewer.scene.fog.minimumBrightness = CesiumMath.lerp(0.018, 0.16, sky.noon)
+  viewer.scene.fog.minimumBrightness = CesiumMath.lerp(0.018, 0.16, sky.daylight)
 
   // CSS 문자열 파싱 없이 정적 Color 인스턴스 간 보간 수행 (Reflow 완전 제거)
-  const baseBgColor = sky.noon > 0.1 ? COLOR_BACKGROUND_DAY : COLOR_BACKGROUND_NIGHT
+  const baseBgColor = sky.daylight > 0.1 ? COLOR_BACKGROUND_DAY : COLOR_BACKGROUND_NIGHT
   const blendRatio = CesiumMath.lerp(0.08, 0.28, Math.max(visibilityFactor, aqiHazeFactor, snowstormHazeFactor * 0.56))
   viewer.scene.backgroundColor = Color.lerp(baseBgColor, fogTint, blendRatio, atmosphereColorScratch)
 
@@ -146,16 +144,16 @@ export function applyAtmosphereToScene(viewer: Viewer, state: SceneWeatherState)
   )
 
   if (viewer.scene.skyAtmosphere) {
-    viewer.scene.skyAtmosphere.atmosphereLightIntensity = CesiumMath.lerp(3.0, 12.0, sky.noon)
-    viewer.scene.skyAtmosphere.hueShift = CesiumMath.lerp(-0.08, 0.02, sky.noon) + aqiHazeFactor * 0.06
+    viewer.scene.skyAtmosphere.atmosphereLightIntensity = CesiumMath.lerp(3.0, 12.0, sky.daylight)
+    viewer.scene.skyAtmosphere.hueShift = CesiumMath.lerp(-0.08, 0.02, sky.daylight) + aqiHazeFactor * 0.06
     viewer.scene.skyAtmosphere.saturationShift =
-      CesiumMath.lerp(-0.18, 0.08, sky.noon) - visibilityFactor * 0.14 + aqiHazeFactor * 0.08
+      CesiumMath.lerp(-0.18, 0.08, sky.daylight) - visibilityFactor * 0.14 + aqiHazeFactor * 0.08
     viewer.scene.skyAtmosphere.brightnessShift =
-      CesiumMath.lerp(-0.55, 0.12, sky.noon) - precipitationHazeFactor * 0.1 - snowstormHazeFactor * 0.1
+      CesiumMath.lerp(-0.55, 0.12, sky.daylight) - precipitationHazeFactor * 0.1 - snowstormHazeFactor * 0.1
   }
 
   if (viewer.scene.light instanceof SunLight) {
-    viewer.scene.light.intensity = CesiumMath.lerp(0.05, 2.0, sky.noon)
+    viewer.scene.light.intensity = CesiumMath.lerp(0.05, 2.0, sky.daylight)
   }
   if (viewer.scene.sun) {
     viewer.scene.sun.glowFactor = CesiumMath.lerp(1.1, 3.1, sky.horizonGlow)
