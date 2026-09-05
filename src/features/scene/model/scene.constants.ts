@@ -89,7 +89,7 @@ export const WORLD_LOCATIONS = [
     cameraView: {
       longitude: 35.2315,
       latitude: 31.7745,
-      height: 380,
+      height: 1500,
       headingDegrees: 55,
       pitchDegrees: -28,
       rollDegrees: 0,

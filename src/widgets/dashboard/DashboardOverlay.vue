@@ -28,7 +28,7 @@ const qualityMode = defineModel<SceneQualityMode>('qualityMode', { required: tru
 const props = defineProps<{
   temperatureMin: number
   temperatureMax: number
-  locations: SceneLocation[]
+  locations: readonly SceneLocation[]
   selectedLocationId: string
   effectiveQuality: SceneQualityLevel
   isSceneTransitioning?: boolean

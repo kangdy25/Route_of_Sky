@@ -6,7 +6,7 @@ import WeatherSyncStatus from './WeatherSyncStatus.vue'
 
 const props = withDefaults(
   defineProps<{
-    locations: SceneLocation[]
+    locations: readonly SceneLocation[]
     selectedLocationId: string
     isDashboardOpen?: boolean
     weatherDataSource?: WeatherDataSource

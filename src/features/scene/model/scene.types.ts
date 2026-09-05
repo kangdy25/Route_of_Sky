@@ -16,6 +16,10 @@ export interface SkyPhase {
   noon: number
   sunset: number
   night: number
+  /** 기존 렌더링 모듈과 호환되는 낮 광량 계수 (noon과 같은 값) */
+  daylight: number
+  /** 기존 렌더링 모듈과 호환되는 해질녘 계수 (sunset과 같은 값) */
+  dusk: number
   /** 수평선 붉은 노을 발광 비율 (dawn과 sunset 중 최댓값) */
   horizonGlow: number
 }

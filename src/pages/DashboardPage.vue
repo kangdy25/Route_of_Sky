@@ -102,14 +102,18 @@ const {
  */
 function flyToSelectedLocation() {
   const location = selectedLocation.value
-  sceneCanvasRef.value?.flyToLocation({
-    longitude: location.lng,
-    latitude: location.lat,
-    height: 1650, // 카메라 고도 (m)
-    headingDegrees: 28, // 카메라 수평 방향각 (Yaw)
-    pitchDegrees: -38, // 카메라 내려다보는 각도 (Pitch)
-    duration: 3.4, // 비행 전환 애니메이션 지속 시간 (초)
-  })
+  // 도시별 cameraView가 있으면 그 조망을 우선 사용합니다.
+  // 그렇지 않은 데이터도 기존 기본값으로 안전하게 이동할 수 있게 fallback을 유지합니다.
+  sceneCanvasRef.value?.flyToLocation(
+    location.cameraView ?? {
+      longitude: location.lng,
+      latitude: location.lat,
+      height: 1650,
+      headingDegrees: 28,
+      pitchDegrees: -38,
+      duration: 3.4,
+    },
+  )
 }
 
 /**
@@ -145,9 +149,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <main
-    class="relative min-h-screen w-full overflow-x-hidden bg-[#020617] font-sans text-slate-200"
-  >
+  <main class="relative min-h-screen w-full overflow-x-hidden bg-[#020617] font-sans text-slate-200">
     <div class="fixed inset-0 z-0">
       <!-- 3D 그래픽 Scene (배경 레이어) -->
       <SceneCanvas

@@ -12,15 +12,36 @@ import {
   Viewer,
 } from 'cesium'
 
-import { NEW_YORK_TIMES_SQUARE_VIEW, WORLD_LOCATIONS } from '../model/scene.constants'
-import type { CameraWaypoint, SceneLocation, SceneWeatherState } from '../model/scene.types'
+import { WORLD_LOCATIONS } from '../model/scene.constants'
+import type { CameraWaypoint, SceneLocation, SceneWeatherState, SkyPhase } from '../model/scene.types'
 import { clampToRange, clampToUnitInterval, lerpRadians } from './math'
 import { getSceneDateFromLocalTime, getSkyPhase } from './sky'
 import { getSnowstormIntensity, getWeatherTint } from './weather'
 
+// --- GC 및 DOM 강제 리플로우 방지를 위한 캐싱/Scratch 버퍼 ---
+const COLOR_BACKGROUND_NIGHT = Color.fromCssColorString('#020617')
+const COLOR_BACKGROUND_DAY = Color.fromCssColorString('#0f2747')
+
+const atmosphereSkyPhaseScratch: SkyPhase = {
+  dawn: 0,
+  noon: 0,
+  sunset: 0,
+  night: 0,
+  daylight: 0,
+  dusk: 0,
+  horizonGlow: 0,
+}
+const atmosphereColorScratch = new Color()
+
+const currentTimeScratch = new JulianDate()
+const startTimeScratch = new JulianDate()
+const stopTimeScratch = new JulianDate()
+
+const flightCurrentPositionScratch = new Cartesian3()
+
 // Cesium Viewer 자체의 상태를 다루는 모듈입니다.
 export function configureViewerScene(viewer: Viewer) {
-  viewer.scene.backgroundColor = Color.fromCssColorString('#020617')
+  viewer.scene.backgroundColor = COLOR_BACKGROUND_NIGHT
   if (viewer.scene.skyAtmosphere) {
     viewer.scene.skyAtmosphere.show = true
     viewer.scene.skyAtmosphere.perFragmentAtmosphere = true
@@ -65,85 +86,76 @@ export function configureCameraControls(viewer: Viewer) {
   ]
 }
 
-export function setInitialLocationView(
-  viewer: Viewer,
-  location: SceneLocation = WORLD_LOCATIONS[1],
-) {
+export function setInitialLocationView(viewer: Viewer, location: SceneLocation = WORLD_LOCATIONS[1]) {
+  const view = location.cameraView
+  const targetLng = view?.longitude ?? location.lng
+  const targetLat = view?.latitude ?? location.lat
+  const targetHeight = view?.height ?? 1200
+  const heading = view?.headingDegrees ?? 0
+  const pitch = view?.pitchDegrees ?? -35
+  const roll = view?.rollDegrees ?? 0
+
   viewer.camera.setView({
-    destination: Cartesian3.fromDegrees(
-      location.lng,
-      location.lat,
-      NEW_YORK_TIMES_SQUARE_VIEW.height,
-    ),
+    destination: Cartesian3.fromDegrees(targetLng, targetLat, targetHeight),
     orientation: {
-      heading: CesiumMath.toRadians(NEW_YORK_TIMES_SQUARE_VIEW.headingDegrees),
-      pitch: CesiumMath.toRadians(NEW_YORK_TIMES_SQUARE_VIEW.pitchDegrees),
-      roll: 0,
+      heading: CesiumMath.toRadians(heading),
+      pitch: CesiumMath.toRadians(pitch),
+      roll: CesiumMath.toRadians(roll),
     },
   })
 }
 
 export function setInitialTimesSquareView(viewer: Viewer) {
-  setInitialLocationView(viewer, WORLD_LOCATIONS[1])
+  const ny = WORLD_LOCATIONS.find((loc) => loc.id === 'us-new-york') ?? WORLD_LOCATIONS[1]
+  setInitialLocationView(viewer, ny)
 }
 
 export function applyAtmosphereToScene(viewer: Viewer, state: SceneWeatherState) {
-  const sky = getSkyPhase(state.time)
+  const sky = getSkyPhase(state.time, atmosphereSkyPhaseScratch)
   const visibilityKm = clampToRange(state.visibility, 0.1, 30)
   const visibilityFactor = clampToUnitInterval((20 - visibilityKm) / 20)
   const aqiHazeFactor = clampToUnitInterval((state.aqi - 45) / 180)
   const precipitationHazeFactor = clampToUnitInterval(state.precipitation / 16)
   const snowstormHazeFactor = getSnowstormIntensity(state)
-  const nightFactor = 1 - sky.daylight
-  // Koschmieder 법칙의 소산 계수(3.912 / 가시거리)를 Cesium fog density로 압축해 사용합니다.
-  // AQI, 강수, 눈보라가 높아질수록 같은 가시거리에서도 안개가 더 두껍게 보입니다.
+  const nightFactor = sky.night
+
+  // Koschmieder 법칙 소산 계수 기반 안개 밀도 계산
   const extinctionCoefficient = 3.912 / (visibilityKm * 1000)
   const fogDensity = clampToRange(
-    extinctionCoefficient *
-      (1 + aqiHazeFactor * 2.2 + precipitationHazeFactor * 0.9 + snowstormHazeFactor * 1.8),
+    extinctionCoefficient * (1 + aqiHazeFactor * 2.2 + precipitationHazeFactor * 0.9 + snowstormHazeFactor * 1.8),
     0.000045,
     0.0034,
   )
   const fogTint = getWeatherTint(state)
-  viewer.scene.fog.enabled =
-    visibilityKm < 22 || state.aqi > 65 || snowstormHazeFactor > 0 || state.precipitation > 0.2
+
+  viewer.scene.fog.enabled = visibilityKm < 22 || state.aqi > 65 || snowstormHazeFactor > 0 || state.precipitation > 0.2
   viewer.scene.fog.renderable = true
   viewer.scene.fog.density = fogDensity
-  viewer.scene.fog.minimumBrightness = CesiumMath.lerp(0.018, 0.16, sky.daylight)
-  viewer.scene.backgroundColor = Color.lerp(
-    Color.fromCssColorString(sky.daylight > 0.1 ? '#0f2747' : '#020617'),
-    fogTint,
-    CesiumMath.lerp(
-      0.08,
-      0.28,
-      Math.max(visibilityFactor, aqiHazeFactor, snowstormHazeFactor * 0.56),
-    ),
-    new Color(),
-  )
-  viewer.scene.fog.screenSpaceErrorFactor = CesiumMath.lerp(
-    1.4,
-    3.4,
-    Math.max(visibilityFactor, snowstormHazeFactor),
-  )
+  viewer.scene.fog.minimumBrightness = CesiumMath.lerp(0.018, 0.16, sky.noon)
+
+  // CSS 문자열 파싱 없이 정적 Color 인스턴스 간 보간 수행 (Reflow 완전 제거)
+  const baseBgColor = sky.noon > 0.1 ? COLOR_BACKGROUND_DAY : COLOR_BACKGROUND_NIGHT
+  const blendRatio = CesiumMath.lerp(0.08, 0.28, Math.max(visibilityFactor, aqiHazeFactor, snowstormHazeFactor * 0.56))
+  viewer.scene.backgroundColor = Color.lerp(baseBgColor, fogTint, blendRatio, atmosphereColorScratch)
+
+  viewer.scene.fog.screenSpaceErrorFactor = CesiumMath.lerp(1.4, 3.4, Math.max(visibilityFactor, snowstormHazeFactor))
   viewer.scene.fog.visualDensityScalar = CesiumMath.lerp(
     0.16,
     0.72,
     Math.max(visibilityFactor, aqiHazeFactor, snowstormHazeFactor),
   )
+
   if (viewer.scene.skyAtmosphere) {
-    // Cesium Fog에는 직접 색을 넣을 수 없어 skyAtmosphere와 backgroundColor를 함께 조정합니다.
-    viewer.scene.skyAtmosphere.atmosphereLightIntensity = CesiumMath.lerp(3.0, 12.0, sky.daylight)
-    viewer.scene.skyAtmosphere.hueShift =
-      CesiumMath.lerp(-0.08, 0.02, sky.daylight) + aqiHazeFactor * 0.06
+    viewer.scene.skyAtmosphere.atmosphereLightIntensity = CesiumMath.lerp(3.0, 12.0, sky.noon)
+    viewer.scene.skyAtmosphere.hueShift = CesiumMath.lerp(-0.08, 0.02, sky.noon) + aqiHazeFactor * 0.06
     viewer.scene.skyAtmosphere.saturationShift =
-      CesiumMath.lerp(-0.18, 0.08, sky.daylight) - visibilityFactor * 0.14 + aqiHazeFactor * 0.08
+      CesiumMath.lerp(-0.18, 0.08, sky.noon) - visibilityFactor * 0.14 + aqiHazeFactor * 0.08
     viewer.scene.skyAtmosphere.brightnessShift =
-      CesiumMath.lerp(-0.55, 0.12, sky.daylight) -
-      precipitationHazeFactor * 0.1 -
-      snowstormHazeFactor * 0.1
+      CesiumMath.lerp(-0.55, 0.12, sky.noon) - precipitationHazeFactor * 0.1 - snowstormHazeFactor * 0.1
   }
+
   if (viewer.scene.light instanceof SunLight) {
-    viewer.scene.light.intensity = CesiumMath.lerp(0.05, 2.0, sky.daylight)
+    viewer.scene.light.intensity = CesiumMath.lerp(0.05, 2.0, sky.noon)
   }
   if (viewer.scene.sun) {
     viewer.scene.sun.glowFactor = CesiumMath.lerp(1.1, 3.1, sky.horizonGlow)
@@ -151,22 +163,19 @@ export function applyAtmosphereToScene(viewer: Viewer, state: SceneWeatherState)
   if (viewer.scene.moon) {
     viewer.scene.moon.show = nightFactor > 0.25
   }
+
   viewer.scene.requestRender()
 }
 
-export function applySceneTime(
-  viewer: Viewer,
-  state: SceneWeatherState,
-  location: SceneLocation = WORLD_LOCATIONS[1],
-) {
-  const currentTime = JulianDate.fromDate(getSceneDateFromLocalTime(state.time, location))
-  const startTime = JulianDate.fromDate(getSceneDateFromLocalTime(0, location))
-  const stopTime = JulianDate.fromDate(getSceneDateFromLocalTime(24, location))
+export function applySceneTime(viewer: Viewer, state: SceneWeatherState, location: SceneLocation = WORLD_LOCATIONS[1]) {
+  // JulianDate 인스턴스 재사용으로 가비지 컬렉터 부하 차단
+  JulianDate.fromDate(getSceneDateFromLocalTime(state.time, location), currentTimeScratch)
+  JulianDate.fromDate(getSceneDateFromLocalTime(0, location), startTimeScratch)
+  JulianDate.fromDate(getSceneDateFromLocalTime(24, location), stopTimeScratch)
 
-  // 실제 애니메이션 시계가 아니라 선택된 로컬 시간을 태양/달 위치 계산에 고정하기 위한 설정입니다.
-  viewer.clock.startTime = startTime
-  viewer.clock.stopTime = stopTime
-  viewer.clock.currentTime = currentTime
+  viewer.clock.startTime = startTimeScratch
+  viewer.clock.stopTime = stopTimeScratch
+  viewer.clock.currentTime = currentTimeScratch
   viewer.clock.clockRange = ClockRange.LOOP_STOP
   viewer.clock.shouldAnimate = false
   viewer.clock.multiplier = 1
@@ -188,7 +197,7 @@ export class CameraFlyToController {
     this.getViewer = getViewer
   }
 
-  flyToLocation(target: CameraWaypoint, callbacks: CameraFlightCallbacks = {}) {
+  flyToLocation(target: CameraWaypoint | SceneLocation, callbacks: CameraFlightCallbacks = {}) {
     const viewer = this.getViewer()
     if (!viewer) return
 
@@ -197,48 +206,73 @@ export class CameraFlyToController {
     this.activeOnFinish = callbacks.onFinish ?? null
     callbacks.onStart?.()
 
+    let targetLng: number
+    let targetLat: number
+    let targetHeight: number
+    let targetHeading: number
+    let targetPitch: number
+    let targetRoll: number
+    let targetDuration: number
+
+    if ('city' in target || 'landmark' in target) {
+      const loc = target as SceneLocation
+      const view = loc.cameraView
+      targetLng = view?.longitude ?? loc.lng
+      targetLat = view?.latitude ?? loc.lat
+      targetHeight = view?.height ?? 1200
+      targetHeading = view?.headingDegrees ?? 0
+      targetPitch = view?.pitchDegrees ?? -35
+      targetRoll = view?.rollDegrees ?? 0
+      targetDuration = view?.duration ?? 3.2
+    } else {
+      const wp = target as CameraWaypoint
+      targetLng = wp.longitude
+      targetLat = wp.latitude
+      targetHeight = wp.height ?? 1200
+      targetHeading = wp.headingDegrees ?? 0
+      targetPitch = wp.pitchDegrees ?? -35
+      targetRoll = wp.rollDegrees ?? 0
+      targetDuration = wp.duration ?? 3.2
+    }
+
     const camera = viewer.camera
     const startPosition = Cartesian3.clone(camera.positionWC)
-    const endPosition = Cartesian3.fromDegrees(
-      target.longitude,
-      target.latitude,
-      target.height ?? NEW_YORK_TIMES_SQUARE_VIEW.height,
-    )
+    const endPosition = Cartesian3.fromDegrees(targetLng, targetLat, targetHeight)
+
     const startHeading = camera.heading
     const startPitch = camera.pitch
     const startRoll = camera.roll
-    const endHeading = CesiumMath.toRadians(
-      target.headingDegrees ?? NEW_YORK_TIMES_SQUARE_VIEW.headingDegrees,
-    )
-    const endPitch = CesiumMath.toRadians(
-      target.pitchDegrees ?? NEW_YORK_TIMES_SQUARE_VIEW.pitchDegrees,
-    )
-    const endRoll = CesiumMath.toRadians(target.rollDegrees ?? 0)
+    const endHeading = CesiumMath.toRadians(targetHeading)
+    const endPitch = CesiumMath.toRadians(targetPitch)
+    const endRoll = CesiumMath.toRadians(targetRoll)
+
     const progress = { value: 0 }
-    const currentPosition = new Cartesian3()
     let completed = false
 
-    // Cesium flyTo 대신 GSAP으로 보간해 기존 카메라 제어감과 easing을 유지합니다.
     const tween = gsap.to(progress, {
       value: 1,
-      duration: target.duration ?? 3.2,
+      duration: targetDuration,
       ease: 'power3.inOut',
       onUpdate: () => {
         const activeViewer = this.getViewer()
         if (!activeViewer) return
 
-        Cartesian3.lerp(startPosition, endPosition, progress.value, currentPosition)
-        camera.setView({
-          destination: currentPosition,
+        Cartesian3.lerp(startPosition, endPosition, progress.value, flightCurrentPositionScratch)
+        activeViewer.camera.setView({
+          destination: flightCurrentPositionScratch,
           orientation: {
             heading: lerpRadians(startHeading, endHeading, progress.value),
             pitch: CesiumMath.lerp(startPitch, endPitch, progress.value),
             roll: CesiumMath.lerp(startRoll, endRoll, progress.value),
           },
         })
+        activeViewer.scene.requestRender()
       },
       onComplete: () => {
         completed = true
+        // requestRenderMode에서는 GSAP 카메라 이동이 끝난 뒤에도 한 프레임을 요청해야
+        // 새 시점의 3D Tiles 요청/선택이 이어집니다.
+        viewer?.scene.requestRender()
         if (this.activeFlightId === flightId) {
           this.activeTween = null
           this.activeOnFinish?.()
@@ -246,6 +280,7 @@ export class CameraFlyToController {
         }
       },
     })
+
     if (!completed && this.activeFlightId === flightId) {
       this.activeTween = tween
     }

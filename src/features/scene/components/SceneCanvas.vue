@@ -1,20 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import {
-  Cartesian2,
-  Cartesian3,
-  Cesium3DTileset,
-  Ion,
-  Math as CesiumMath,
-  SceneTransforms,
-  Viewer,
-} from 'cesium'
+import { Cartesian2, Cartesian3, Cesium3DTileset, Ion, Math as CesiumMath, SceneTransforms, Viewer } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 import { cesiumIonAccessToken, hasCesiumIonAccessToken } from '@/shared/config/env'
-import {
-  GOOGLE_3D_TILES_ION_ASSET_ID,
-  WORLD_LOCATIONS,
-} from '@/features/scene/model/scene.constants'
+import { GOOGLE_3D_TILES_ION_ASSET_ID, WORLD_LOCATIONS } from '@/features/scene/model/scene.constants'
 import type {
   CameraWaypoint,
   SceneLocation,
@@ -103,10 +92,7 @@ let sceneUpdateFrame = 0
 let lastAppliedState: SceneWeatherState | null = null
 let lastAppliedLocationId = ''
 
-function reportPerformanceInDevelopment(
-  event: 'viewer-ready' | 'tiles-stable' | 'quality-applied',
-  valueMs: number,
-) {
+function reportPerformanceInDevelopment(event: 'viewer-ready' | 'tiles-stable' | 'quality-applied', valueMs: number) {
   void import('@/shared/lib/performanceTelemetry').then(({ reportDevelopmentPerformance }) => {
     reportDevelopmentPerformance({ event, valueMs })
   })
@@ -359,6 +345,8 @@ async function loadGooglePhotorealisticTiles() {
 
   try {
     const tileset = await Cesium3DTileset.fromIonAssetId(GOOGLE_3D_TILES_ION_ASSET_ID, {
+      // 부모 타일을 먼저 표시하고, 필요한 자식 LOD를 이어 받아 점진적으로 선명하게 합니다.
+      // 초기 화면이 빈 채로 오래 있다가 한 번에 나타나는 현상을 피하기 위한 조합입니다.
       maximumScreenSpaceError: 16,
       cullWithChildrenBounds: true,
       cullRequestsWhileMoving: false,
@@ -428,7 +416,7 @@ function keepRenderingUntilInitialTilesLoaded(
     if (initialTilesSettled) return
 
     initialTilesSettled = true
-    tileset.maximumScreenSpaceError = 2
+    tileset.maximumScreenSpaceError = 8
     onInitialTilesLoaded()
     markPerformance('route-of-sky:tiles-stable')
     requestRender()
@@ -544,27 +532,16 @@ defineExpose({
     :data-quality-level="effectiveQuality"
     :data-quality-mode="qualityMode"
   >
-    <div
-      id="cesiumContainer"
-      ref="cesiumContainer"
-      class="absolute inset-0 h-full w-full"
-      @contextmenu.prevent
-    ></div>
+    <div id="cesiumContainer" ref="cesiumContainer" class="absolute inset-0 h-full w-full" @contextmenu.prevent></div>
     <div class="pointer-events-none absolute inset-0 mix-blend-screen" :style="skyTimeStyle"></div>
-    <div
-      class="pointer-events-none absolute inset-0 mix-blend-screen"
-      :style="twilightCloudGlowStyle"
-    ></div>
+    <div class="pointer-events-none absolute inset-0 mix-blend-screen" :style="twilightCloudGlowStyle"></div>
     <div
       class="pointer-events-none absolute h-24 w-24 rounded-full bg-amber-100/80 mix-blend-screen shadow-[0_0_34px_rgba(253,224,71,0.88),0_0_110px_rgba(251,146,60,0.68),0_0_190px_rgba(180,83,9,0.32)]"
       :style="sunGlowStyle"
     ></div>
     <div class="pointer-events-none absolute inset-0" :style="atmosphereOverlayStyle"></div>
     <div class="pointer-events-none absolute inset-0" :style="mistOverlayStyle"></div>
-    <canvas
-      ref="precipitationCanvas"
-      class="pointer-events-none absolute inset-0 h-full w-full"
-    ></canvas>
+    <canvas ref="precipitationCanvas" class="pointer-events-none absolute inset-0 h-full w-full"></canvas>
     <div class="pointer-events-none absolute inset-0" :style="whiteoutOverlayStyle"></div>
     <div
       v-if="statusMessage || isTilesLoading"
