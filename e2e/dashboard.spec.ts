@@ -18,9 +18,7 @@ test.describe('대시보드 메인 화면 로드 테스트', () => {
     await expect(title).toContainText('Route of Sky')
     const logo = page.getByAltText('Route of Sky')
     await expect(logo).toHaveAttribute('src', '/logo.webp')
-    await expect
-      .poll(() => logo.evaluate((image: HTMLImageElement) => image.naturalWidth))
-      .toBe(128)
+    await expect.poll(() => logo.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(128)
 
     // 2. 환경 정보 (Environment Specs) 위젯 표시 확인
     const envSpecsHeader = page.locator('h2', { hasText: '환경 정보' })
@@ -33,6 +31,19 @@ test.describe('대시보드 메인 화면 로드 테스트', () => {
     // 4. 대기질 정보 (Atmosphere Quality) 위젯 표시 확인
     const atmosphereHeader = page.locator('h2', { hasText: '대기질 정보' })
     await expect(atmosphereHeader).toBeVisible()
+  })
+
+  test('모바일에서 접은 대시보드는 데스크톱 폭으로 전환하면 다시 열린다', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.reload({ waitUntil: 'domcontentloaded' })
+
+    await page.getByRole('button', { name: 'Hide dashboard' }).click()
+    await expect(page.locator('#dashboard-panels')).toHaveCount(0)
+
+    await page.setViewportSize({ width: 1365, height: 768 })
+
+    await expect(page.locator('#dashboard-panels')).toBeVisible()
+    await expect(page.locator('h2', { hasText: '환경 정보' })).toBeVisible()
   })
 
   test('High/Medium/Low 품질을 즉시 적용하고 새로고침 후 복원한다', async ({ page }) => {

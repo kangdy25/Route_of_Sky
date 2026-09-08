@@ -113,6 +113,27 @@ describe('대시보드 오버레이', () => {
     expect(wrapper.find('#dashboard-panels').classes()).toContain('flex')
   })
 
+  it('모바일에서 접은 뒤 데스크톱 너비로 전환하면 패널을 다시 열어야 한다', async () => {
+    const originalInnerWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 768 })
+
+    const wrapper = mount(DashboardOverlay, {
+      props: baseProps,
+    })
+
+    await wrapper.find('button[aria-label="Hide dashboard"]').trigger('click')
+    expect(wrapper.find('#dashboard-panels').exists()).toBe(false)
+
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 })
+    window.dispatchEvent(new Event('resize'))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('#dashboard-panels').exists()).toBe(true)
+
+    wrapper.unmount()
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalInnerWidth })
+  })
+
   it('설정 패널의 날씨 변경과 닫기 이벤트를 처리해야 한다', async () => {
     const wrapper = mount(DashboardOverlay, {
       props: baseProps,

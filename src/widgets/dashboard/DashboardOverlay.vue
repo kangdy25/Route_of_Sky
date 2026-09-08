@@ -14,6 +14,8 @@ import SettingsPanel from './SettingsPanel.vue'
 import SkyPanel from './SkyPanel.vue'
 import TimePanel from './TimePanel.vue'
 
+const DESKTOP_DASHBOARD_BREAKPOINT = 1024
+
 const time = defineModel<number>('time', { required: true })
 const temperature = defineModel<number>('temperature', { required: true })
 const humidity = defineModel<number>('humidity', { required: true })
@@ -133,6 +135,17 @@ async function toggleDashboard() {
   })
 }
 
+/** 데스크톱 레이아웃에서는 패널을 항상 표시합니다. */
+function openDashboardForDesktopViewport() {
+  if (window.innerWidth < DESKTOP_DASHBOARD_BREAKPOINT) return
+
+  // 모바일에서 접는 애니메이션이 진행 중인 상태로 화면이 넓어져도 완료 콜백이 다시 닫지 않도록 취소합니다.
+  activePanelTween?.kill()
+  activePanelTween = null
+  isPanelGroupRendered.value = true
+  isDashboardOpen.value = true
+}
+
 /** 씬 카메라 전환(FlyTo) 중 대시보드 UI를 반투명 처리 */
 function animateSceneTransition(isTransitioning: boolean) {
   if (!panelGroupRef.value || prefersReducedMotion()) return
@@ -165,6 +178,8 @@ onMounted(() => {
     },
   )
   animatePanelEntrance()
+
+  window.addEventListener('resize', openDashboardForDesktopViewport)
 })
 
 /** 템플릿 재렌더링 시 기존 DOM 엘리먼트 배열 초기화 */
@@ -174,6 +189,7 @@ onBeforeUpdate(() => {
 
 /** 컴포넌트가 사라진 뒤에 애니메이션이, 콜백이 백그라운드에서 실행되어 발생하는 메모리 누수와 에러 방지. */
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', openDashboardForDesktopViewport)
   activePanelTween?.kill()
   if (panelGroupRef.value) gsap.killTweensOf(panelGroupRef.value)
 })
