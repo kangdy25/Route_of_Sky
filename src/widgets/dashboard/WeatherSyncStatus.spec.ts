@@ -10,14 +10,14 @@ describe('날씨 동기화 상태', () => {
       props: { isLoading: true },
     })
 
-    expect(wrapper.get('[data-testid="weather-sync-status"]').text()).toBe('날씨 업데이트 중')
+    expect(wrapper.get('[data-testid="weather-sync-status"]').text()).toBe('날씨 업데이트 중...')
     expect(wrapper.get('[role="status"]').attributes('aria-live')).toBe('polite')
   })
 
   it.each([
     ['network', '실시간 데이터'],
     ['cache', '저장된 데이터'],
-    ['stale-cache', '저장된 날씨 표시 중'],
+    ['stale-cache', '이전 날씨 표시 중'],
   ] as const)('%s 데이터 출처를 표시해야 한다', (dataSource, expectedLabel) => {
     const wrapper = mount(WeatherSyncStatus, {
       props: { dataSource, lastUpdatedAt: updatedAt },

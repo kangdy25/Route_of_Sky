@@ -14,6 +14,6 @@ describe('하늘 상태 카드 통합 렌더링', () => {
     expect(wrapper.text()).toContain('1.5')
     expect(wrapper.text()).toContain('약한 비')
     expect(wrapper.text()).toContain('12')
-    expect(wrapper.text()).toContain('선명함')
+    expect(wrapper.text()).toContain('약간 탁함')
   })
 })

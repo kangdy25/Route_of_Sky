@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import {
-  createWeatherLocationQuery,
-  fetchCurrentWeather,
-  mapWeatherApiCurrentResponse,
-} from './weatherApi'
+import { createWeatherLocationQuery, fetchCurrentWeather, mapWeatherApiCurrentResponse } from './weatherApi'
 
 describe('WeatherAPI 클라이언트', () => {
   it('WeatherAPI 현재 날씨 응답을 앱 날씨 상태로 변환해야 한다', () => {
@@ -183,23 +179,27 @@ describe('WeatherAPI 클라이언트', () => {
     expect(fetcher).toHaveBeenCalledWith('/api/weather?q=Seoul', undefined)
   })
 
-  it('WeatherAPI 오류 응답이면 메시지를 포함해 실패해야 한다', async () => {
+  it('HTTP 오류 응답이면 원본 오류 메시지 대신 상태 코드로 실패해야 한다', async () => {
     const fetcher = vi.fn().mockResolvedValue({
       ok: false,
+      status: 401,
       json: () => Promise.resolve({ error: { message: 'API key is invalid.' } }),
     })
 
-    await expect(fetchCurrentWeather('Seoul', { fetcher })).rejects.toThrow('API key is invalid.')
+    await expect(fetchCurrentWeather('Seoul', { fetcher })).rejects.toThrow(
+      '날씨 정보를 가져오지 못했습니다. (HTTP 401)',
+    )
   })
 
-  it('WeatherAPI 오류 메시지가 없으면 기본 실패 메시지를 사용해야 한다', async () => {
+  it('HTTP 오류 응답에 메시지가 없어도 상태 코드로 실패해야 한다', async () => {
     const fetcher = vi.fn().mockResolvedValue({
       ok: false,
+      status: 502,
       json: () => Promise.resolve({}),
     })
 
     await expect(fetchCurrentWeather('Seoul', { fetcher })).rejects.toThrow(
-      'WeatherAPI 요청에 실패했습니다.',
+      '날씨 정보를 가져오지 못했습니다. (HTTP 502)',
     )
   })
 })

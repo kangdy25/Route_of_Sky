@@ -9,10 +9,12 @@ import IconButton from '@/shared/ui/IconButton.vue'
 import Panel from '@/shared/ui/Panel.vue'
 
 const time = defineModel<number>({ default: 16.5 })
+
 const emit = defineEmits<{
   setTime: [time: number]
   manualTimeInput: []
 }>()
+
 const props = withDefaults(
   defineProps<{
     location?: SceneLocation
@@ -73,23 +75,16 @@ const resetToCurrentTime = () => {
   emit('setTime', getCurrentLocalTimeForLocation(props.location))
 }
 
-const leftOpacity = computed(() => {
-  // 00:00 to 08:00: opacity scales from 0 to 1
-  return Math.min(1, Math.max(0, time.value / 8))
-})
+// 중앙 텍스트와의 겹침 방지를 위한 시작/끝 텍스트 페이드아웃 투명도
+const leftOpacity = computed(() => Math.min(1, Math.max(0, time.value / 8)))
+const rightOpacity = computed(() => Math.min(1, Math.max(0, (24 - time.value) / 8)))
 
-const rightOpacity = computed(() => {
-  // 16:00 to 24:00: opacity scales from 1 to 0
-  return Math.min(1, Math.max(0, (24 - time.value) / 8))
-})
-
-onUnmounted(() => {
-  stopPlay()
-})
+onUnmounted(() => stopPlay())
 </script>
 
 <template>
   <Panel class="relative" padding-class="p-4 sm:p-8" full-height justify>
+    <!-- 패널 헤더: 타이틀 설명 및 현재 시간대 상태 라벨 -->
     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <h2 class="text-lg font-black text-cyan-50 uppercase sm:text-xl">시간대 탐색</h2>
@@ -100,12 +95,11 @@ onUnmounted(() => {
       </div>
       <div class="sm:text-right">
         <span class="block text-xl font-black text-white sm:text-2xl">{{ timeStatus.title }}</span>
-        <span class="block text-base font-bold text-cyan-300 uppercase">{{
-          timeStatus.subtitle
-        }}</span>
+        <span class="block text-base font-bold text-cyan-300 uppercase">{{ timeStatus.subtitle }}</span>
       </div>
     </div>
 
+    <!-- 타임라인 인터랙션 및 재생 컨트롤 영역 -->
     <div class="mt-6 flex flex-col gap-6 sm:mt-8 sm:gap-8">
       <div class="relative w-full px-2">
         <input
@@ -117,6 +111,7 @@ onUnmounted(() => {
           step="0.1"
           class="absolute z-10 h-full w-full cursor-pointer opacity-0"
         />
+        <!-- 커스텀 슬라이더 트랙 & 발광 인디케이터 -->
         <div class="relative h-2 w-full rounded-full border border-cyan-300/10 bg-cyan-950/55">
           <div
             class="absolute top-0 left-0 h-full rounded-full bg-cyan-400 shadow-[0_0_15px_#22d3ee]"
@@ -127,11 +122,10 @@ onUnmounted(() => {
             :style="{ left: `${(time / 24) * 100}%` }"
           ></div>
         </div>
+
+        <!-- 하단 시간 눈금 라벨 (00:00 / 현재 재생 헤드 / 24:00) -->
         <div class="relative mt-5 h-12 font-mono text-sm font-bold text-slate-300 sm:text-base">
-          <span
-            class="absolute top-0 left-1 transition-opacity duration-200"
-            :style="{ opacity: leftOpacity }"
-          >
+          <span class="absolute top-0 left-1 transition-opacity duration-200" :style="{ opacity: leftOpacity }">
             00:00
           </span>
           <span
@@ -141,15 +135,13 @@ onUnmounted(() => {
             {{ formattedTime }}
             <span class="block text-sm font-normal text-slate-400">현재</span>
           </span>
-          <span
-            class="absolute top-0 right-1 transition-opacity duration-200"
-            :style="{ opacity: rightOpacity }"
-          >
+          <span class="absolute top-0 right-1 transition-opacity duration-200" :style="{ opacity: rightOpacity }">
             24:00
           </span>
         </div>
       </div>
 
+      <!-- 미디어 재생 및 탐색 제어 버튼 그룹 -->
       <div class="flex items-center justify-center gap-3 sm:gap-6">
         <IconButton title="00:00으로 리셋" class="text-xl" @click="resetTime">↺</IconButton>
         <IconButton title="2시간 뒤로 감기" @click="skipBackward">⏮</IconButton>
@@ -157,9 +149,7 @@ onUnmounted(() => {
           {{ isPlaying ? '❚❚' : '▶' }}
         </IconButton>
         <IconButton title="2시간 빨리 감기" @click="skipForward">⏭</IconButton>
-        <IconButton title="현재 시간으로 리셋" class="text-xl" @click="resetToCurrentTime">
-          ◷
-        </IconButton>
+        <IconButton title="현재 시간으로 리셋" class="text-xl" @click="resetToCurrentTime"> ◷ </IconButton>
       </div>
     </div>
   </Panel>

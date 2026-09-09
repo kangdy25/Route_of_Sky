@@ -1,5 +1,7 @@
+/** 뇌우 판정을 위한 강수량 임계값 (mm/h) */
 const THUNDERSTORM_PRECIPITATION_THRESHOLD = 12
 
+/** 운량(0~100%) 수치를 한글 기상 라벨로 변환합니다. */
 export function getCloudCoverLabel(cloudCover: number) {
   if (cloudCover < 10) return '맑음'
   if (cloudCover < 50) return '구름 조금'
@@ -7,21 +9,27 @@ export function getCloudCoverLabel(cloudCover: number) {
   return '흐림'
 }
 
+/**
+ * 시간당 강수량(mm/h)을 강도별 한글 라벨로 변환합니다.
+ * 눈/비 여부에 따라 다른 라벨을 반환합니다.
+ */
 export function getPrecipitationLabel(precipitation: number, isSnow = false) {
   if (precipitation === 0) return '없음'
   if (precipitation < 2.5) return isSnow ? '약한 눈' : '약한 비'
   if (precipitation < 7.6) return isSnow ? '보통 눈' : '보통 비'
   if (precipitation < THUNDERSTORM_PRECIPITATION_THRESHOLD) return isSnow ? '강한 눈' : '강한 비'
-  return isSnow ? '강한 눈' : '뇌우'
+  return isSnow ? '폭설' : '폭우'
 }
 
+/** 가시거리(km) 수치를 대기 선명도 라벨로 변환합니다. */
 export function getVisibilityLabel(visibility: number) {
-  if (visibility >= 10) return '선명함'
-  if (visibility >= 5) return '연무'
-  if (visibility >= 2) return '박무'
-  return '안개'
+  if (visibility >= 15) return '선명함'
+  if (visibility >= 10) return '약간 탁함'
+  if (visibility >= 5) return '옅은 안개'
+  return '짙은 안개'
 }
 
+/** 하루 시간대(0~24)에 따른 하늘의 시각적 테마 상태와 설명을 반환합니다. */
 export function getTimeStatus(time: number) {
   if (time >= 0 && time < 5) {
     return { title: '깊은 밤', subtitle: '별빛이 빛나는 하늘' }

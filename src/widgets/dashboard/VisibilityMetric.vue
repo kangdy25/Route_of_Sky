@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { getVisibilityLabel } from '@/features/weather/lib/weatherLabels'
+import { formatSingleDecimal } from '@/shared/lib/formatMetricValue'
 
 const props = withDefaults(
   defineProps<{
@@ -11,9 +12,8 @@ const props = withDefaults(
   },
 )
 
-const visibilityText = computed(() => {
-  return getVisibilityLabel(props.visibility)
-})
+const visibilityText = computed(() => getVisibilityLabel(props.visibility))
+const displayedVisibility = computed(() => formatSingleDecimal(props.visibility))
 </script>
 
 <template>
@@ -22,18 +22,14 @@ const visibilityText = computed(() => {
   >
     <span class="text-sm font-bold text-cyan-50 uppercase sm:text-base">가시 거리</span>
     <div class="my-2 flex flex-col items-center gap-1">
+      <!-- 시정 상태 아이콘 (눈 모양 SVG) -->
       <svg
         class="h-8 w-8 text-teal-300 drop-shadow-[0_0_8px_rgba(45,212,191,0.5)] sm:h-10 sm:w-10"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-        />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -42,7 +38,7 @@ const visibilityText = computed(() => {
         />
       </svg>
       <span class="mt-1 text-lg leading-none font-black text-white sm:text-xl"
-        >{{ visibility }} <span class="text-sm font-normal text-slate-200">km</span></span
+        >{{ displayedVisibility }} <span class="text-sm font-normal text-slate-200">km</span></span
       >
     </div>
     <span class="text-sm font-bold text-teal-300 uppercase sm:text-base">{{ visibilityText }}</span>

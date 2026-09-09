@@ -2,6 +2,7 @@ const WEATHER_API_ENDPOINT = 'https://api.weatherapi.com/v1/forecast.json'
 const UPSTREAM_TIMEOUT_MS = 8_000
 const WEATHER_CDN_CACHE_CONTROL = 'max-age=300, stale-while-revalidate=60'
 
+/** 클라이언트 조작이나 무차별 호출로 인한 API 쿼터 고갈을 차단하기 위한 허용 좌표 리스트 */
 const ALLOWED_LOCATION_QUERIES = new Set([
   '37.5512,126.9882',
   '40.758,-73.9855',
@@ -28,23 +29,28 @@ function getWeatherApiKey() {
 }
 
 export default async function handler(request, response) {
+  // 브라우저 로컬 캐시는 무조건 비활성화하여 항상 최신 뷰포트 상태를 반영하도록 보장
   response.setHeader('Cache-Control', 'no-store')
 
+  // HTTP 메서드 가드: GET 메서드만 허용
   if (request.method !== 'GET') {
     response.setHeader('Allow', 'GET')
     return sendJson(response, 405, { error: { message: 'GET 요청만 지원합니다.' } })
   }
 
+  // 파라미터 보안 가드: 'q' 이외의 불필요하거나 악의적인 쿼리 파라미터 유입 차단
   const queryKeys = Object.keys(request.query ?? {})
   if (queryKeys.some((key) => key !== 'q')) {
     return sendJson(response, 400, { error: { message: '지원하지 않는 쿼리입니다.' } })
   }
 
+  // 좌표 화이트리스트 검증: 사전에 정의된 지역 외 임의의 위치 요청 차단
   const locationQuery = getSingleQueryValue(request.query?.q)
   if (!ALLOWED_LOCATION_QUERIES.has(locationQuery)) {
     return sendJson(response, 400, { error: { message: '지원하지 않는 지역 좌표입니다.' } })
   }
 
+  // 서버 설정 검증: API 키 환경변수 주입 여부 확인
   const apiKey = getWeatherApiKey()
   if (!apiKey) {
     return sendJson(response, 503, {
@@ -52,12 +58,14 @@ export default async function handler(request, response) {
     })
   }
 
+  // 외부 Upstream URL 및 파라미터 조립
   const upstreamUrl = new URL(WEATHER_API_ENDPOINT)
   upstreamUrl.searchParams.set('key', apiKey)
   upstreamUrl.searchParams.set('q', locationQuery)
   upstreamUrl.searchParams.set('days', '1')
   upstreamUrl.searchParams.set('aqi', 'yes')
 
+  // 외부 API 지연 응답 방어를 위한 타임아웃 AbortController 구성
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS)
 
@@ -81,9 +89,7 @@ export default async function handler(request, response) {
 
     return sendJson(response, timedOut ? 504 : 502, {
       error: {
-        message: timedOut
-          ? '날씨 서비스 응답 시간이 초과되었습니다.'
-          : '날씨 서비스에 연결하지 못했습니다.',
+        message: timedOut ? '날씨 서비스 응답 시간이 초과되었습니다.' : '날씨 서비스에 연결하지 못했습니다.',
       },
     })
   } finally {

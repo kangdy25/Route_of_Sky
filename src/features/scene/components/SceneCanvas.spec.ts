@@ -236,7 +236,7 @@ vi.mock('@/features/scene/lib/overlayStyles', () => ({
 }))
 
 vi.mock('@/features/scene/lib/sky', () => ({
-  getSkyPhase: vi.fn(() => ({ daylight: 1, dawn: 0, dusk: 0, horizonGlow: 0.5 })),
+  getSkyPhase: vi.fn(() => ({ daylight: 1, dawn: 0, sunset: 0, horizonGlow: 0.5 })),
   getSunPositionForTime: vi.fn(() => ({ x: 4, y: 5, z: 6 })),
 }))
 
@@ -321,16 +321,8 @@ describe('SceneCanvas', () => {
     await flushAsyncWork()
 
     expect(mocks.setInitialLocationView).toHaveBeenCalledTimes(2)
-    expect(mocks.setInitialLocationView).toHaveBeenNthCalledWith(
-      1,
-      mocks.viewer,
-      WORLD_LOCATIONS[2],
-    )
-    expect(mocks.setInitialLocationView).toHaveBeenNthCalledWith(
-      2,
-      mocks.viewer,
-      WORLD_LOCATIONS[2],
-    )
+    expect(mocks.setInitialLocationView).toHaveBeenNthCalledWith(1, mocks.viewer, WORLD_LOCATIONS[2])
+    expect(mocks.setInitialLocationView).toHaveBeenNthCalledWith(2, mocks.viewer, WORLD_LOCATIONS[2])
     expect(mocks.applySceneTime).toHaveBeenCalledWith(
       mocks.viewer,
       expect.objectContaining({ time: 16.5 }),
@@ -348,14 +340,14 @@ describe('SceneCanvas', () => {
     expect(event.defaultPrevented).toBe(true)
   })
 
-  it('첫 타일이 로드되면 로딩 상태를 해제하고 품질 목표를 되돌려야 한다', async () => {
+  it('첫 타일이 로드되면 로딩 상태를 해제하고 SSE 8 품질 목표를 적용해야 한다', async () => {
     const wrapper = mount(SceneCanvas)
     await flushAsyncWork()
 
     mocks.tileset.tileLoad.listeners[0]()
     await nextTick()
 
-    expect(mocks.tileset.maximumScreenSpaceError).toBe(2)
+    expect(mocks.tileset.maximumScreenSpaceError).toBe(8)
     expect(wrapper.text()).not.toContain('Loading Google Photorealistic 3D Tiles')
   })
 
@@ -401,7 +393,7 @@ describe('SceneCanvas', () => {
     wrapper.unmount()
   })
 
-  it('워밍업 시간이 오래 지나면 타임아웃으로 초기 로딩을 정리해야 한다', async () => {
+  it('워밍업 시간이 오래 지나면 초기 로딩 상태만 해제하고 타일 완료 이벤트는 계속 기다려야 한다', async () => {
     let timeoutCallback: (() => void) | null = null
     vi.stubGlobal(
       'setTimeout',
@@ -418,6 +410,11 @@ describe('SceneCanvas', () => {
 
     expect(wrapper.text()).not.toContain('Loading Google Photorealistic 3D Tiles')
     expect(window.clearTimeout).toHaveBeenCalledWith(77)
+
+    mocks.viewer.scene.requestRender.mockClear()
+    mocks.tileset.initialTilesLoaded.listeners[0]()
+
+    expect(mocks.viewer.scene.requestRender).toHaveBeenCalled()
   })
 
   it('언마운트 이후 타일 이벤트가 들어와도 안전해야 한다', async () => {
@@ -498,13 +495,7 @@ describe('SceneCanvas', () => {
     await nextTick()
 
     const sunGlow = wrapper.findAll('div').find((element) => element.classes().includes('h-24'))
-    expect(Cartesian3.fromDegrees).toHaveBeenCalledWith(
-      139.7454,
-      35.6586,
-      0,
-      undefined,
-      expect.anything(),
-    )
+    expect(Cartesian3.fromDegrees).toHaveBeenCalledWith(139.7454, 35.6586, 0, undefined, expect.anything())
     expect(sunGlow?.attributes('style')).toContain('opacity: 0')
   })
 

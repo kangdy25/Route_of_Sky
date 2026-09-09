@@ -17,6 +17,13 @@ describe('습도 지표 카드', () => {
     expect(wrapper.text()).toContain('안정 응결도 ↗')
   })
 
+  it('보간 중 습도는 소수점을 생략해 표시해야 한다', () => {
+    const wrapper = mount(HumidityMetric, { props: { humidity: 61.54 } })
+
+    expect(wrapper.text()).toContain('62%')
+    expect(wrapper.text()).not.toContain('61.54%')
+  })
+
   it('습도가 높으면 습함 상태와 높은 응결도 라벨을 렌더링해야 한다', () => {
     const wrapper = mount(HumidityMetric, { props: { humidity: 82 } })
 
