@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="public/logo.webp" alt="Route of Sky Logo" width="128px" />
+  <img src="public/logo.webp" alt="Route of Sky 로고" width="128" />
   <h1>Route of Sky</h1>
-  <p><strong>여러 국가들의 3D 도시 경관과 실시간 날씨 데이터를 시각화하는 시뮬레이터</strong></p>
+  <p><strong>실시간 날씨를 세계 도시의 3D 하늘과 대기 효과로 변환하는 인터랙티브 시뮬레이터</strong></p>
 
   <p>
     <img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue 3" />
@@ -9,144 +9,206 @@
     <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
     <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
     <img src="https://img.shields.io/badge/Cesium-FF9900?style=for-the-badge&logo=cesium&logoColor=white" alt="Cesium" />
-    <img src="https://img.shields.io/badge/Pinia-FRUIT?style=for-the-badge&logo=pinia&logoColor=yellow" alt="Pinia" />
+    <img src="https://img.shields.io/badge/Pinia-F2C94C?style=for-the-badge&logo=pinia&logoColor=black" alt="Pinia" />
   </p>
 
   <p>
-    Cesium JS와 Google Photorealistic 3D Tiles를 결합하여 여러 국가의 3D 도시 환경을 생생하게 구현하고, <br>
-    시간대별 광원 효과 및 다양한 기상 현상(비, 눈, 안개, 폭풍 등)을 정교하게 제어하는 대시보드 애플리케이션입니다.
+    <a href="https://routeofsky.vercel.app/"><strong>Live Demo</strong></a>
+    ·
+    <a href="docs/performance/case-study.md"><strong>Performance Case Study</strong></a>
+    ·
+    <a href="docs/study/01-project-structure.md"><strong>Architecture Notes</strong></a>
   </p>
 </div>
 
 ---
 
-## 📸 미리보기 (Demo)
+## 프로젝트 소개
+
+Route of Sky는 Cesium과 Google Photorealistic 3D Tiles 위에 실제 날씨, 지역별 현지 시각, 대기 상태를 결합한 Vue 3 대시보드입니다. 사용자는 10개 도시의 랜드마크로 이동하고, 현재 날씨를 확인하거나 Weather Lab에서 비·눈·폭풍·안개를 직접 시뮬레이션할 수 있습니다.
+
+이 프로젝트는 화려한 3D 표현뿐 아니라 다음 문제를 함께 다룹니다.
+
+- 서버 프록시를 통한 WeatherAPI 키 보호와 허용 지역 검증
+- 5분 캐시, 중복 요청 병합, 요청 취소, 만료 캐시 fallback을 포함한 날씨 동기화
+- Canvas 강수·번개, Cesium 구름·대기·후처리를 결합한 날씨 렌더링
+- Auto/High/Medium/Low 품질 프로필과 실제 프레임 p95 기반 적응형 품질 제어
+- 단위 테스트, E2E, 성능 예산과 실제 GPU 측정을 통한 회귀 방지
+
+## 미리보기
 
 <div align="center">
-  <img src="docs/performance/assets/demo-1.webp" alt="Route of Sky Demo 1" width="90%" style="border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); margin-bottom: 20px;" />
+  <img src="docs/performance/assets/demo-1.webp" alt="Route of Sky 도시 및 날씨 대시보드" width="90%" />
   <br />
-  <img src="docs/performance/assets/demo-2.webp" alt="Route of Sky Demo 2" width="90%" style="border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);" />
+  <img src="docs/performance/assets/demo-2.webp" alt="Route of Sky 날씨 시뮬레이션 화면" width="90%" />
 </div>
 
-## Performance Optimization Case Study
+## 주요 기능
 
-API 요청, 정적 전달, 저사양 품질 보호를 하나의 사례 연구로 검증했습니다. 수치는 출처·측정 환경·인과관계가 분명한 경우에만 성과로 기록했습니다.
+### 세계 도시와 3D 카메라
 
-- 배포 산출물: **35.78 → 13.63MiB**, 22.16MiB·**61.9% 감소**
-- 헤더 로고: **3,872,089 → 5,154B**, **99.9% 감소**
-- 공유 썸네일: **977,995 → 213,019B**, **78.2% 감소**
-- Weather API 요청: **2 → 1건**, **50.0% 감소**
-- 실제 GPU 렌더링 trace는 단일 병목을 확정하지 못해, High 품질을 낮추거나 추측성 코드를 추가하지 않았습니다.
+- 서울, 뉴욕, 도쿄, 예루살렘, 런던, 파리, 베를린, 시드니, 리우데자네이루, 아그라 프리셋
+- 도시별 랜드마크를 보여 주는 카메라 위치·방향 설정
+- Cesium ion 토큰이 있으면 Google Photorealistic 3D Tiles를 로드하고, 없으면 설정 안내를 표시
 
-![정적 전달량 비교](docs/performance/assets/static-delivery.svg)
+### 실시간 날씨 동기화
 
-[통합 사례 연구](docs/performance/case-study.md) · [측정 원본과 비교 자료](docs/performance/case-study.md#측정-원본과-의사결정-근거) · [PR 이력](docs/performance/case-study.md#pr-이력)
+- WeatherAPI의 현재 기온, 최저·최고 기온, 습도, 풍속·풍향, 운량, 강수량, 가시거리, PM2.5 기반 AQI 표시
+- 브라우저에는 API 키를 노출하지 않고 로컬 Vite 프록시 또는 Vercel 서버리스 함수로 요청
+- 지역별 5분 캐시와 만료 캐시 fallback, 수동 강제 새로고침, 실패 후 재시도 지원
+- 빠른 지역 전환 시 이전 요청을 취소하고 최신 지역 응답만 반영
 
-## ✨ 주요 기능
+### 시간과 날씨 시뮬레이션
 
-- 🌆 **Cesium 기반의 실사 3D 렌더링**
-  - Cesium Ion 토큰 연동 시 **Google Photorealistic 3D Tiles**를 로드하여 디테일한 여러 국가들의 전경 시각화.
-  - 카메라 이동 및 최적화된 3D 씬 컨트롤.
-- ☀️ **시간대별 대기 시뮬레이션 (Scene Time Preset)**
-  - 태양의 고도와 방위각 계산을 통한 일출, 일몰, 낮, 밤의 하늘 색상 및 안개 표현.
-  - 노을빛 Glow 효과와 시간의 흐름에 따른 동적인 조도 변화.
-- ⛈️ **Weather Lab 기상 현상 구현**
-  - Cesium Particle System 및 Shader 효과를 커스텀하여 **구름, 비, 폭풍, 눈, 안개(Fog/Haze)** 비주얼 시뮬레이션 제공.
-- 📊 **모던하고 직관적인 날씨 대시보드**
-  - 기온, 습도, 풍속, 운량, 강수량, 가시거리 및 대기질 지수(AQI) 등 다양한 날씨 지표를 미려한 UI 카드로 시각화.
-- 🧪 **상태 관리 기반 시뮬레이터**
-  - **Pinia** 스토어를 통해 실시간 3D 날씨 씬과 대시보드 UI 상태를 양방향으로 동기화.
-  - API 연동 전에도 개발자 도구 및 설정 드로어를 통해 간편하게 기상 수치를 조작하고 결과를 프리뷰 가능.
+- 도시별 UTC offset을 반영한 현지 시간과 새벽·정오·일몰·밤 프리셋
+- 태양 위치, 배경색, 대기 산란, 안개, 가시거리의 연동
+- 비·눈 Canvas 파티클, 강풍 streak, 번개, Cesium 구름과 날씨 후처리
+- 맑음·비·폭풍우·눈·안개 프리셋과 세부 수치 수동 조절
 
-## 🛠️ 기술 스택
+### 품질과 상태 복원
 
-### Frontend & Core
+- Auto/High/Medium/Low 렌더링 품질 선택
+- 프레임 p95에 따른 Auto 품질 조절과 품질별 해상도·파티클·구름·후처리 설정
+- 선택 지역과 품질 설정을 `localStorage`에 저장하고 새로고침 후 복원
+- 모바일에서 대시보드를 접고, 데스크톱 너비로 복귀하면 자동으로 다시 표시
 
-- **Vue 3 (Composition API)**: 선언적이고 고성능의 컴포넌트 개발.
-- **TypeScript**: 정적 타입을 통한 견고한 애플리케이션 설계.
-- **Vite**: 초고속 빌드 및 HMR 환경 구성.
-- **Pinia**: 중앙 기상 상태 및 드로어 토글 상태 관리.
-- **Tailwind CSS (v4)**: 유연하고 현대적인 UI 스타일링 적용.
-- **GSAP (GreenSock)**: 대시보드 진입 및 위젯 전환용 부드러운 마이크로 인터랙션 구현.
+## 동작 구조
 
-### 3D Map Engine
+```mermaid
+flowchart LR
+  user["사용자 입력"] --> page["DashboardPage"]
+  page <--> store["Pinia Weather Store"]
+  store <--> cache["5분 localStorage 캐시"]
+  store --> proxy["Weather API 프록시"]
+  proxy --> weather["WeatherAPI"]
+  store --> widgets["Dashboard Widgets"]
+  page --> scene["SceneCanvas"]
+  scene --> cesium["Cesium 3D Tiles, 대기, 구름"]
+  scene --> canvas["Canvas 강수, 번개"]
+  scene --> quality["적응형 품질 제어"]
+```
 
-- **Cesium.js (via `vite-plugin-cesium`)**: 웹 브라우저 기반 고성능 3D GIS 및 타일 렌더링.
+- 개발 환경에서는 Vite가 `/api/weather`를 WeatherAPI로 프록시합니다.
+- Vercel 배포에서는 `api/weather.js`가 요청 좌표를 검증하고 서버 전용 키로 upstream을 호출합니다.
+- Pinia store는 fresh cache를 우선 사용하고, 네트워크 오류 시 만료 캐시가 있으면 화면을 유지합니다.
+- 같은 날씨 상태가 대시보드와 Cesium/Canvas 렌더러에 전달되어 수치와 장면을 동기화합니다.
 
-### Testing & Quality
+## 기술 스택
 
-- **Vitest & @vue/test-utils**: 고속 유닛 테스트 및 커버리지 검증.
-- **Playwright**: 안정적인 E2E 브라우저 테스트 및 시나리오 검증.
-- **ESLint & Prettier**: 코드 일관성 및 스타일 가이드 준수.
+| 영역      | 기술                                     | 역할                                              |
+| --------- | ---------------------------------------- | ------------------------------------------------- |
+| UI        | Vue 3, TypeScript                        | Composition API 기반 화면과 타입 안전한 상태 흐름 |
+| 상태 관리 | Pinia                                    | 날씨 요청, 캐시, 오류, 시뮬레이션 상태 관리       |
+| 3D 렌더링 | CesiumJS, Google Photorealistic 3D Tiles | 도시 지형, 카메라, 태양, 대기와 구름 표현         |
+| 시각 효과 | Canvas 2D, Cesium PostProcessStage, GSAP | 강수·번개·날씨 색보정과 UI 모션                   |
+| 스타일    | Tailwind CSS 4, Sass                     | 반응형 대시보드와 시각 시스템                     |
+| 빌드      | Vite 8, vue-tsc                          | 개발 서버, 타입 검사와 프로덕션 번들              |
+| 품질      | Vitest, Vue Test Utils, Playwright       | 단위·컴포넌트·E2E 검증                            |
+| 배포      | Vercel Functions                         | WeatherAPI 서버 프록시와 정적 앱 배포             |
 
-## 🚀 빠른 시작
+## 빠른 시작
 
-### 1. 요구사항
+### 요구사항
 
-이 프로젝트를 실행하려면 [Node.js](https://nodejs.org/)와 [pnpm](https://pnpm.io/) 패키지 매니저가 필요합니다.
+- Node.js 20 이상
+- pnpm 10
 
-### 2. 패키지 설치
+### 설치
 
 ```bash
+git clone https://github.com/kangdy25/Route_of_Sky.git
+cd Route_of_Sky
 pnpm install
 ```
 
-### 3. 환경 변수 설정
+### 환경 변수
 
-Google Photorealistic 3D Tiles를 사용하려면 **Cesium ion Access Token**, **Google Maps API key**가 필요합니다.
-또한 날씨 데이터를 정확히 받기 위해서는 **Weather API** 키가 필요합니다. 날씨 키는
-브라우저 번들에 포함되지 않도록 `VITE_` 접두사 없이 서버 전용 변수로 설정합니다.
-프로젝트 루트 폴더에 `.env` 파일을 생성하고 발급받은 액세스 토큰과 API 키들을 입력해 주세요.
+프로젝트 루트에 `.env` 파일을 만듭니다.
 
 ```env
-# .env
-VITE_GOOGLE_MAPS_API_KEY=your_api_key
-VITE_CESIUM_ION_ACCESS_TOKEN=your_cesium_ion_access_token_here
-WEATHER_API_KEY=your_api_key
+WEATHER_API_KEY=your_weather_api_key
+VITE_CESIUM_ION_ACCESS_TOKEN=your_cesium_ion_access_token
 ```
 
-### 4. 개발 서버 실행
+| 변수                           | 필수 여부                | 용도                                                                  |
+| ------------------------------ | ------------------------ | --------------------------------------------------------------------- |
+| `WEATHER_API_KEY`              | 실시간 날씨 사용 시 필수 | 로컬 Vite 프록시와 Vercel 서버리스 함수가 WeatherAPI를 호출할 때 사용 |
+| `VITE_CESIUM_ION_ACCESS_TOKEN` | 선택                     | Cesium ion의 Google Photorealistic 3D Tiles를 로드할 때 사용          |
+
+`WEATHER_API_KEY`는 서버 전용이므로 `VITE_` 접두사를 붙이지 않습니다. Cesium 토큰이 없어도 앱과 대시보드는 실행되지만 3D Tiles 대신 설정 안내가 표시됩니다.
+
+### 실행
 
 ```bash
 pnpm dev
 ```
 
-개발 서버가 구동되면 브라우저에서 `http://localhost:5173`으로 접속할 수 있습니다.
+개발 서버는 기본적으로 `http://localhost:5173`에서 실행됩니다.
 
-## 📁 프로젝트 구조
+## 프로젝트 구조
 
-```bash
-src/
-├── pages/             # 메인 레이아웃 및 전체 페이지 조립
-│   └── Dashboard.vue  # 3D 맵과 날씨 대시보드가 결합된 메인 페이지
-├── widgets/
-│   └── dashboard/     # 대시보드용 위젯 (지표 카드, 설정 드로어 등)
-├── features/
-│   ├── scene/         # Cesium 3D 씬 렌더링, 카메라 뷰, 날씨 파티클(비, 눈 등) 관리
-│   └── weather/       # 날씨 상태 모델(Pinia Store), 날씨 데이터 가공 유틸
-└── shared/
-    ├── config/        # 환경변수 로더 및 설정 상수
-    └── ui/            # 공통으로 사용되는 UI 컴포넌트 (버튼, 카드, 드로어 등)
+```text
+.
+├── api/                         # Vercel 서버리스 API와 성능 수집 endpoint
+├── e2e/                         # Playwright 사용자 흐름 테스트
+├── scripts/performance/         # 측정·비교·예산 검사 도구
+├── src/
+│   ├── pages/DashboardPage.vue  # 화면 조립과 지역·품질·날씨 흐름 연결
+│   ├── widgets/dashboard/       # 헤더, 지표 패널, 시간·설정 UI
+│   ├── features/scene/          # Cesium 장면, 카메라, 날씨 효과와 품질 제어
+│   ├── features/weather/        # WeatherAPI 변환, Pinia store와 캐시
+│   └── shared/                  # 환경 설정, 공통 UI와 유틸리티
+├── docs/performance/            # 성능 원본, 비교표, 차트와 사례 연구
+└── tests/                       # 서버 API 단위 테스트
 ```
 
-## 📜 실행 스크립트
+## 테스트와 품질
 
-| 명령어               | 설명                                            |
-| :------------------- | :---------------------------------------------- |
-| `pnpm dev`           | Vite 로컬 개발 서버 구동 (HMR 적용)             |
-| `pnpm build`         | 프로덕션 환경을 위한 정적 리소스 빌드           |
-| `pnpm preview`       | 빌드된 프로덕션 앱 로컬 미리보기                |
-| `pnpm lint`          | ESLint 및 Prettier 포맷팅 검증 및 자동 수정     |
-| `pnpm format`        | Prettier를 사용하여 전체 소스코드 스타일 정리   |
-| `pnpm test:unit`     | Vitest 기반 유닛 테스트 실행                    |
-| `pnpm test:coverage` | 테스트 커버리지 리포트 생성 (c8)                |
-| `pnpm test:e2e`      | Playwright 기반 E2E 테스트 수행 (헤드리스 모드) |
-| `pnpm test:e2e:ui`   | Playwright E2E 테스트 UI 모드 실행              |
+2026-09-09 로컬 검증 기준:
 
-## ⚠️ 개발 & 빌드 노트 (Troubleshooting)
+| 항목                | 결과                    |
+| ------------------- | ----------------------- |
+| Vitest              | 36개 파일, 280/280 통과 |
+| Playwright Chromium | 10/10 통과              |
+| 라인 커버리지       | 95.0%                   |
+| 프로덕션 빌드       | 성공                    |
 
-- **Vite Build 시 타입 문제**:
-  일부 환경에서 `pnpm build` 시 `vite.config.ts` 내의 coverage 설정 및 외부 Spec 타입 정의 오류로 인해 빌드가 실패하는 경우가 있습니다.
-  로컬 코드 무결성 검증은 우선 `pnpm lint` 및 `pnpm test:unit`을 통해 진행하시기 바랍니다.
-- **Cesium Ion Token**:
-  3D Tiles가 로드되지 않는 경우 개발자 도구 콘솔의 Cesium 경고 메시지 또는 `.env`에 정의된 `VITE_CESIUM_ION_ACCESS_TOKEN` 값을 재확인하세요. (현재 3D Tiles의 Asset ID는 `2275207`을 사용하고 있습니다.)
+```bash
+pnpm test:unit
+pnpm test:coverage
+pnpm test:e2e
+pnpm build
+```
+
+테스트 통과율과 코드 커버리지는 별도 지표입니다. 상세 커버리지는 `pnpm test:coverage`가 생성하는 V8 리포트에서 확인할 수 있습니다.
+
+## 실행 스크립트
+
+### 개발과 검증
+
+| 명령어                   | 설명                                    |
+| ------------------------ | --------------------------------------- |
+| `pnpm dev`               | Vite 개발 서버 실행                     |
+| `pnpm build`             | vue-tsc 타입 검사 후 프로덕션 빌드      |
+| `pnpm preview`           | 프로덕션 빌드 로컬 미리보기             |
+| `pnpm lint`              | ESLint 자동 수정 실행                   |
+| `pnpm format`            | `src/`, `e2e/`에 Prettier 적용          |
+| `pnpm test:unit`         | Vitest 전체 단발 실행                   |
+| `pnpm test:coverage`     | V8 커버리지 리포트 생성                 |
+| `pnpm test:e2e`          | Playwright Chromium E2E 실행            |
+| `pnpm test:e2e:ui`       | Playwright UI 모드 실행                 |
+| `pnpm test:e2e:report`   | 마지막 Playwright HTML 리포트 열기      |
+| `pnpm test:perf-scripts` | 렌더 trace 분석 도구의 Node 테스트 실행 |
+
+### 성능 측정
+
+| 명령어                           | 설명                              |
+| -------------------------------- | --------------------------------- |
+| `pnpm perf:measure`              | 초기 로드와 API 관련 성능 측정    |
+| `pnpm perf:gpu`                  | 실제 GPU 시나리오 측정            |
+| `pnpm perf:gpu:compare`          | GPU 측정 결과 비교                |
+| `pnpm perf:render-trace`         | 렌더링 trace 수집                 |
+| `pnpm perf:render-trace:combine` | 반복 trace 측정 결과 결합         |
+| `pnpm perf:compare`              | Before/After 결과 비교            |
+| `pnpm perf:capture`              | 동일 조건의 시각 캡처 생성        |
+| `pnpm perf:budget`               | JS·CSS·썸네일·배포 크기 예산 검사 |

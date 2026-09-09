@@ -122,9 +122,7 @@ async function expectWeatherRequest(queries: string[], query: string) {
 }
 
 async function expectPageText(page: Page, text: string) {
-  await expect
-    .poll(async () => page.locator('body').innerText(), { timeout: 15_000 })
-    .toContain(text)
+  await expect.poll(async () => page.locator('body').innerText(), { timeout: 15_000 }).toContain(text)
 }
 
 async function expectMetricText(page: Page, title: string, value: string) {
@@ -168,9 +166,7 @@ test.describe('WeatherAPI 통합 흐름', () => {
     await expectMetricText(page, '강수량', '4.6 mm/h')
   })
 
-  test('새로고침 후에는 마지막 지역의 5분 캐시를 사용해 API 재호출을 생략해야 한다', async ({
-    page,
-  }) => {
+  test('새로고침 후에는 마지막 지역의 5분 캐시를 사용해 API 재호출을 생략해야 한다', async ({ page }) => {
     const queries = await mockWeatherApi(page)
 
     await page.goto('/')
@@ -199,7 +195,7 @@ test.describe('WeatherAPI 통합 흐름', () => {
     queries.length = 0
 
     await page.getByRole('button', { name: 'Open settings' }).click()
-    await page.getByRole('button', { name: 'Render Current Weather' }).click({ force: true })
+    await page.getByRole('button', { name: '실시간 날씨 반영' }).click()
 
     await expectWeatherRequest(queries, '40.758,-73.9855')
   })
@@ -210,22 +206,18 @@ test.describe('WeatherAPI 통합 흐름', () => {
 
     await page.goto('/')
     await expectWeatherRequest(queries, '40.758,-73.9855')
-    await expect(page.getByTestId('weather-sync-alert')).toContainText(
-      '현재 값은 최신 정보가 아닐 수 있습니다.',
-    )
+    await expect(page.getByTestId('weather-sync-alert')).toContainText('현재 값은 최신 정보가 아닐 수 있습니다.')
     await expectPageText(page, '날씨 업데이트 실패')
 
     failRequest = false
-    await page.getByRole('button', { name: 'Retry weather update' }).click()
+    await page.getByRole('button', { name: '날씨 동기화 다시 시도' }).click()
 
     await expect.poll(() => queries.filter((query) => query === '40.758,-73.9855')).toHaveLength(2)
     await expectPageText(page, '실시간 데이터')
     await expect(page.getByTestId('weather-sync-alert')).toHaveCount(0)
   })
 
-  test('만료 캐시에서 네트워크 요청이 실패하면 경고와 저장된 날씨를 표시해야 한다', async ({
-    page,
-  }) => {
+  test('만료 캐시에서 네트워크 요청이 실패하면 경고와 저장된 날씨를 표시해야 한다', async ({ page }) => {
     let failRequest = false
     const queries = await mockWeatherApi(page, () => failRequest)
 
@@ -258,10 +250,8 @@ test.describe('WeatherAPI 통합 흐름', () => {
     await page.reload({ waitUntil: 'domcontentloaded' })
 
     await expect.poll(() => queries.filter((query) => query === '40.758,-73.9855')).toHaveLength(2)
-    await expect(page.getByTestId('weather-sync-alert')).toContainText(
-      '저장된 날씨를 계속 표시합니다.',
-    )
-    await expectPageText(page, '저장된 날씨 표시 중')
+    await expect(page.getByTestId('weather-sync-alert')).toContainText('저장된 날씨를 계속 표시합니다.')
+    await expectPageText(page, '날씨 업데이트 실패')
     await expectMetricText(page, '가시 거리', '12 km')
   })
 })
