@@ -76,16 +76,16 @@ Route of Sky는 Cesium과 Google Photorealistic 3D Tiles 위에 실제 날씨, �
 
 ```mermaid
 flowchart LR
-  U[사용자 입력] --> P[DashboardPage]
-  P <--> S[Pinia Weather Store]
-  S <--> C[(5분 Local Cache)]
-  S --> A[/api/weather]
-  A --> W[WeatherAPI]
-  S --> D[Dashboard Widgets]
-  P --> V[SceneCanvas]
-  V --> T[Cesium 3D Tiles·대기·구름]
-  V --> R[Canvas 강수·번개]
-  V --> Q[적응형 품질 제어]
+  user["사용자 입력"] --> page["DashboardPage"]
+  page <--> store["Pinia Weather Store"]
+  store <--> cache["5분 localStorage 캐시"]
+  store --> proxy["Weather API 프록시"]
+  proxy --> weather["WeatherAPI"]
+  store --> widgets["Dashboard Widgets"]
+  page --> scene["SceneCanvas"]
+  scene --> cesium["Cesium 3D Tiles, 대기, 구름"]
+  scene --> canvas["Canvas 강수, 번개"]
+  scene --> quality["적응형 품질 제어"]
 ```
 
 - 개발 환경에서는 Vite가 `/api/weather`를 WeatherAPI로 프록시합니다.
@@ -212,18 +212,3 @@ pnpm build
 | `pnpm perf:compare`              | Before/After 결과 비교            |
 | `pnpm perf:capture`              | 동일 조건의 시각 캡처 생성        |
 | `pnpm perf:budget`               | JS·CSS·썸네일·배포 크기 예산 검사 |
-
-## 성능 최적화 요약
-
-측정 가능한 개선만 제품 성과로 기록하고, 실제 GPU에서 원인을 확정하지 못한 실험은 채택하지 않았습니다.
-
-| 지표             |      Before |     After |       개선 |
-| ---------------- | ----------: | --------: | ---------: |
-| 배포 산출물      |   35.78 MiB | 13.63 MiB | 61.9% 감소 |
-| 헤더 로고        | 3,872,089 B |   5,154 B | 99.9% 감소 |
-| 공유 썸네일      |   977,995 B | 213,019 B | 78.2% 감소 |
-| Weather API 요청 |         2회 |       1회 | 50.0% 감소 |
-
-![정적 전달량 비교](docs/performance/assets/static-delivery.svg)
-
-측정 프로토콜, 원본 JSON, 실패한 실험과 롤백 판단은 [통합 성능 사례 연구](docs/performance/case-study.md)에서 확인할 수 있습니다.
