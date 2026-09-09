@@ -9,7 +9,6 @@ import {
   configureCameraControls,
   configureViewerScene,
   setInitialLocationView,
-  setInitialTimesSquareView,
 } from './cesiumScene'
 
 const { gsapTo } = vi.hoisted(() => ({
@@ -93,15 +92,15 @@ describe('Cesium scene 설정', () => {
     configureCameraControls(viewer as never)
 
     expect(viewer.scene.screenSpaceCameraController.minimumZoomDistance).toBe(80)
-    expect(viewer.scene.screenSpaceCameraController.maximumZoomDistance).toBe(30000)
+    expect(viewer.scene.screenSpaceCameraController.maximumZoomDistance).toBe(10000)
     expect(viewer.scene.screenSpaceCameraController.zoomEventTypes).toHaveLength(2)
     expect(viewer.scene.screenSpaceCameraController.lookEventTypes).toHaveLength(2)
   })
 
-  it('초기 타임스퀘어 뷰를 카메라에 적용해야 한다', () => {
+  it('기본 지역의 초기 뷰를 카메라에 적용해야 한다', () => {
     const viewer = createViewer()
 
-    setInitialTimesSquareView(viewer as never)
+    setInitialLocationView(viewer as never)
 
     expect(viewer.camera.setView).toHaveBeenCalledWith(
       expect.objectContaining({

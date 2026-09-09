@@ -31,6 +31,7 @@ const mocks = vi.hoisted(() => {
       directionWC: { x: 0, y: 0, z: 1 },
     },
     scene: {
+      globe: { show: false },
       primitives: {
         add: vi.fn(),
       },
@@ -542,7 +543,7 @@ describe('SceneCanvas', () => {
     const wrapper = mount(SceneCanvas)
     await flushAsyncWork()
 
-    expect(errorSpy).toHaveBeenCalledWith(error)
+    expect(errorSpy).toHaveBeenCalledWith('[CesiumScene] Google 3D Tiles 로드 실패:', error)
     expect(wrapper.text()).toContain('Unable to load Google 3D Tiles asset')
     errorSpy.mockRestore()
   })

@@ -46,6 +46,7 @@ function createCanvas(context: ReturnType<typeof createContext> | null = createC
   return {
     width: 0,
     height: 0,
+    style: {},
     getContext: vi.fn(() => context),
   } as unknown as HTMLCanvasElement
 }
@@ -53,10 +54,10 @@ function createCanvas(context: ReturnType<typeof createContext> | null = createC
 describe('화면 날씨 렌더러', () => {
   beforeEach(() => {
     vi.stubGlobal(
-      'setTimeout',
+      'requestAnimationFrame',
       vi.fn(() => 7),
     )
-    vi.stubGlobal('clearTimeout', vi.fn())
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
     vi.stubGlobal('ResizeObserver', undefined)
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
@@ -81,15 +82,15 @@ describe('화면 날씨 렌더러', () => {
     renderer.update()
     renderer.start()
 
-    expect(window.setTimeout).toHaveBeenCalledTimes(1)
+    expect(window.requestAnimationFrame).toHaveBeenCalledTimes(1)
   })
 
   it('예약된 타이머 callback은 다음 렌더 프레임을 실행해야 한다', () => {
-    let timerCallback: (() => void) | null = null
+    let animationFrameCallback: FrameRequestCallback | null = null
     vi.stubGlobal(
-      'setTimeout',
-      vi.fn((callback: () => void) => {
-        timerCallback = callback
+      'requestAnimationFrame',
+      vi.fn((callback: FrameRequestCallback) => {
+        animationFrameCallback = callback
         return 7
       }),
     )
@@ -101,7 +102,7 @@ describe('화면 날씨 렌더러', () => {
     const nowSpy = vi.spyOn(window.performance, 'now').mockReturnValue(16)
 
     renderer.start()
-    timerCallback?.()
+    animationFrameCallback?.(16)
 
     expect(context.clearRect).toHaveBeenCalled()
     nowSpy.mockRestore()
@@ -114,7 +115,7 @@ describe('화면 날씨 렌더러', () => {
     renderer.start()
     renderer.update()
 
-    expect(window.clearTimeout).toHaveBeenCalledWith(7)
+    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(7)
     expect(context.clearRect).toHaveBeenCalled()
   })
 
@@ -123,15 +124,12 @@ describe('화면 날씨 렌더러', () => {
 
     renderer.stop()
 
-    expect(window.clearTimeout).not.toHaveBeenCalled()
+    expect(window.cancelAnimationFrame).not.toHaveBeenCalled()
   })
 
   it('canvas나 context가 없으면 프레임을 중단해야 한다', () => {
     const missingCanvasRenderer = new ScreenWeatherRenderer(ref(null), () => baseState)
-    const missingContextRenderer = new ScreenWeatherRenderer(
-      ref(createCanvas(null)),
-      () => baseState,
-    )
+    const missingContextRenderer = new ScreenWeatherRenderer(ref(createCanvas(null)), () => baseState)
 
     expect(() =>
       (missingCanvasRenderer as never as { renderFrame: (time: number) => void }).renderFrame(16),
@@ -218,10 +216,7 @@ describe('화면 날씨 렌더러', () => {
     }))
 
     ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(16)
-    observerCallback(
-      [{ contentRect: { width: 123.8, height: 45.2 } } as ResizeObserverEntry],
-      {} as ResizeObserver,
-    )
+    observerCallback([{ contentRect: { width: 123.8, height: 45.2 } } as ResizeObserverEntry], {} as ResizeObserver)
     ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(50)
 
     expect(canvas.width).toBe(246)
@@ -250,10 +245,7 @@ describe('화면 날씨 렌더러', () => {
     }))
 
     ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(16)
-    observerCallback(
-      [{ contentRect: { width: 123.8, height: 45.2 } } as ResizeObserverEntry],
-      {} as ResizeObserver,
-    )
+    observerCallback([{ contentRect: { width: 123.8, height: 45.2 } } as ResizeObserverEntry], {} as ResizeObserver)
     ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(50)
 
     expect(canvas.width).toBe(123)
@@ -329,7 +321,7 @@ describe('화면 날씨 렌더러', () => {
     ;(renderer as never as { renderFrame: (time: number) => void }).renderFrame(32)
 
     expect(context.clearRect).toHaveBeenCalledTimes(1)
-    expect(window.setTimeout).toHaveBeenCalledTimes(2)
+    expect(window.requestAnimationFrame).toHaveBeenCalledTimes(2)
   })
 
   it('devicePixelRatio가 없으면 1배율로 canvas를 맞춰야 한다', () => {
@@ -494,12 +486,7 @@ describe('화면 날씨 렌더러', () => {
     const renderer = new ScreenWeatherRenderer(ref(createCanvas()), () => baseState)
     const particle = (
       renderer as never as {
-        createParticle: (
-          width: number,
-          height: number,
-          state: SceneWeatherState,
-          fromTop?: boolean,
-        ) => { y: number }
+        createParticle: (width: number, height: number, state: SceneWeatherState, fromTop?: boolean) => { y: number }
       }
     ).createParticle(320, 180, { ...baseState, precipitation: 4 }, false)
 
@@ -510,10 +497,7 @@ describe('화면 날씨 렌더러', () => {
     const renderer = new ScreenWeatherRenderer(ref(createCanvas()), () => baseState)
     const vector = (
       renderer as never as {
-        getSnowstormScreenVector: (
-          windVector: { x: number; y: number },
-          intensity: number,
-        ) => { x: number; y: number }
+        getSnowstormScreenVector: (windVector: { x: number; y: number }, intensity: number) => { x: number; y: number }
       }
     ).getSnowstormScreenVector({ x: 0.1, y: -1 }, 1)
 
@@ -524,10 +508,7 @@ describe('화면 날씨 렌더러', () => {
     const renderer = new ScreenWeatherRenderer(ref(createCanvas()), () => baseState)
     const vector = (
       renderer as never as {
-        getSnowstormScreenVector: (
-          windVector: { x: number; y: number },
-          intensity: number,
-        ) => { x: number; y: number }
+        getSnowstormScreenVector: (windVector: { x: number; y: number }, intensity: number) => { x: number; y: number }
       }
     ).getSnowstormScreenVector({ x: 0.1, y: 1 }, 1)
 
@@ -558,12 +539,7 @@ describe('화면 날씨 렌더러', () => {
     ]
     ;(
       renderer as never as {
-        updateLightning: (
-          timestamp: number,
-          width: number,
-          height: number,
-          intensity: number,
-        ) => void
+        updateLightning: (timestamp: number, width: number, height: number, intensity: number) => void
       }
     ).updateLightning(50, 320, 180, 0)
 
@@ -576,12 +552,7 @@ describe('화면 날씨 렌더러', () => {
 
     ;(
       renderer as never as {
-        updateLightning: (
-          timestamp: number,
-          width: number,
-          height: number,
-          intensity: number,
-        ) => void
+        updateLightning: (timestamp: number, width: number, height: number, intensity: number) => void
       }
     ).updateLightning(50, 320, 180, 0.5)
 
